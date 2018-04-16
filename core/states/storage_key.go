@@ -38,18 +38,13 @@ func (this *StorageKey) Serialize(w io.Writer) (int, error) {
 }
 
 func (this *StorageKey) Deserialize(r io.Reader) error {
-	u := new(common.Address)
-	err := u.Deserialize(r)
+	err := this.CodeHash.Deserialize(r)
 	if err != nil {
 		return err
 	}
-	this.CodeHash = *u
-	key, err := serialization.ReadVarBytes(r)
-	if err != nil {
-		return err
-	}
-	this.Key = key
-	return nil
+	this.Key, err = serialization.ReadVarBytes(r)
+
+	return err
 }
 
 func (this *StorageKey) ToArray() []byte {
