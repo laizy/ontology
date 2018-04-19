@@ -151,7 +151,7 @@ func (self *StateStore) GetMerkleProof(proofHeight, rootHeight uint32) ([]common
 
 //NewStateBatch return state commit bathe. Usually using in smart contract execution
 func (self *StateStore) NewStateBatch() *statestore.StateBatch {
-	return statestore.NewStateStoreBatch(statestore.NewMemDatabase(), self.store)
+	return statestore.NewStateStoreBatch(self.store)
 }
 
 //CommitTo commit state batch to state store
@@ -292,8 +292,8 @@ func (self *StateStore) GetCurrentBlock() (common.Uint256, uint32, error) {
 	return blockHash, height, nil
 }
 
-//SaveCurrentBlock persist current block to state store
-func (self *StateStore) SaveCurrentBlock(height uint32, blockHash common.Uint256) error {
+//SaveCurrentBlockInfo persist current block to state store
+func (self *StateStore) SaveCurrentBlockInfo(height uint32, blockHash common.Uint256) error {
 	key := self.getCurrentBlockKey()
 	value := bytes.NewBuffer(nil)
 	blockHash.Serialize(value)

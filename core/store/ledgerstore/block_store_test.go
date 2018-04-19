@@ -58,9 +58,9 @@ func TestCurrentBlock(t *testing.T) {
 	blockHash := common.Uint256(sha256.Sum256([]byte("123456789")))
 	blockHeight := uint32(1)
 	testBlockStore.NewBatch()
-	err := testBlockStore.SaveCurrentBlock(blockHeight, blockHash)
+	err := testBlockStore.SaveCurrentBlockInfo(blockHeight, blockHash)
 	if err != nil {
-		t.Errorf("SaveCurrentBlock error %s", err)
+		t.Errorf("SaveCurrentBlockInfo error %s", err)
 		return
 	}
 	err = testBlockStore.CommitTo()

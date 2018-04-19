@@ -151,7 +151,7 @@ func (this *EventStore) ClearAll() error {
 	return this.CommitTo()
 }
 
-//SaveCurrentBlock persist current block height and block hash to event store
+//SaveCurrentBlockInfo persist current block height and block hash to event store
 func (this *EventStore) SaveCurrentBlock(height uint32, blockHash common.Uint256) error {
 	key := genCurrentBlockKey()
 	value := bytes.NewBuffer(nil)

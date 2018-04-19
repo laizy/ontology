@@ -21,6 +21,7 @@ import (
 
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/payload"
+	cstates "github.com/ontio/ontology/core/states"
 	"github.com/ontio/ontology/core/store"
 	scommon "github.com/ontio/ontology/core/store/common"
 	ctypes "github.com/ontio/ontology/core/types"
@@ -228,7 +229,7 @@ func (this *SmartContract) loadCode(address common.Address, codes []byte) ([]byt
 		if item == nil {
 			return nil, CONTRACT_NOT_EXIST
 		}
-		contract, ok := item.Value.(*payload.DeployCode)
+		contract, ok := item.(*payload.DeployCode)
 		if !ok {
 			return nil, DEPLOYCODE_TYPE_ERROR
 		}
@@ -241,7 +242,7 @@ func (this *SmartContract) loadCode(address common.Address, codes []byte) ([]byt
 	}
 }
 
-func (this *SmartContract) getContract(address []byte) (*scommon.StateItem, error) {
+func (this *SmartContract) getContract(address []byte) (cstates.StateValue, error) {
 	item, err := this.CloneCache.Store.TryGet(scommon.ST_CONTRACT, address[:])
 	if err != nil {
 		return nil, errors.NewErr("[getContract] Get contract context error!")

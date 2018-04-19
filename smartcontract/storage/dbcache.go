@@ -84,8 +84,8 @@ func (cloneCache *CloneCache) GetOrAdd(prefix common.DataEntryPrefix, key []byte
 	if err != nil {
 		return nil, err
 	}
-	if item != nil && item.State != common.Deleted {
-		return item.Value, nil
+	if item != nil {
+		return item, nil
 	}
 	cloneCache.Memory[string(append([]byte{byte(prefix)}, key...))] = &StateItem{Prefix: prefix, Key: string(key), Value: value, State: common.Changed}
 	return value, nil
@@ -100,13 +100,8 @@ func (cloneCache *CloneCache) Get(prefix common.DataEntryPrefix, key []byte) (st
 		return v.Value, nil
 	}
 	item, err := cloneCache.Store.TryGet(prefix, key)
-	if err != nil {
-		return nil, err
-	}
-	if item == nil || item.State == common.Deleted {
-		return nil, nil
-	}
-	return item.Value, nil
+
+	return item, err
 }
 
 // Delete item from cache

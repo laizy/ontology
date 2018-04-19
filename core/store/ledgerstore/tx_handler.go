@@ -46,19 +46,21 @@ func (self *StateStore) HandleDeployTransaction(stateBatch *statestore.StateBatc
 	if deploy.Code.VmType == stypes.Native {
 		targetAddress, err := common.AddressParseFromBytes(deploy.Code.Code)
 		if err != nil {
-			return fmt.Errorf("Invalid native contract address:%v", err)
+			return fmt.Errorf("invalid native contract address:%v", err)
 
 		}
 		originAddress = targetAddress
 	}
 
-	// store contract message
-	if err := stateBatch.TryGetOrAdd(
-		scommon.ST_CONTRACT,
-		originAddress[:],
-		deploy); err != nil {
+	val, err := stateBatch.TryGet(scommon.ST_CONTRACT, originAddress[:])
+	if err != nil {
 		return fmt.Errorf("TryGetOrAdd contract error %s", err)
 	}
+	if val != nil {
+		return fmt.Errorf("deploy error: contract %x already existed", originAddress)
+	}
+
+	stateBatch.TryAdd(scommon.ST_CONTRACT, originAddress[:], deploy)
 	return nil
 }
 

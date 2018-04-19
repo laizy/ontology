@@ -21,12 +21,12 @@ package ledgerstore
 import (
 	"testing"
 
+	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/states"
 	scommon "github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/statestore"
 	vmtypes "github.com/ontio/ontology/smartcontract/types"
-	"github.com/ontio/ontology-crypto/keypair"
 )
 
 func TestContractState(t *testing.T) {
@@ -55,11 +55,7 @@ func TestContractState(t *testing.T) {
 		VmType: vmtypes.NEOVM,
 	}
 	codeHash := code.AddressFromVmCode()
-	err = batch.TryGetOrAdd(
-		scommon.ST_CONTRACT,
-		codeHash[:],
-		deploy,
-		false)
+	err = batch.TryGetOrAdd(scommon.ST_CONTRACT, codeHash[:], deploy)
 	if err != nil {
 		t.Errorf("TryGetOrAdd contract error %s", err)
 		return

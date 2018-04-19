@@ -274,8 +274,8 @@ func (this *BlockStore) GetCurrentBlock() (common.Uint256, uint32, error) {
 	return blockHash, height, nil
 }
 
-//SaveCurrentBlock persist the current block height and current block hash to store
-func (this *BlockStore) SaveCurrentBlock(height uint32, blockHash common.Uint256) error {
+//SaveCurrentBlockInfo persist the current block height and current block hash to store
+func (this *BlockStore) SaveCurrentBlockInfo(height uint32, blockHash common.Uint256) error {
 	key := this.getCurrentBlockKey()
 	value := bytes.NewBuffer(nil)
 	blockHash.Serialize(value)

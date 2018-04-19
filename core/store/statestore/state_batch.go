@@ -30,76 +30,56 @@ import (
 )
 
 type StateBatch struct {
-	store       common.PersistStore
-	memoryStore common.MemoryCacheStore
+	store  common.PersistStore
+	memory map[string]states.StateValue
 }
 
-func NewStateStoreBatch(memoryStore common.MemoryCacheStore, store common.PersistStore) *StateBatch {
+func NewStateStoreBatch(store common.PersistStore) *StateBatch {
 	return &StateBatch{
-		store:       store,
-		memoryStore: memoryStore,
+		store:  store,
+		memory: make(map[string]states.StateValue),
 	}
 }
 
 func (self *StateBatch) Find(prefix common.DataEntryPrefix, key []byte) ([]*common.StateItem, error) {
 	var states []*common.StateItem
-	bp := []byte{byte(prefix)}
-	iter := self.store.NewIterator(append(bp, key...))
+	bp := append([]byte{byte(prefix)}, key...)
+	iter := self.store.NewIterator(bp)
 	defer iter.Release()
 	for iter.Next() {
 		key := iter.Key()
 		keyV := key[1:]
-		if self.memoryStore.Get(byte(prefix), keyV) == nil {
+		if _, ok := self.memory[string(key)]; ok == false {
 			value := iter.Value()
-			state, err := getStateObject(prefix, value)
+			state, err := decodeStateObject(prefix, value)
 			if err != nil {
 				return nil, err
 			}
 			states = append(states, &common.StateItem{Key: string(keyV), Value: state})
 		}
 	}
-	keyP := string(append(bp, key...))
-	for _, v := range self.memoryStore.Find() {
-		if v.State != common.Deleted && strings.HasPrefix(v.Key, keyP) {
-			states = append(states, v.Copy())
+	kprefix := string(bp)
+	for k, v := range self.memory {
+		if v != nil && strings.HasPrefix(k, kprefix) {
+			states = append(states, &common.StateItem{Key: k, Value: v})
 		}
 	}
+
 	return states, nil
 }
 
 func (self *StateBatch) TryAdd(prefix common.DataEntryPrefix, key []byte, value states.StateValue) {
-	self.setStateObject(byte(prefix), key, value, common.Changed)
+	k := string(append([]byte{byte(prefix)}, key...))
+	self.memory[k] = value
 }
 
-func (self *StateBatch) TryGetOrAdd(prefix common.DataEntryPrefix, key []byte, value states.StateValue) error {
-	state := self.memoryStore.Get(byte(prefix), key)
-	if state != nil {
-		if state.State == common.Deleted {
-			self.setStateObject(byte(prefix), key, value, common.Changed)
-			return nil
-		}
-		return nil
-	}
-	item, err := self.store.Get(append([]byte{byte(prefix)}, key...))
-	if err != nil && err != leveldb.ErrNotFound {
-		return err
-	}
-	if item != nil {
-		return nil
-	}
-	self.setStateObject(byte(prefix), key, value, common.Changed)
-	return nil
-}
-
-func (self *StateBatch) TryGet(prefix common.DataEntryPrefix, key []byte) (*common.StateItem, error) {
-	state := self.memoryStore.Get(byte(prefix), key)
-	if state != nil {
-		if state.State == common.Deleted {
-			return nil, nil
-		}
+func (self *StateBatch) TryGet(prefix common.DataEntryPrefix, key []byte) (states.StateValue, error) {
+	k := string(append([]byte{byte(prefix)}, key...))
+	if state, ok := self.memory[k]; ok {
 		return state, nil
 	}
-	enc, err := self.store.Get(append([]byte{byte(prefix)}, key...))
+
+	enc, err := self.store.Get([]byte(k))
 	if err != nil && err != leveldb.ErrNotFound {
 		return nil, err
 	}
@@ -107,55 +87,27 @@ func (self *StateBatch) TryGet(prefix common.DataEntryPrefix, key []byte) (*comm
 	if enc == nil {
 		return nil, nil
 	}
-	stateVal, err := getStateObject(prefix, enc)
+	stateVal, err := decodeStateObject(prefix, enc)
 	if err != nil {
 		return nil, err
 	}
-	self.setStateObject(byte(prefix), key, stateVal, common.None)
-	return &common.StateItem{Key: string(append([]byte{byte(prefix)}, key...)), Value: stateVal, State: common.None}, nil
-}
-
-func (self *StateBatch) TryGetAndChange(prefix common.DataEntryPrefix, key []byte) (states.StateValue, error) {
-	state := self.memoryStore.Get(byte(prefix), key)
-	if state != nil {
-		if state.State == common.Deleted {
-			return nil, nil
-		} else if state.State == common.None {
-			state.State = common.Changed
-		}
-		return state.Value, nil
-	}
-	k := append([]byte{byte(prefix)}, key...)
-	enc, err := self.store.Get(k)
-	if err != nil && err != leveldb.ErrNotFound {
-		return nil, err
-	}
-
-	if enc == nil {
-		return nil, nil
-	}
-
-	val, err := getStateObject(prefix, enc)
-	if err != nil {
-		return nil, err
-	}
-	self.setStateObject(byte(prefix), key, val, common.Changed)
-	return val, nil
+	return stateVal, nil
 }
 
 func (self *StateBatch) TryDelete(prefix common.DataEntryPrefix, key []byte) {
-	self.memoryStore.Delete(byte(prefix), key)
+	k := string(append([]byte{byte(prefix)}, key...))
+	self.memory[k] = nil
 }
 
 func (self *StateBatch) CommitTo() error {
-	for k, v := range self.memoryStore.GetChangeSet() {
-		if v.State == common.Deleted {
+	for k, v := range self.memory {
+		if v == nil {
 			self.store.BatchDelete([]byte(k))
 		} else {
 			data := new(bytes.Buffer)
-			err := v.Value.Serialize(data)
+			err := v.Serialize(data)
 			if err != nil {
-				return fmt.Errorf("error: key %v, value:%v", k, v.Value)
+				return fmt.Errorf("error: key %v, value:%v", k, v)
 			}
 			self.store.BatchPut([]byte(k), data.Bytes())
 		}
@@ -163,11 +115,7 @@ func (self *StateBatch) CommitTo() error {
 	return nil
 }
 
-func (self *StateBatch) setStateObject(prefix byte, key []byte, value states.StateValue, state common.ItemState) {
-	self.memoryStore.Put(prefix, key, value, state)
-}
-
-func getStateObject(prefix common.DataEntryPrefix, enc []byte) (states.StateValue, error) {
+func decodeStateObject(prefix common.DataEntryPrefix, enc []byte) (states.StateValue, error) {
 	reader := bytes.NewBuffer(enc)
 	switch prefix {
 	case common.ST_BOOKKEEPER:
@@ -189,6 +137,6 @@ func getStateObject(prefix common.DataEntryPrefix, enc []byte) (states.StateValu
 		}
 		return storage, nil
 	default:
-		panic("[getStateObject] invalid state type!")
+		panic("[decodeStateObject] invalid state type!")
 	}
 }
