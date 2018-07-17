@@ -348,7 +348,8 @@ func handleBlockTransactionParallel(store store.LedgerStore, stateBatch *statest
 			res := <-resultChan
 			results[res.index] = res
 
-			for execResult, ok := results[curr]; ok; curr += 1 {
+			execResult, ok := results[curr]
+			for ok {
 				result := execResult.res
 				tx := execResult.tx
 				txDB := execResult.txDB
@@ -414,6 +415,9 @@ func handleBlockTransactionParallel(store store.LedgerStore, stateBatch *statest
 				}
 
 				eventNotifies = append(eventNotifies, eventNotify)
+
+				curr += 1
+				execResult, ok = results[curr]
 			}
 		}
 
