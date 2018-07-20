@@ -34,7 +34,7 @@ import (
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/common/serialization"
-	vconfig "github.com/ontio/ontology/consensus/vbft/config"
+	"github.com/ontio/ontology/consensus/vbft/config"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/signature"
 	"github.com/ontio/ontology/core/states"
@@ -592,7 +592,8 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 	}
 
 	stateBatch := this.stateStore.NewStateBatch()
-	err := handleBlockTransactionParallel(this, stateBatch, block, this.eventStore,
+	//err := handleBlockTransactionSerial(this, stateBatch, block, this.eventStore,
+		err := handleBlockTransactionParallel(this, stateBatch, block, this.eventStore,
 		createGasPrice.(uint64), deployUintCodePrice.(uint64), invokeUintCodeGasPrice.(uint64))
 	if err != nil {
 		return fmt.Errorf("handle block transaction error %s", err)
