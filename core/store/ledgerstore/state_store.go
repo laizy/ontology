@@ -212,10 +212,7 @@ func (self *StateStore) SaveBookkeeperState(bookkeeperState *states.BookkeeperSt
 
 //GetStorageItem return the storage value of the key in smart contract.
 func (self *StateStore) GetStorageState(key *states.StorageKey) (*states.StorageItem, error) {
-	storeKey, err := self.getStorageKey(key)
-	if err != nil {
-		return nil, err
-	}
+	storeKey := self.genStorageKey(key)
 
 	data, err := self.store.Get(storeKey)
 	if err != nil {
@@ -275,16 +272,16 @@ func (self *StateStore) getContractStateKey(contractHash common.Address) ([]byte
 	data := contractHash[:]
 	key := make([]byte, 1+len(data))
 	key[0] = byte(scom.ST_CONTRACT)
-	copy(key[1:], []byte(data))
+	copy(key[1:], data)
 	return key, nil
 }
 
-func (self *StateStore) getStorageKey(key *states.StorageKey) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	buf.WriteByte(byte(scom.ST_STORAGE))
-	buf.Write(key.ContractAddress[:])
-	buf.Write(key.Key)
-	return buf.Bytes(), nil
+func (self *StateStore) genStorageKey(key *states.StorageKey) []byte {
+	data := make([]byte, 0, 1+len(key.ContractAddress[:])+len(key.Key))
+	data = append(data, byte(scom.ST_STORAGE))
+	data = append(data, key.ContractAddress[:]...)
+	data = append(data, key.Key...)
+	return data
 }
 
 func (self *StateStore) GetBlockRootWithNewTxRoot(txRoot common.Uint256) common.Uint256 {

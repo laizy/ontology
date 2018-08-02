@@ -25,6 +25,7 @@ import (
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
+	"github.com/ontio/ontology/common/poolbuf"
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/vm/neovm"
 	"math"
@@ -171,7 +172,9 @@ func (self *programParser) ReadNum() (uint16, error) {
 	if err != nil {
 		return 0, err
 	}
-	bint := common.BigIntFromNeoBytes(buff)
+	bint := common.BigIntFromNeoBytes(buff.Bytes())
+	buff.Free()
+
 	num := bint.Int64()
 	if num > math.MaxUint16 || num <= 16 {
 		return 0, fmt.Errorf("num not in range (16, MaxUint16]: %d", num)
@@ -180,7 +183,7 @@ func (self *programParser) ReadNum() (uint16, error) {
 	return uint16(num), nil
 }
 
-func (self *programParser) ReadBytes() ([]byte, error) {
+func (self *programParser) ReadBytes() (*poolbuf.PoolBuf, error) {
 	code, err := self.ReadOpCode()
 	if err != nil {
 		return nil, err
@@ -222,7 +225,8 @@ func (self *programParser) ReadPubKey() (keypair.PublicKey, error) {
 		return nil, err
 	}
 
-	pubkey, err := keypair.DeserializePublicKey(buf)
+	pubkey, err := keypair.DeserializePublicKey(buf.Bytes())
+
 	return pubkey, err
 }
 
@@ -284,7 +288,8 @@ func GetProgramInfo(program []byte) (ProgramInfo, error) {
 				if err != nil {
 					return info, err
 				}
-				buffers = append(buffers, buff)
+				buffers = append(buffers, buff.Bytes())
+				buff.Free()
 			}
 		}
 		err = parser.ExpectEOF()
@@ -329,7 +334,8 @@ func GetParamInfo(program []byte) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		signatures = append(signatures, sig)
+		signatures = append(signatures, sig.Bytes())
+		sig.Free()
 	}
 
 	return signatures, nil

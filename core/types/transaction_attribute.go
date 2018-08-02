@@ -74,11 +74,11 @@ func (tx *TxAttribute) Serialize(w io.Writer) error {
 }
 
 func (tx *TxAttribute) Deserialize(r io.Reader) error {
-	val, err := serialization.ReadBytes(r, 1)
+	val, err := serialization.ReadByte(r)
 	if err != nil {
 		return fmt.Errorf("Transaction attribute Usage deserialization error: %s", err)
 	}
-	tx.Usage = TransactionAttributeUsage(val[0])
+	tx.Usage = TransactionAttributeUsage(val)
 	if !IsValidAttributeType(tx.Usage) {
 		return errors.New("[TxAttribute] Unsupported attribute Description.")
 	}

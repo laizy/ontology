@@ -117,12 +117,13 @@ func (this *ConsensusPayload) Deserialize(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	buf, err := serialization.ReadVarBytes(r)
+	buf, err := serialization.ReadVarBytesBuf(r)
 	if err != nil {
 
 		return errors.NewDetailErr(err, errors.ErrNetUnPackFail, "read buf error")
 	}
-	this.Owner, err = keypair.DeserializePublicKey(buf)
+	this.Owner, err = keypair.DeserializePublicKey(buf.Bytes())
+	buf.Free()
 	if err != nil {
 
 		return errors.NewDetailErr(err, errors.ErrNetUnPackFail, "deserialize publickey error")

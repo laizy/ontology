@@ -197,10 +197,10 @@ func TestReadVarBytesRead(t *testing.T) {
 	buff := bytes.NewBuffer(bs)
 	read, err := byteXReader(buff, uint64(len(bs)))
 	assert.Nil(t, err)
-	assert.Equal(t, bs, read)
+	assert.Equal(t, bs, read.Bytes())
 }
 
-const N = 24829*1 + 1
+const N = 248029*1 + 1
 
 func BenchmarkBytesXReader(b *testing.B) {
 	bs := make([]byte, N)

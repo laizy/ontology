@@ -24,6 +24,8 @@ import (
 	"errors"
 	"io"
 	"math"
+
+	"github.com/ontio/ontology/common/poolbuf"
 )
 
 var ErrRange = errors.New("value out of range")
@@ -72,6 +74,7 @@ type SerializableData interface {
  */
 
 func WriteVarUint(writer io.Writer, value uint64) error {
+	// buf will escape to heap, due to calling io.Writer.Write
 	var buf [9]byte
 	var len = 0
 	if value < 0xFD {
@@ -145,7 +148,7 @@ func WriteString(writer io.Writer, value string) error {
 	return WriteVarBytes(writer, []byte(value))
 }
 
-func ReadVarBytes(reader io.Reader) ([]byte, error) {
+func ReadVarBytesBuf(reader io.Reader) (*poolbuf.PoolBuf, error) {
 	val, err := ReadVarUint(reader, 0)
 	if err != nil {
 		return nil, err
@@ -157,12 +160,27 @@ func ReadVarBytes(reader io.Reader) ([]byte, error) {
 	return str, nil
 }
 
+func ReadVarBytes(reader io.Reader) ([]byte, error) {
+	val, err := ReadVarUint(reader, 0)
+	if err != nil {
+		return nil, err
+	}
+	str, err := byteXReader(reader, val)
+	if err != nil {
+		return nil, err
+	}
+	return str.Bytes(), nil
+}
+
 func ReadString(reader io.Reader) (string, error) {
-	val, err := ReadVarBytes(reader)
+	val, err := ReadVarBytesBuf(reader)
 	if err != nil {
 		return "", err
 	}
-	return string(val), nil
+
+	str := string(val.Bytes())
+	val.Free()
+	return str, nil
 }
 
 func GetVarUintSize(value uint64) int {
@@ -177,12 +195,12 @@ func GetVarUintSize(value uint64) int {
 	}
 }
 
-func ReadBytes(reader io.Reader, length uint64) ([]byte, error) {
-	str, err := byteXReader(reader, length)
+func ReadBytes(reader io.Reader, length uint64) (*poolbuf.PoolBuf, error) {
+	buf, err := byteXReader(reader, length)
 	if err != nil {
 		return nil, err
 	}
-	return str, nil
+	return buf, nil
 }
 
 func ReadUint8(reader io.Reader) (uint8, error) {
@@ -262,27 +280,24 @@ func ToArray(data SerializableData) []byte {
 //** 3.byteToUint8: change byte -> uint8 and return.
 //**************************************************************************
 
-func byteXReader(reader io.Reader, x uint64) ([]byte, error) {
+func byteXReader(reader io.Reader, x uint64) (*poolbuf.PoolBuf, error) {
 	if x == 0 {
 		return nil, nil
 	}
-	//fast path to avoid buffer reallocation
+
+	buf := poolbuf.Get()
 	if x < 2*1024*1024 {
-		p := make([]byte, x)
-		_, err := io.ReadFull(reader, p)
-		if err != nil {
-			return nil, err
-		}
-		return p, nil
+		buf.Grow(int(x))
 	}
 
-	// normal path to avoid attack
 	limited := io.LimitReader(reader, int64(x))
-	buf := &bytes.Buffer{}
 	n, _ := buf.ReadFrom(limited)
 	if n == int64(x) {
-		return buf.Bytes(), nil
+		return buf, nil
 	}
+
+	buf.Free()
+
 	return nil, ErrEof
 }
 
@@ -306,9 +321,12 @@ func WriteByte(writer io.Writer, val byte) error {
 }
 
 func ReadByte(reader io.Reader) (byte, error) {
-	b, err := byteXReader(reader, 1)
+	buf, err := byteXReader(reader, 1)
 	if err != nil {
 		return 0, err
 	}
-	return b[0], nil
+	b := buf.Bytes()[0]
+	buf.Free()
+
+	return b, nil
 }

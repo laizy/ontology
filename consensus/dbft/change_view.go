@@ -38,11 +38,11 @@ func (cv *ChangeView) Serialize(w io.Writer) error {
 //read data to reader
 func (cv *ChangeView) Deserialize(r io.Reader) error {
 	cv.msgData.Deserialize(r)
-	viewNum, err := ser.ReadBytes(r, 1)
+	viewNum, err := ser.ReadByte(r)
 	if err != nil {
 		return err
 	}
-	cv.NewViewNumber = viewNum[0]
+	cv.NewViewNumber = viewNum
 	return nil
 }
 

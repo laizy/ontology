@@ -125,7 +125,9 @@ func getUnboundOffset(native *native.NativeService, contract, address common.Add
 }
 
 func genTransferFromKey(contract common.Address, state *TransferFrom) []byte {
-	temp := append(contract[:], state.From[:]...)
+	temp := make([]byte, 0, 3*common.ADDR_LEN)
+	temp = append(temp, contract[:]...)
+	temp = append(temp, state.From[:]...)
 	return append(temp, state.Sender[:]...)
 }
 
