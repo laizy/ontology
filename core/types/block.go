@@ -68,6 +68,17 @@ func (b *Block) Serialization(sink *common.ZeroCopySink) error {
 	return nil
 }
 
+// if no error, ownership of param raw is transfered to Transaction
+func BlockFromRawBytes(raw []byte) (*Block, error) {
+	source := common.NewZeroCopySource(raw)
+	block := &Block{}
+	err := block.Deserialization(source)
+	if err != nil {
+		return nil, err
+	}
+	return block, nil
+}
+
 func (self *Block) Deserialization(source *common.ZeroCopySource) error {
 	if self.Header == nil {
 		self.Header = new(Header)

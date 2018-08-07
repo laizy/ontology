@@ -397,65 +397,11 @@ func (tx *Transaction) Serialization(sink *common.ZeroCopySink) error {
 
 // Serialize the Transaction
 func (tx *Transaction) Serialize(w io.Writer) error {
+	if tx.nonDirectConstracted == false || len(tx.Raw) == 0 {
+		panic("wrong constructed transaction")
+	}
 	_, err := w.Write(tx.Raw)
 	return err
-}
-
-/*
-	func (tx *Transaction) Serialize(w io.Writer) error {
-
-	err := tx.SerializeUnsigned(w)
-	if err != nil {
-		return err
-	}
-
-	err = serialization.WriteVarUint(w, uint64(len(tx.Sigs)))
-	if err != nil {
-		return err
-	}
-	for _, sig := range tx.Sigs {
-		err = sig.Serialize(w)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-*/
-
-//Serialize the Transaction data without contracts
-func (tx *Transaction) SerializeUnsigned(w io.Writer) error {
-	//txType
-	if _, err := w.Write([]byte{byte(tx.Version), byte(tx.TxType)}); err != nil {
-		return fmt.Errorf("[SerializeUnsigned], Transaction version failed. %v", err)
-	}
-	if err := serialization.WriteUint32(w, tx.Nonce); err != nil {
-		return fmt.Errorf("[SerializeUnsigned], Transaction nonce failed. %v", err)
-	}
-	if err := serialization.WriteUint64(w, tx.GasPrice); err != nil {
-		return fmt.Errorf("[SerializeUnsigned], Transaction gasPrice failed. %v", err)
-	}
-	if err := serialization.WriteUint64(w, tx.GasLimit); err != nil {
-		return fmt.Errorf("[SerializeUnsigned], Transaction gasLimit failed. %v", err)
-	}
-	if err := tx.Payer.Serialize(w); err != nil {
-		return fmt.Errorf("[SerializeUnsigned], Transaction payer failed. %v", err)
-	}
-	//Payload
-	if tx.Payload == nil {
-		return errors.New("Transaction Payload is nil.")
-	}
-	if err := tx.Payload.Serialize(w); err != nil {
-		return fmt.Errorf("[SerializeUnsigned], Transaction payload failed. %v", err)
-	}
-
-	err := serialization.WriteVarUint(w, uint64(tx.attributes))
-	if err != nil {
-		return fmt.Errorf("[SerializeUnsigned], Transaction item txAttribute length serialization failed. %v", err)
-	}
-
-	return nil
 }
 
 // deserialize the Transaction
@@ -541,12 +487,6 @@ func (tx *Transaction) DeserializeUnsigned(r io.Reader) error {
 	tx.attributes = 0
 
 	return nil
-}
-
-func (tx *Transaction) GetMessage() []byte {
-	buf := new(bytes.Buffer)
-	tx.SerializeUnsigned(buf)
-	return buf.Bytes()
 }
 
 func (tx *Transaction) ToArray() []byte {
