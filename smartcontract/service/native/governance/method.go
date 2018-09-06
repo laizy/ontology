@@ -269,6 +269,9 @@ func normalQuit(native *native.NativeService, contract common.Address, peerPoolI
 			return errors.NewDetailErr(err, errors.ErrNoCode, "putAuthorizeInfo, put authorizeInfo error!")
 		}
 	}
+	if err := iter.Error(); err != nil {
+		return err
+	}
 	if flag == false {
 		authorizeInfo := &AuthorizeInfo{
 			PeerPubkey:          peerPoolItem.PeerPubkey,
@@ -342,6 +345,9 @@ func blackQuit(native *native.NativeService, contract common.Address, peerPoolIt
 		}
 		authorizePos = authorizePos + penalty
 	}
+	if err := iter.Error(); err != nil {
+		return err
+	}
 
 	//add penalty stake
 	err = depositPenaltyStake(native, contract, peerPoolItem.PeerPubkey, initPos, authorizePos)
@@ -385,6 +391,9 @@ func consensusToConsensus(native *native.NativeService, contract common.Address,
 			return errors.NewDetailErr(err, errors.ErrNoCode, "putAuthorizeInfo, put authorizeInfo error!")
 		}
 	}
+	if err := iter.Error(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -422,6 +431,9 @@ func unConsensusToConsensus(native *native.NativeService, contract common.Addres
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "putAuthorizeInfo, put authorizeInfo error!")
 		}
+	}
+	if err := iter.Error(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -461,6 +473,9 @@ func consensusToUnConsensus(native *native.NativeService, contract common.Addres
 			return errors.NewDetailErr(err, errors.ErrNoCode, "putAuthorizeInfo, put authorizeInfo error!")
 		}
 	}
+	if err := iter.Error(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -499,6 +514,9 @@ func unConsensusToUnConsensus(native *native.NativeService, contract common.Addr
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "putAuthorizeInfo, put authorizeInfo error!")
 		}
+	}
+	if err := iter.Error(); err != nil {
+		return err
 	}
 	return nil
 }
