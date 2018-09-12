@@ -158,10 +158,12 @@ func (this *NeoVmService) Invoke() (*vmty.VmValue, error) {
 				return nil, ERR_CHECK_STACK_SIZE
 			}
 		}
+		//name := vm.OpExecList[opCode].Name
 		if opCode >= vm.PUSHBYTES1 && opCode <= vm.PUSHBYTES75 {
 			if !this.ContextRef.CheckUseGas(OPCODE_GAS) {
 				return nil, ERR_GAS_INSUFFICIENT
 			}
+			//name = "pushbytes"
 		} else {
 			price := gasTable[opCode]
 			if price == 0 {
@@ -178,6 +180,12 @@ func (this *NeoVmService) Invoke() (*vmty.VmValue, error) {
 				return nil, ERR_GAS_INSUFFICIENT
 			}
 		}
+		//t, _ := this.Engine.EvalStack.Dump()
+		//_, _ = fmt.Fprintln(os.Stderr, "EvalStack:", t)
+		//t2, _ := this.Engine.AltStack.Dump()
+		//_, _ = fmt.Fprintln(os.Stderr, "AltStack:", t2)
+		//_, _ = fmt.Fprintln(os.Stderr, "opExec:", name)
+
 		switch opCode {
 		case vm.SYSCALL:
 			if err := this.SystemCall(this.Engine); err != nil {

@@ -571,22 +571,22 @@ func (this *LedgerStoreImp) SubmitBlock(block *types.Block, result store.Execute
 //AddBlock add the block to store.
 //When the block is not the next block, it will be cache. until the missing block arrived
 func (this *LedgerStoreImp) AddBlock(block *types.Block, stateMerkleRoot common.Uint256) error {
-	currBlockHeight := this.GetCurrentBlockHeight()
-	blockHeight := block.Header.Height
-	if blockHeight <= currBlockHeight {
-		return nil
-	}
-	nextBlockHeight := currBlockHeight + 1
-	if blockHeight != nextBlockHeight {
-		return fmt.Errorf("block height %d not equal next block height %d", blockHeight, nextBlockHeight)
-	}
-	var err error
-	this.vbftPeerInfoblock, err = this.verifyHeader(block.Header, this.vbftPeerInfoblock)
-	if err != nil {
-		return fmt.Errorf("verifyHeader error %s", err)
-	}
+	//currBlockHeight := this.GetCurrentBlockHeight()
+	//blockHeight := block.Header.Height
+	//if blockHeight <= currBlockHeight {
+	//	return nil
+	//}
+	//nextBlockHeight := currBlockHeight + 1
+	//if blockHeight != nextBlockHeight {
+	//	return fmt.Errorf("block height %d not equal next block height %d", blockHeight, nextBlockHeight)
+	//}
+	//var err error
+	//this.vbftPeerInfoblock, err = this.verifyHeader(block.Header, this.vbftPeerInfoblock)
+	//if err != nil {
+	//	return fmt.Errorf("verifyHeader error %s", err)
+	//}
 
-	err = this.saveBlock(block, stateMerkleRoot)
+	err := this.saveBlock(block, stateMerkleRoot)
 	if err != nil {
 		return fmt.Errorf("saveBlock error %s", err)
 	}
@@ -708,22 +708,28 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block, result sto
 		SaveNotify(this.eventStore, notify.TxHash, notify)
 	}
 
-	err := this.stateStore.AddStateMerkleTreeRoot(blockHeight, result.Hash)
-	if err != nil {
-		return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
-	}
+	//err := this.stateStore.AddStateMerkleTreeRoot(blockHeight, result.Hash)
+	//if err != nil {
+	//	return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
+	//}
 
-	err = this.stateStore.AddBlockMerkleTreeRoot(block.Header.TransactionsRoot)
-	if err != nil {
-		return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
-	}
+	//err := this.stateStore.AddBlockMerkleTreeRoot(block.Header.TransactionsRoot)
+	//if err != nil {
+	//	return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
+	//}
 
-	err = this.stateStore.SaveCurrentBlock(blockHeight, blockHash)
+	err := this.stateStore.SaveCurrentBlock(blockHeight, blockHash)
 	if err != nil {
 		return fmt.Errorf("SaveCurrentBlock error %s", err)
 	}
 
 	log.Debugf("the state transition hash of block %d is:%s", blockHeight, result.Hash.ToHexString())
+
+	fmt.Fprintf(os.Stderr, "diff hash at height:%d, hash:%x\n", blockHeight, result.WriteSet.Hash())
+
+	if block.Header.Height >= 1212152 {
+		panic("")
+	}
 
 	result.WriteSet.ForEach(func(key, val []byte) {
 		if len(val) == 0 {
@@ -783,11 +789,11 @@ func (this *LedgerStoreImp) releaseSavingBlockLock() {
 func (this *LedgerStoreImp) submitBlock(block *types.Block, result store.ExecuteResult) error {
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
-	blockRoot := this.GetBlockRootWithNewTxRoots(block.Header.Height, []common.Uint256{block.Header.TransactionsRoot})
-	if block.Header.Height != 0 && blockRoot != block.Header.BlockRoot {
-		return fmt.Errorf("wrong block root at height:%d, expected:%s, got:%s",
-			block.Header.Height, blockRoot.ToHexString(), block.Header.BlockRoot.ToHexString())
-	}
+	//blockRoot := this.GetBlockRootWithNewTxRoots(block.Header.Height, []common.Uint256{block.Header.TransactionsRoot})
+	//if block.Header.Height != 0 && blockRoot != block.Header.BlockRoot {
+	//	return fmt.Errorf("wrong block root at height:%d, expected:%s, got:%s",
+	//		block.Header.Height, blockRoot.ToHexString(), block.Header.BlockRoot.ToHexString())
+	//}
 
 	this.blockStore.NewBatch()
 	this.stateStore.NewBatch()

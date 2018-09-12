@@ -664,8 +664,7 @@ func (self *VmValue) Dump() (string, error) {
 func (self *VmValue) dump() string {
 	switch self.valType {
 	case boolType:
-		bs, _ := self.AsBytes()
-		return fmt.Sprintf("bool(%v)", bs)
+		return fmt.Sprintf("int(%d)", self.integer)
 	case integerType:
 		return fmt.Sprintf("int(%d)", self.integer)
 	case bigintType:
@@ -674,8 +673,8 @@ func (self *VmValue) dump() string {
 		return fmt.Sprintf("bytes(hex:%x)", self.byteArray)
 	case arrayType:
 		data := ""
-		for _, v := range self.array.Data {
-			data += v.dump() + ", "
+		for i, v := range self.array.Data {
+			data += fmt.Sprintf("%d: %s, ", i, v.dump())
 		}
 		return fmt.Sprintf("array[%d]{%s}", len(self.array.Data), data)
 	case mapType:
@@ -697,7 +696,7 @@ func (self *VmValue) dump() string {
 		}
 		return fmt.Sprintf("struct[%d]{%s}", len(self.structval.Data), data)
 	case interopType:
-		return fmt.Sprintf("interop[%x]", self.interop.Data)
+		return fmt.Sprintf("interop:%x", self.interop.Data)
 	default:
 		panic("unreacheable!")
 	}

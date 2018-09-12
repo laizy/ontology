@@ -21,9 +21,13 @@ package overlaydb
 import (
 	"crypto/sha256"
 
+	"encoding/binary"
 	comm "github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"sort"
+	"strings"
 )
 
 type OverlayDB struct {
@@ -82,14 +86,32 @@ func (self *OverlayDB) Delete(key []byte) {
 	self.memdb.Delete(key)
 }
 
-func (self *OverlayDB) CommitTo() {
+func (self *OverlayDB) CommitTo(height uint32) []byte {
+	var kv []string
 	self.memdb.ForEach(func(key, val []byte) {
 		if len(val) == 0 {
+			var buf [4]byte
+			binary.BigEndian.PutUint32(buf[:], uint32(len(key)))
+			kv = append(kv, string(append(buf[:], []byte(key)...)))
 			self.store.BatchDelete(key)
 		} else {
+			var buf [4]byte
+			binary.BigEndian.PutUint32(buf[:], uint32(len(key)))
+			item := string(append(buf[:], []byte(key)...))
+			binary.BigEndian.PutUint32(buf[:], uint32(len(val)))
+			item += string(append(buf[:], val...))
+			kv = append(kv, item)
 			self.store.BatchPut(key, val)
 		}
 	})
+
+	sort.Strings(kv)
+	kvall := strings.Join(kv, "")
+	hash := sha256.Sum256([]byte(kvall))
+	if height == 7180 {
+		log.Fatalf("diff at height:%d, kvAll:%x", height, []byte(kvall))
+	}
+	return hash[:]
 }
 
 func (self *OverlayDB) GetWriteSet() *MemDB {

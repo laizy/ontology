@@ -75,6 +75,7 @@ func (self *CacheDB) Commit() {
 }
 
 func (self *CacheDB) Put(key []byte, value []byte) {
+	//fmt.Printf("cache db: Put key: %x, value: %x\n", key, value)
 	self.put(common.ST_STORAGE, key, value)
 }
 
@@ -119,7 +120,9 @@ func (self *CacheDB) DeleteContract(address comm.Address) {
 }
 
 func (self *CacheDB) Get(key []byte) ([]byte, error) {
-	return self.get(common.ST_STORAGE, key)
+	val, _ := self.get(common.ST_STORAGE, key)
+	//fmt.Printf("cache db: get key: %x, value: %x\n", key, val)
+	return val,nil
 }
 
 func (self *CacheDB) get(prefix common.DataEntryPrefix, key []byte) ([]byte, error) {
@@ -137,6 +140,7 @@ func (self *CacheDB) get(prefix common.DataEntryPrefix, key []byte) ([]byte, err
 }
 
 func (self *CacheDB) Delete(key []byte) {
+	//fmt.Printf("cache db: delete key %x\n", key)
 	self.delete(common.ST_STORAGE, key)
 }
 

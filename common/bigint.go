@@ -32,7 +32,7 @@ var bigOne = big.NewInt(1)
 func BigIntToNeoBytes(data *big.Int) []byte {
 	bs := data.Bytes()
 	if len(bs) == 0 {
-		return []byte{0}
+		return []byte{}
 	}
 	b := bs[0]
 	if data.Sign() < 0 {

@@ -135,7 +135,6 @@ func importBlocks(ctx *cli.Context) error {
 		})
 
 	PrintInfoMsg("Start import blocks.")
-
 	for i := uint32(startBlockHeight); i <= endBlockHeight; i++ {
 		size, err := serialization.ReadUint32(fReader)
 		if err != nil {
@@ -163,6 +162,7 @@ func importBlocks(ctx *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("block height:%d ExecuteBlock error:%s", i, err)
 		}
+
 		err = ledger.DefLedger.SubmitBlock(block, execResult)
 		if err != nil {
 			return fmt.Errorf("SubmitBlock block height:%d error:%s", i, err)
