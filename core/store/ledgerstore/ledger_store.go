@@ -582,6 +582,10 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 		}
 	}
 
+	if blockHeight == 7180 {
+		log.Debugf("hhhhh")
+	}
+
 	for _, tx := range block.Transactions {
 		err := this.handleTransaction(overlay, block, tx)
 		if err != nil {
@@ -601,8 +605,12 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 
 	stateHash := overlay.ChangeHash()
 	log.Debugf("the state transition hash of block %d is:%s", blockHeight, stateHash.ToHexString())
-	overlay.CommitTo()
+	hash := overlay.CommitTo(blockHeight)
+	log.Fatalf("diff at height:%d, hash:%x", blockHeight, hash)
 
+	if blockHeight == 7180 {
+		os.Exit(-1)
+	}
 	return nil
 }
 
