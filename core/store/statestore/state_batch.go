@@ -22,11 +22,15 @@ import (
 	"bytes"
 	"fmt"
 
+	"crypto/sha256"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/states"
 	"github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/errors"
+	"sort"
 	"strings"
+	"encoding/binary"
 )
 
 type StateBatch struct {
@@ -131,20 +135,38 @@ func (self *StateBatch) TryDelete(prefix common.DataEntryPrefix, key []byte) {
 	self.memoryStore.Delete(byte(prefix), key)
 }
 
-func (self *StateBatch) CommitTo() error {
+func (self *StateBatch) CommitTo(height uint32) ([]byte, error) {
+	var kv []string
 	for k, v := range self.memoryStore.GetChangeSet() {
 		if v.State == common.Deleted {
+			var buf [4]byte
+			binary.BigEndian.PutUint32(buf[:], uint32(len(k)))
+			kv = append(kv, string(append(buf[:], []byte(k)...) ))
 			self.store.BatchDelete([]byte(k))
 		} else {
 			data := new(bytes.Buffer)
 			err := v.Value.Serialize(data)
 			if err != nil {
-				return fmt.Errorf("error: key %v, value:%v", k, v.Value)
+				return nil, fmt.Errorf("error: key %v, value:%v", k, v.Value)
 			}
+			var buf [4]byte
+			binary.BigEndian.PutUint32(buf[:], uint32(len(k)))
+			item := string(append(buf[:], []byte(k)...) )
+			binary.BigEndian.PutUint32(buf[:], uint32(len(data.Bytes())))
+			item += string(append(buf[:], data.Bytes()...) )
+			kv = append(kv, item)
 			self.store.BatchPut([]byte(k), data.Bytes())
 		}
 	}
-	return nil
+
+	sort.Strings(kv)
+	kvall := strings.Join(kv, "")
+	hash := sha256.Sum256([]byte(kvall))
+	if height == 7180 {
+		log.Fatalf("diff at height:%d, kvAll:%x", height, []byte(kvall))
+	}
+
+	return hash[:], nil
 }
 
 func (self *StateBatch) setStateObject(prefix byte, key []byte, value states.StateValue, state common.ItemState) {

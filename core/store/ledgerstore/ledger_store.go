@@ -583,6 +583,10 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 		}
 	}
 
+	if blockHeight == 7180 {
+		log.Debugf("hhhhh")
+	}
+
 	for _, tx := range block.Transactions {
 		err := this.handleTransaction(stateBatch, block, tx)
 		if err != nil {
@@ -599,9 +603,14 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 	if err != nil {
 		return fmt.Errorf("SaveCurrentBlock error %s", err)
 	}
-	err = stateBatch.CommitTo()
+	hash, err := stateBatch.CommitTo(blockHeight)
 	if err != nil {
 		return fmt.Errorf("stateBatch.CommitTo error %s", err)
+	}
+
+	log.Fatalf("diff at height:%d, hash:%x", blockHeight, hash)
+	if blockHeight == 7180 {
+		os.Exit(-1)
 	}
 	return nil
 }
