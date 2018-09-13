@@ -609,9 +609,9 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 	}
 
 	log.Fatalf("diff at height:%d, hash:%x", blockHeight, hash)
-	if blockHeight == 7180 {
-		os.Exit(-1)
-	}
+	//if blockHeight == 7180 {
+	//	os.Exit(-1)
+	//}
 	return nil
 }
 
