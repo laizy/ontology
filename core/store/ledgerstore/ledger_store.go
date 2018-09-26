@@ -530,10 +530,10 @@ func (this *LedgerStoreImp) AddBlock(block *types.Block) error {
 		return fmt.Errorf("block height %d not equal next block height %d", blockHeight, nextBlockHeight)
 	}
 	var err error
-	this.vbftPeerInfoblock, err = this.verifyHeader(block.Header, this.vbftPeerInfoblock)
-	if err != nil {
-		return fmt.Errorf("verifyHeader error %s", err)
-	}
+	//this.vbftPeerInfoblock, err = this.verifyHeader(block.Header, this.vbftPeerInfoblock)
+	//if err != nil {
+	//	return fmt.Errorf("verifyHeader error %s", err)
+	//}
 
 	err = this.saveBlock(block)
 	if err != nil {
@@ -668,11 +668,11 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
 	this.blockStore.NewBatch()
 	this.stateStore.NewBatch()
 	this.eventStore.NewBatch()
-	err := this.saveBlockToBlockStore(block)
-	if err != nil {
-		return fmt.Errorf("save to block store height:%d error:%s", blockHeight, err)
-	}
-	err = this.saveBlockToStateStore(block)
+	//err := this.saveBlockToBlockStore(block)
+	//if err != nil {
+	//	return fmt.Errorf("save to block store height:%d error:%s", blockHeight, err)
+	//}
+	err := this.saveBlockToStateStore(block)
 	if err != nil {
 		return fmt.Errorf("save to state store height:%d error:%s", blockHeight, err)
 	}
@@ -849,6 +849,15 @@ func (this *LedgerStoreImp) GetEventNotifyByTx(tx common.Uint256) (*event.Execut
 //GetEventNotifyByBlock return the transaction hash which have event notice after execution of smart contract. Wrap function of EventStore.GetEventNotifyByBlock
 func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]*event.ExecuteNotify, error) {
 	return this.eventStore.GetEventNotifyByBlock(height)
+}
+
+func (this *LedgerStoreImp) DumpStats() {
+	fmt.Println("---------------block store---------------------")
+	this.blockStore.store.DumpStats()
+	fmt.Println("---------------state store-------------------")
+	this.stateStore.store.DumpStats()
+	fmt.Println("---------------event store-------------------")
+	this.eventStore.store.DumpStats()
 }
 
 //PreExecuteContract return the result of smart contract execution without commit to store

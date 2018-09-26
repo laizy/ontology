@@ -19,6 +19,7 @@
 package leveldbstore
 
 import (
+	"fmt"
 	"github.com/ontio/ontology/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
@@ -85,6 +86,12 @@ func NewMemLevelDBStore() (*LevelDBStore, error) {
 //Put a key-value pair to leveldb
 func (self *LevelDBStore) Put(key []byte, value []byte) error {
 	return self.db.Put(key, value, nil)
+}
+
+func (self *LevelDBStore) DumpStats() {
+	stats, _ := self.db.GetProperty("leveldb.stats")
+	io, _ := self.db.GetProperty("leveldb.iostats")
+	fmt.Printf("stats:%s\nio:%s\n", stats, io)
 }
 
 //Get the value of a key from leveldb

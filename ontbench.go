@@ -124,7 +124,7 @@ func BlockGen(issuer *account.Account) {
 	// 构造交易向这些账户转一个ont
 	N := 10000 // 要小于max uint16
 	M := 10000
-	H := 11
+	H := 21
 	accounts := GenAccounts(N)
 	balance := make(map[int]uint64)
 
