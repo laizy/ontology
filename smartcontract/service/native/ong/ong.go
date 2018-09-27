@@ -29,6 +29,8 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/native/ont"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"github.com/ontio/ontology/vm/neovm/types"
+	"bytes"
+	"github.com/ontio/ontology/common/serialization"
 )
 
 func InitOng() {
@@ -49,6 +51,12 @@ func RegisterOngContract(native *native.NativeService) {
 }
 
 func OngInit(native *native.NativeService) ([]byte, error) {
+	buf, err := serialization.ReadVarBytes(bytes.NewBuffer(native.Input))
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "serialization.ReadVarBytes, contract params deserialize error!")
+	}
+	addr, _ := common.AddressParseFromBytes(buf)
+
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	amount, err := utils.GetStorageUInt64(native, ont.GenTotalSupplyKey(contract))
 	if err != nil {
@@ -61,7 +69,7 @@ func OngInit(native *native.NativeService) ([]byte, error) {
 
 	item := utils.GenUInt64StorageItem(constants.ONG_TOTAL_SUPPLY)
 	native.CacheDB.Put(ont.GenTotalSupplyKey(contract), item.ToArray())
-	native.CacheDB.Put(append(contract[:], utils.OntContractAddress[:]...), item.ToArray())
+	native.CacheDB.Put(append(contract[:], addr[:]...), item.ToArray())
 	ont.AddNotifications(native, contract, &ont.State{To: utils.OntContractAddress, Value: constants.ONG_TOTAL_SUPPLY})
 	return utils.BYTE_TRUE, nil
 }

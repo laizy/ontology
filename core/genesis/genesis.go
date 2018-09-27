@@ -109,7 +109,7 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 			auth,
 			config,
 			newGoverningInit(),
-			newUtilityInit(),
+			newUtilityInit(nextBookkeeper),
 			newParamInit(),
 			govConfig,
 		},
@@ -214,8 +214,8 @@ func newGoverningInit() *types.Transaction {
 	return tx
 }
 
-func newUtilityInit() *types.Transaction {
-	mutable := utils.BuildNativeTransaction(nutils.OngContractAddress, ont.INIT_NAME, []byte{})
+func newUtilityInit(addr common.Address) *types.Transaction {
+	mutable := utils.BuildNativeTransaction(nutils.OngContractAddress, ont.INIT_NAME, addr[:])
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("constract genesis governing token transaction error ")

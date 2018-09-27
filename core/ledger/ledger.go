@@ -69,7 +69,7 @@ func (self *Ledger) AddBlock(block *types.Block) error {
 	if err != nil {
 		log.Errorf("Ledger AddBlock BlockHeight:%d BlockHash:%x error:%s", block.Header.Height, block.Hash(), err)
 	}
-	self.ldgStore.DumpStats()
+	//self.ldgStore.DumpStats()
 	return err
 }
 

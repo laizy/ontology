@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"encoding/binary"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/serialization"
@@ -143,8 +144,24 @@ func fromApprove(native *native.NativeService, fromApproveKey []byte, value uint
 	return nil
 }
 
+func getBalance(native *native.NativeService, key []byte) (uint64, error) {
+	var fromBalance uint64
+	b, err := native.CacheDB.Get(key)
+	if err != nil {
+		return 0, errors.NewErr("authentication failed!")
+	}
+	if b == nil {
+		fromBalance = 0
+	} else {
+		fromBalance = binary.LittleEndian.Uint64(b[2:])
+	}
+
+	return fromBalance, nil
+}
+
 func fromTransfer(native *native.NativeService, fromKey []byte, value uint64) (uint64, error) {
-	fromBalance, err := utils.GetStorageUInt64(native, fromKey)
+	//fromBalance, err := utils.GetStorageUInt64(native, fromKey)
+	fromBalance, err := getBalance(native, fromKey)
 	if err != nil {
 		return 0, err
 	}
@@ -161,12 +178,17 @@ func fromTransfer(native *native.NativeService, fromKey []byte, value uint64) (u
 }
 
 func toTransfer(native *native.NativeService, toKey []byte, value uint64) (uint64, error) {
-	toBalance, err := utils.GetStorageUInt64(native, toKey)
+	//toBalance, err := utils.GetStorageUInt64(native, toKey)
+	toBalance, err := getBalance(native, toKey)
 	if err != nil {
 		return 0, err
 	}
 	native.CacheDB.Put(toKey, GetToUInt64StorageItem(toBalance, value).ToArray())
 	return toBalance, nil
+}
+
+func genBalanceVar(value uint64) []byte {
+
 }
 
 func genAddressUnboundOffsetKey(contract, address common.Address) []byte {
