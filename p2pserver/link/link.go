@@ -112,6 +112,7 @@ func (this *Link) GetRXTime() time.Time {
 func (this *Link) Rx() {
 	conn := this.conn
 	if conn == nil {
+		log.Error("p2p link connection is nil!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		return
 	}
 
