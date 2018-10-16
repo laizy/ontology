@@ -693,6 +693,7 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
 				Block: block,
 			})
 	}
+	log.Errorf("save block completed. height:%d, numtx:%d", block.Header.Height, len(block.Transactions))
 	return nil
 }
 
