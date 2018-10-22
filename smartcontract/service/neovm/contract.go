@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/errors"
 	vm "github.com/ontio/ontology/vm/neovm"
@@ -60,6 +61,8 @@ func ContractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	context := service.ContextRef.CurrentContext()
 	oldAddr := context.ContractAddress
 
+	log.Errorf("start migrate: old address:%x, new address:%x", oldAddr[:], newAddr[:])
+
 	service.CacheDB.PutContract(contract)
 	service.CacheDB.DeleteContract(oldAddr)
 
@@ -71,6 +74,7 @@ func ContractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		newKey := genStorageKey(newAddr, key[20:])
 		service.CacheDB.Put(newKey, val)
 		service.CacheDB.Delete(key)
+		log.Errorf("old key:%x, new key:%x, val:%x", key, newKey, val)
 	}
 	iter.Release()
 	if err := iter.Error(); err != nil {
@@ -78,6 +82,7 @@ func ContractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	}
 
 	vm.PushData(engine, contract)
+	log.Errorf("end migrate")
 	return nil
 }
 

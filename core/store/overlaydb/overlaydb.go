@@ -22,6 +22,7 @@ import (
 	"crypto/sha256"
 
 	comm "github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -80,13 +81,17 @@ func (self *OverlayDB) Delete(key []byte) {
 }
 
 func (self *OverlayDB) CommitTo() {
+	log.Errorf("overlaydb start commit")
 	self.memdb.ForEach(func(key, val []byte) {
 		if len(val) == 0 {
 			self.store.BatchDelete(key)
+			log.Errorf("delete key:%x", key)
 		} else {
 			self.store.BatchPut(key, val)
+			log.Errorf("put key:%x, val:%x", key, val)
 		}
 	})
+	log.Errorf("overlay end commit")
 }
 
 func (self *OverlayDB) ChangeHash() comm.Uint256 {

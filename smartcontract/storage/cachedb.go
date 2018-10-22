@@ -20,6 +20,7 @@ package storage
 
 import (
 	comm "github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/overlaydb"
@@ -58,13 +59,18 @@ func makePrefixedKey(dst []byte, prefix byte, key []byte) []byte {
 
 // Commit current transaction cache to block cache
 func (self *CacheDB) Commit() {
+	log.Errorf("cachedb start commit")
 	self.memdb.ForEach(func(key, val []byte) {
 		if len(val) == 0 {
 			self.backend.Delete(key)
+			log.Errorf("delete key:%x", key)
 		} else {
 			self.backend.Put(key, val)
+			log.Errorf("put key:%x, val:%x", key, val)
 		}
 	})
+
+	log.Errorf("cachedb end commit")
 }
 
 func (self *CacheDB) Put(key []byte, value []byte) {
