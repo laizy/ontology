@@ -30,7 +30,7 @@ func TestGetPushData(t *testing.T) {
 	var e ExecutionEngine
 	var iRet int8
 	var ret []byte
-	e.Context = NewExecutionContext(&e, nil)
+	e.Context = NewExecutionContext( nil)
 
 	e.OpCode = PUSH0
 	iRet, ok := getPushData(&e).(int8)
