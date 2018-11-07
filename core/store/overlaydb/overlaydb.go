@@ -23,7 +23,6 @@ import (
 
 	"encoding/binary"
 	comm "github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"sort"
@@ -105,9 +104,9 @@ func (self *OverlayDB) CommitTo(height uint32) []byte {
 	sort.Strings(kv)
 	kvall := strings.Join(kv, "")
 	hash := sha256.Sum256([]byte(kvall))
-	if height == 7180 {
-		log.Fatalf("diff at height:%d, kvAll:%x", height, []byte(kvall))
-	}
+	//if height == 7180 {
+	//	log.Fatalf("diff at height:%d, kvAll:%x", height, []byte(kvall))
+	//}
 	return hash[:]
 }
 
