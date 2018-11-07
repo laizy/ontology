@@ -120,14 +120,14 @@ func (self *StateStore) AddMerkleTreeRoot(txRoot common.Uint256) error {
 	key := self.getMerkleTreeKey()
 
 	self.merkleTree.AppendHash(txRoot)
-	err := self.merkleHashStore.Flush()
-	if err != nil {
-		return err
-	}
+	//err := self.merkleHashStore.Flush()
+	//if err != nil {
+	//	return err
+	//}
 	treeSize := self.merkleTree.TreeSize()
 	hashes := self.merkleTree.Hashes()
 	value := bytes.NewBuffer(make([]byte, 0, 4+len(hashes)*common.UINT256_SIZE))
-	err = serialization.WriteUint32(value, treeSize)
+	err := serialization.WriteUint32(value, treeSize)
 	if err != nil {
 		return err
 	}
