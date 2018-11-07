@@ -152,7 +152,7 @@ func (self *CompactMerkleTree) AppendHash(leaf common.Uint256) []common.Uint256 
 	}
 	if self.hashStore != nil {
 		self.hashStore.Append(storehashes)
-		self.hashStore.Flush()
+		//self.hashStore.Flush()
 	}
 	self.treeSize += 1
 	self.hashes = self.hashes[0:size]
