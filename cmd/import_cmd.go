@@ -51,7 +51,8 @@ var ImportCommand = cli.Command{
 }
 
 func importBlocks(ctx *cli.Context) error {
-	log.InitLog(log.InfoLog)
+	//log.InitLog(log.InfoLog)
+	log.InitLog(log.InfoLog, log.PATH, log.Stdout)
 
 	_, err := SetOntologyConfig(ctx)
 	if err != nil {

@@ -58,6 +58,9 @@ import (
 	"github.com/ontio/ontology/validator/stateful"
 	"github.com/ontio/ontology/validator/stateless"
 	"github.com/urfave/cli"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 func setupAPP() *cli.App {
@@ -132,6 +135,10 @@ func setupAPP() *cli.App {
 }
 
 func main() {
+	go func() {
+		log.Error(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	if err := setupAPP().Run(os.Args); err != nil {
 		cmd.PrintErrorMsg(err.Error())
 		os.Exit(1)
