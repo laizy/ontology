@@ -89,7 +89,6 @@ func (self *ChainStore) AddBlock(block *Block, server *Server) error {
 		if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
 			log.Infof("ledger adding chained block (%d, %d)", blkNum, self.GetChainedBlockNum())
 
-			//err := self.db.AddBlock(blk.Block)
 			var err error
 			if self.needSubmitBlock {
 				if submitBlk, present := self.pendingBlocks[blkNum-1]; submitBlk != nil && present {
@@ -126,21 +125,6 @@ func (self *ChainStore) AddBlock(block *Block, server *Server) error {
 	return nil
 }
 
-//
-// SetBlock is used when recovering from fork-chain
-//
-/*
-func (self *ChainStore) SetBlock(block *Block, blockHash common.Uint256) error {
-
-	err := self.db.AddBlock(block.Block, common.Uint256{})
-	self.chainedBlockNum = self.db.GetCurrentBlockHeight()
-	if err != nil {
-		return fmt.Errorf("ledger failed to add block: %s", err)
-	}
-
-	return nil
-}
-*/
 func (self *ChainStore) GetBlock(blockNum uint32) (*Block, error) {
 
 	if blk, present := self.pendingBlocks[blockNum]; present {
