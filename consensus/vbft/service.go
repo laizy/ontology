@@ -175,7 +175,7 @@ func (self *Server) Receive(context actor.Context) {
 		log.Info("vbft actor start consensus")
 	case *actorTypes.StopConsensus:
 		self.stop()
-	case *message.NotifyBlockCompleteMsg:
+	case *message.BlockConsensusComplete:
 		log.Infof("vbft actor receives block complete event. block height=%d, numtx=%d",
 			msg.Block.Header.Height, len(msg.Block.Transactions))
 		self.handleBlockPersistCompleted(msg.Block)

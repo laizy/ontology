@@ -43,6 +43,6 @@ type SmartCodeEventMsg struct {
 	Event *types.SmartCodeEvent
 }
 
-type NotifyBlockCompleteMsg struct {
+type BlockConsensusComplete struct {
 	Block *types.Block
 }

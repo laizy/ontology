@@ -128,7 +128,7 @@ func (self *ChainStore) AddBlock(block *Block, server *Server) error {
 			self.execResult = &execResult
 			self.needSubmitBlock = true
 			server.pid.Tell(
-				&message.NotifyBlockCompleteMsg{
+				&message.BlockConsensusComplete{
 					Block: blk.Block,
 				})
 			self.chainedBlockNum = blkNum
