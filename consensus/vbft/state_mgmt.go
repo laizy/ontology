@@ -407,7 +407,7 @@ func (self *StateMgr) checkStartSyncing(startBlkNum uint32, forceSync bool) erro
 		self.currentState = Syncing
 		startBlkNum = self.server.GetCommittedBlockNo() + 1
 
-		if maxCommitted > self.lastBlockSyncReqHeight {
+		if maxCommitted > self.server.syncer.getCurrentTargetBlockNum() {
 			// syncer is much slower than peer-update, too much SyncReq can make channel full
 			log.Infof("server %d, start syncing %d - %d, with %v", self.server.Index, startBlkNum, maxCommitted, peers)
 			self.lastBlockSyncReqHeight = maxCommitted
