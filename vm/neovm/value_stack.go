@@ -118,7 +118,7 @@ func (self *ValueStack) PushMany(vals ...types.VmValue) error {
 
 func (self *ValueStack) PushAsArray(vals []types.VmValue) error {
 
-	if int64(len(self.data)+len(vals)) > self.limit {
+	if int64(len(self.data)+1) > self.limit {
 		return errors.ERR_OVER_STACK_LEN
 	}
 	arrayValue := types.NewArrayValue()

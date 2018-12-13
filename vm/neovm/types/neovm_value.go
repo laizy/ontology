@@ -273,17 +273,17 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		}
 		mapValue := NewMapValue()
 		for i := 0; i < int(l); i++ {
-			keyValue := &VmValue{}
+			keyValue := VmValue{}
 			err := keyValue.Deserialize(source)
 			if err != nil {
 				return err
 			}
-			v := &VmValue{}
+			v := VmValue{}
 			err = v.Deserialize(source)
 			if err != nil {
 				return err
 			}
-			mapValue.Set(*keyValue, *v)
+			mapValue.Set(keyValue, v)
 		}
 		*self = VmValueFromMapValue(mapValue)
 	case StructType:
@@ -305,7 +305,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		}
 		*self = VmValueFromStructVal(structValue)
 	default:
-		return fmt.Errorf("Unsupport type")
+		return errors.ERR_BAD_TYPE
 
 	}
 	return nil
@@ -372,12 +372,7 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 			}
 		}
 	default:
-		return fmt.Errorf("Unsupport type")
-		//case interopType:
-		//	intero, err := self.AsInteropValue()
-		//	if err != nil {
-		//		return err
-		//	}
+		panic("unreacheable!")
 	}
 	return nil
 }
