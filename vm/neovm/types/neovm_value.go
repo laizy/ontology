@@ -110,6 +110,44 @@ func (self *VmValue) AsBytes() ([]byte, error) {
 		panic("unreacheable!")
 	}
 }
+
+func (self *VmValue) BuildParamToNative(sink *common.ZeroCopySink) error {
+	switch self.valType {
+	case bytearrayType:
+		sink.WriteVarBytes(self.byteArray)
+	case boolType:
+		bool, err := self.AsBool()
+		if err != nil {
+			return err
+		}
+		sink.WriteBool(bool)
+	case integerType:
+		bs, err := self.AsBytes()
+		if err != nil {
+			return err
+		}
+		sink.WriteVarBytes(bs)
+	case arrayType:
+		sink.WriteVarBytes(BigIntToBytes(big.NewInt(int64(len(self.array.Data)))))
+		for _, v := range self.array.Data {
+			err := v.BuildParamToNative(sink)
+			if err != nil {
+				return err
+			}
+		}
+	case structType:
+		for _, v := range self.structval.Data {
+			err := v.BuildParamToNative(sink)
+			if err != nil {
+				return err
+			}
+		}
+	default:
+		panic("unreacheable!")
+	}
+	return nil
+}
+
 func (self *VmValue) ToHexString() (interface{}, error) {
 	switch self.valType {
 	case boolType:
