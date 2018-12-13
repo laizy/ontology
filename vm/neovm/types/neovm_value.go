@@ -54,9 +54,9 @@ func VmValueFromBytes(val []byte) (result VmValue, err error) {
 
 func VmValueFromBool(val bool) VmValue {
 	if val {
-		return VmValue{valType:boolType, integer:1}
+		return VmValue{valType: boolType, integer: 1}
 	} else {
-		return VmValue{valType:boolType, integer:0}
+		return VmValue{valType: boolType, integer: 0}
 	}
 }
 
@@ -92,7 +92,7 @@ func VmValueFromInteropValue(val InteropValue) VmValue {
 	return VmValue{valType: interopType, interop: val}
 }
 func VmValueFromMapValue(val *MapValue) VmValue {
-	return VmValue{valType:mapType, mapval:val}
+	return VmValue{valType: mapType, mapval: val}
 }
 
 func NewMapVmValue() VmValue {

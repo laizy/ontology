@@ -19,32 +19,34 @@
 package neovm
 
 import (
+	"fmt"
 	"github.com/ontio/ontology/core/types"
 	vm "github.com/ontio/ontology/vm/neovm"
 	vmtypes "github.com/ontio/ontology/vm/neovm/types"
 )
 
 // GetExecutingAddress push transaction's hash to vm stack
-func TransactionGetHash(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	txn, _ := vm.PopInteropInterface(engine)
-	tx := txn.(*types.Transaction)
-	txHash := tx.Hash()
-	vm.PushData(engine, txHash.ToArray())
-	return nil
+func TransactionGetHash(service *NeoVmService, engine *vm.Executor) error {
+	txn, _ := engine.EvalStack.PopAsInteropValue()
+	if tx, ok := txn.Data.(*types.Transaction); ok {
+		txHash := tx.Hash()
+		return engine.EvalStack.PushBytes(txHash.ToArray())
+	}
+	return fmt.Errorf("[TransactionGetHash] Type error")
 }
 
 // TransactionGetType push transaction's type to vm stack
-func TransactionGetType(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	txn, _ := vm.PopInteropInterface(engine)
-	tx := txn.(*types.Transaction)
-	vm.PushData(engine, int(tx.TxType))
-	return nil
+func TransactionGetType(service *NeoVmService, engine *vm.Executor) error {
+	txn, _ := engine.EvalStack.PopAsInteropValue()
+	if tx, ok := txn.Data.(*types.Transaction); ok {
+		return engine.EvalStack.PushInt64(int64(tx.TxType))
+	}
+	return fmt.Errorf("[TransactionGetType] Type error")
 }
 
 // TransactionGetAttributes push transaction's attributes to vm stack
-func TransactionGetAttributes(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PopInteropInterface(engine)
-	attributList := make([]vmtypes.StackItems, 0)
-	vm.PushData(engine, attributList)
-	return nil
+func TransactionGetAttributes(service *NeoVmService, engine *vm.Executor) error {
+	engine.EvalStack.PopAsInteropValue()
+	attributList := make([]vmtypes.VmValue, 0)
+	return engine.EvalStack.PushAsArray(attributList)
 }

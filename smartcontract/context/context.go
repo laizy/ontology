@@ -43,7 +43,7 @@ type ContextRef interface {
 }
 
 type Engine interface {
-	Invoke() (interface{}, error)
+	Invoke() ([]byte, error)
 }
 
 // Context describe smart contract execute context struct

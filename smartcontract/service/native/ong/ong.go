@@ -21,9 +21,11 @@ package ong
 import (
 	"math/big"
 
+	"bytes"
 	"fmt"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
+	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/smartcontract/service/native"
 	"github.com/ontio/ontology/smartcontract/service/native/ont"

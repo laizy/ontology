@@ -19,152 +19,161 @@
 package neovm
 
 import (
+	"fmt"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/errors"
 	vm "github.com/ontio/ontology/vm/neovm"
 )
 
 // HeaderGetHash put header's hash to vm stack
-func HeaderGetHash(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetHash(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
 		return errors.NewErr("[HeaderGetHash] Wrong type!")
 	}
 	h := data.Hash()
-	vm.PushData(engine, h.ToArray())
-	return nil
+	return engine.EvalStack.PushBytes(h.ToArray())
 }
 
 // HeaderGetVersion put header's version to vm stack
-func HeaderGetVersion(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetVersion(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
 		return errors.NewErr("[HeaderGetVersion] Wrong type!")
 	}
-	vm.PushData(engine, data.Version)
-	return nil
+	return engine.EvalStack.PushInt64(int64(data.Version))
 }
 
 // HeaderGetPrevHash put header's prevblockhash to vm stack
-func HeaderGetPrevHash(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetPrevHash(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
 		return errors.NewErr("[HeaderGetPrevHash] Wrong type!")
 	}
-	vm.PushData(engine, data.PrevBlockHash.ToArray())
-	return nil
+	return engine.EvalStack.PushBytes(data.PrevBlockHash.ToArray())
 }
 
 // HeaderGetMerkleRoot put header's merkleroot to vm stack
-func HeaderGetMerkleRoot(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetMerkleRoot(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
 		return errors.NewErr("[HeaderGetMerkleRoot] Wrong type!")
 	}
-	vm.PushData(engine, data.TransactionsRoot.ToArray())
-	return nil
+	return engine.EvalStack.PushBytes(data.TransactionsRoot.ToArray())
 }
 
 // HeaderGetIndex put header's height to vm stack
-func HeaderGetIndex(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetIndex(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
-		return errors.NewErr("[HeaderGetIndex] Wrong type!")
+		return fmt.Errorf("[HeaderGetIndex] Wrong type!")
 	}
-	vm.PushData(engine, data.Height)
+	err = engine.EvalStack.PushInt64(int64(data.Height))
+	if err != nil {
+		return fmt.Errorf("[HeaderGetIndex] PushInt64 error, %s", err)
+	}
 	return nil
 }
 
 // HeaderGetTimestamp put header's timestamp to vm stack
-func HeaderGetTimestamp(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetTimestamp(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
 		return errors.NewErr("[HeaderGetTimestamp] Wrong type!")
 	}
-	vm.PushData(engine, data.Timestamp)
+	err = engine.EvalStack.PushInt64(int64(data.Timestamp))
+	if err != nil {
+		return fmt.Errorf("[HeaderGetTimestamp] PushInt64 error, %s", err)
+	}
 	return nil
 }
 
 // HeaderGetConsensusData put header's consensus data to vm stack
-func HeaderGetConsensusData(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetConsensusData(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
 		return errors.NewErr("[HeaderGetConsensusData] Wrong type!")
 	}
-	vm.PushData(engine, data.ConsensusData)
+	err = engine.EvalStack.PushInt64(int64(data.ConsensusData))
+	if err != nil {
+		return fmt.Errorf("[HeaderGetConsensusData] PushInt64 error, %s", err)
+	}
 	return nil
 }
 
 // HeaderGetNextConsensus put header's consensus to vm stack
-func HeaderGetNextConsensus(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	d, err := vm.PopInteropInterface(engine)
+func HeaderGetNextConsensus(service *NeoVmService, engine *vm.Executor) error {
+	d, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
 	var data *types.Header
-	if b, ok := d.(*types.Block); ok {
+	if b, ok := d.Data.(*types.Block); ok {
 		data = b.Header
-	} else if h, ok := d.(*types.Header); ok {
+	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
 		return errors.NewErr("[HeaderGetNextConsensus] Wrong type!")
 	}
-	vm.PushData(engine, data.NextBookkeeper[:])
+	err = engine.EvalStack.PushBytes(data.NextBookkeeper[:])
+	if err != nil {
+		return fmt.Errorf("[HeaderGetNextConsensus] PushBytes error, %s", err)
+	}
 	return nil
 }

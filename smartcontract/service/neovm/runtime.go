@@ -29,22 +29,20 @@ import (
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/errors"
-	scommon "github.com/ontio/ontology/smartcontract/common"
 	"github.com/ontio/ontology/smartcontract/event"
 	vm "github.com/ontio/ontology/vm/neovm"
 	vmtypes "github.com/ontio/ontology/vm/neovm/types"
 )
 
 // HeaderGetNextConsensus put current block time to vm stack
-func RuntimeGetTime(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, int(service.Time))
-	return nil
+func RuntimeGetTime(service *NeoVmService, engine *vm.Executor) error {
+	return engine.EvalStack.PushInt64(int64(service.Time))
 }
 
 // RuntimeCheckWitness provide check permissions service
 // If param address isn't exist in authorization list, check fail
-func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	data, err := vm.PopByteArray(engine)
+func RuntimeCheckWitness(service *NeoVmService, engine *vm.Executor) error {
+	data, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -63,44 +61,42 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 		result = service.ContextRef.CheckWitness(types.AddressFromPubKey(pk))
 	}
 
-	vm.PushData(engine, result)
-	return nil
+	return engine.EvalStack.PushBool(result)
 }
 
-func RuntimeSerialize(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	item := vm.PopStackItem(engine)
-
-	buf, err := SerializeStackItem(item)
+func RuntimeSerialize(service *NeoVmService, engine *vm.Executor) error {
+	val, err := engine.EvalStack.Pop()
+	sink := new(common.ZeroCopySink)
+	err = val.Serialize(sink)
 	if err != nil {
 		return err
 	}
-	vm.PushData(engine, buf)
-	return nil
+	return engine.EvalStack.PushBytes(sink.Bytes())
 }
 
-func RuntimeDeserialize(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	data, err := vm.PopByteArray(engine)
+func RuntimeDeserialize(service *NeoVmService, engine *vm.Executor) error {
+	data, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
-	bf := bytes.NewBuffer(data)
-	item, err := DeserializeStackItem(bf)
+	source := common.NewZeroCopySource(data)
+	vmValue := vmtypes.VmValue{}
+	err = vmValue.Deserialize(source)
 	if err != nil {
 		return err
 	}
-
-	if item == nil {
-		return nil
-	}
-	vm.PushData(engine, item)
-	return nil
+	return engine.EvalStack.Push(vmValue)
 }
 
 // RuntimeNotify put smart contract execute event notify to notifications
-func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	item := vm.PopStackItem(engine)
+func RuntimeNotify(service *NeoVmService, engine *vm.Executor) error {
+	item, err := engine.EvalStack.Pop()
+	if err != nil {
+		return err
+	}
+
 	context := service.ContextRef.CurrentContext()
-	states, err := scommon.ConvertNeoVmTypeHexString(item)
+	states, err := item.ToHexString()
 	if err != nil {
 		return err
 	}
@@ -109,8 +105,8 @@ func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
 }
 
 // RuntimeLog push smart contract execute event log to client
-func RuntimeLog(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	item, err := vm.PopByteArray(engine)
+func RuntimeLog(service *NeoVmService, engine *vm.Executor) error {
+	item, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -120,9 +116,8 @@ func RuntimeLog(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-func RuntimeGetTrigger(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, 0)
-	return nil
+func RuntimeGetTrigger(service *NeoVmService, engine *vm.Executor) error {
+	return engine.EvalStack.PushInt64(int64(0))
 }
 
 func RuntimeBase58ToAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
