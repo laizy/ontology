@@ -222,7 +222,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			return common.ErrIrregularData
 		}
 		for i := 0; i < int(l); i++ {
-			key, _, irregular, eof := source.NextString()
+			key, _, irregular, eof := source.NextVarBytes()
 			if eof {
 				return io.ErrUnexpectedEOF
 			}
@@ -231,7 +231,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			}
 			v := &VmValue{}
 			v.Deserialize(source)
-			self.mapval.Data[key] = *v
+			self.mapval.Data[string(key)] = *v
 		}
 	case StructType:
 		self.valType = structType
@@ -292,7 +292,7 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 		}
 		sort.Strings(unsortKey)
 		for _, key := range unsortKey {
-			sink.WriteString(key)
+			sink.WriteVarBytes([]byte(key))
 			value := self.mapval.Data[key]
 			err := value.Serialize(sink)
 			if err != nil {
