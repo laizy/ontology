@@ -318,9 +318,11 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 		sink.WriteByte(ArrayType)
 		sink.WriteVarUint(uint64(len(self.array.Data)))
 		for i := 0; i < len(self.array.Data); i++ {
-			self.array.Data[i].Serialize(sink)
+			err := self.array.Data[i].Serialize(sink)
+			if err != nil {
+				return err
+			}
 		}
-		return nil
 	case mapType:
 		sink.WriteByte(MapType)
 		sink.WriteVarUint(uint64(len(self.mapval.Data)))
@@ -330,14 +332,20 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 		}
 		sort.Strings(unsortKey)
 		for _, key := range unsortKey {
-			sink.WriteVarBytes([]byte(key))
+			keyVal, err := VmValueFromBytes([]byte(key))
+			if err != nil {
+				return err
+			}
+			err = keyVal.Serialize(sink)
+			if err != nil {
+				return err
+			}
 			value := self.mapval.Data[key]
-			err := value.Serialize(sink)
+			err = value.Serialize(sink)
 			if err != nil {
 				return err
 			}
 		}
-		return nil
 	case structType:
 		sink.WriteByte(StructType)
 		sink.WriteVarUint(uint64(len(self.structval.Data)))
@@ -347,7 +355,6 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 				return err
 			}
 		}
-		return nil
 	default:
 		return fmt.Errorf("Unsupport type")
 		//case interopType:
