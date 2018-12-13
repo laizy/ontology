@@ -52,6 +52,14 @@ func VmValueFromBytes(val []byte) (result VmValue, err error) {
 	return
 }
 
+func VmValueFromBool(val bool) VmValue {
+	if val {
+		return VmValue{valType:boolType, integer:1}
+	} else {
+		return VmValue{valType:boolType, integer:0}
+	}
+}
+
 func VmValueFromUint64(val uint64) VmValue {
 	if val <= math.MaxInt64 {
 		return VmValueFromInt64(int64(val))
@@ -82,6 +90,9 @@ func VmValueFromStructVal(val StructValue) VmValue {
 
 func VmValueFromInteropValue(val InteropValue) VmValue {
 	return VmValue{valType: interopType, interop: val}
+}
+func VmValueFromMapValue(val *MapValue) VmValue {
+	return VmValue{valType:mapType, mapval:val}
 }
 
 func NewMapVmValue() VmValue {
@@ -207,12 +218,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		if irregular {
 			return common.ErrIrregularData
 		}
-		self.valType = boolType
-		if b {
-			self.integer = 1
-		} else {
-			self.integer = 0
-		}
+		*self = VmValueFromBool(b)
 	case ByteArrayType:
 		data, _, irregular, eof := source.NextVarBytes()
 		if eof {
@@ -221,8 +227,11 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		if irregular {
 			return common.ErrIrregularData
 		}
-		self.valType = bytearrayType
-		self.byteArray = data
+		value, err := VmValueFromBytes(data)
+		if err != nil {
+			return err
+		}
+		*self = value
 	case IntegerType:
 		data, _, irregular, eof := source.NextVarBytes()
 		if eof {
@@ -231,8 +240,11 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		if irregular {
 			return common.ErrIrregularData
 		}
-		self.valType = bigintType
-		self.bigInt = common.BigIntFromNeoBytes(data)
+		value, err := VmValueFromBigInt(common.BigIntFromNeoBytes(data))
+		if err != nil {
+			return err
+		}
+		*self = value
 	case ArrayType:
 		l, _, irregular, eof := source.NextVarUint()
 		if eof {
@@ -241,17 +253,17 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		if irregular {
 			return common.ErrIrregularData
 		}
+		arr := new(ArrayValue)
 		for i := 0; i < int(l); i++ {
 			v := VmValue{}
 			err := v.Deserialize(source)
 			if err != nil {
 				return err
 			}
-			self.array.Data = append(self.array.Data, v)
+			arr.Append(v)
 		}
-		self.valType = arrayType
+		*self = VmValueFromArrayVal(arr)
 	case MapType:
-		self.valType = mapType
 		l, _, irregular, eof := source.NextVarUint()
 		if eof {
 			return io.ErrUnexpectedEOF
@@ -259,20 +271,22 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		if irregular {
 			return common.ErrIrregularData
 		}
+		mapValue := NewMapValue()
 		for i := 0; i < int(l); i++ {
-			key, _, irregular, eof := source.NextVarBytes()
-			if eof {
-				return io.ErrUnexpectedEOF
-			}
-			if irregular {
-				return common.ErrIrregularData
+			keyValue := &VmValue{}
+			err := keyValue.Deserialize(source)
+			if err != nil {
+				return err
 			}
 			v := &VmValue{}
-			v.Deserialize(source)
-			self.mapval.Data[string(key)] = *v
+			err = v.Deserialize(source)
+			if err != nil {
+				return err
+			}
+			mapValue.Set(*keyValue, *v)
 		}
+		*self = VmValueFromMapValue(mapValue)
 	case StructType:
-		self.valType = structType
 		l, _, irregular, eof := source.NextVarUint()
 		if eof {
 			return io.ErrUnexpectedEOF
@@ -280,14 +294,16 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		if irregular {
 			return common.ErrIrregularData
 		}
+		structValue := NewStructValue()
 		for i := 0; i < int(l); i++ {
 			v := VmValue{}
 			err := v.Deserialize(source)
 			if err != nil {
 				return err
 			}
-			self.structval.Data = append(self.structval.Data, v)
+			structValue.Append(v)
 		}
+		*self = VmValueFromStructVal(structValue)
 	default:
 		return fmt.Errorf("Unsupport type")
 
