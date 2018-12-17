@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
 func TestConvertNeoVmTypeHexString(t *testing.T) {
 	code := `00c57676c8681553797374656d2e52756e74696d652e4e6f74696679`
 

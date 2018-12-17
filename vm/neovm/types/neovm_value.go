@@ -301,7 +301,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			if err != nil {
 				return err
 			}
-			structValue.Append(v)
+			structValue = structValue.Append(v)
 		}
 		*self = VmValueFromStructVal(structValue)
 	default:
