@@ -29,7 +29,7 @@ func TestSerialize(t *testing.T) {
 	fmt.Println(common.ToHexString(sink.Bytes()))
 	assert.Equal(t, common.ToHexString(sink.Bytes()), "810400047465737401010202e803020164")
 
-	structValueStr, err := structValue.ToHexString()
+	structValueStr, err := structValue.ConvertNeoVmTypeHexString()
     fmt.Println("structValueStr:", structValueStr)
 
 	source := common.NewZeroCopySource(sink.Bytes())

@@ -27,6 +27,10 @@ const (
 	mapType
 )
 
+const (
+	MAX_COUNT = 1024
+)
+
 type VmValue struct {
 	valType   NeoVmValueType
 	integer   int64
@@ -123,6 +127,17 @@ func (self *VmValue) AsBytes() ([]byte, error) {
 }
 
 func (self *VmValue) BuildParamToNative(sink *common.ZeroCopySink) error {
+	b, err := self.CircularRefAndDepthDetection()
+	if err != nil {
+		return err
+	}
+	if b {
+		return fmt.Errorf("runtime serialize: can not serialize circular reference data")
+	}
+	return self.buildParamToNative(sink)
+}
+
+func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 	switch self.valType {
 	case bytearrayType:
 		sink.WriteVarBytes(self.byteArray)
@@ -158,8 +173,14 @@ func (self *VmValue) BuildParamToNative(sink *common.ZeroCopySink) error {
 	}
 	return nil
 }
-
-func (self *VmValue) ToHexString() (interface{}, error) {
+func (self *VmValue) ConvertNeoVmTypeHexString() (interface{}, error) {
+	var count int
+	return self.convertNeoVmTypeHexString(&count)
+}
+func (self *VmValue) convertNeoVmTypeHexString(count *int) (interface{},error) {
+	if *count > MAX_COUNT {
+		return nil, fmt.Errorf("over max parameters convert length")
+	}
 	switch self.valType {
 	case boolType:
 		boo, err := self.AsBool()
@@ -180,7 +201,7 @@ func (self *VmValue) ToHexString() (interface{}, error) {
 	case structType:
 		var sstr []interface{}
 		for i := 0; i < len(self.structval.Data); i++ {
-			t, err := self.structval.Data[i].ToHexString()
+			t, err := self.structval.Data[i].ConvertNeoVmTypeHexString()
 			if err != nil {
 				return nil, err
 			}
@@ -190,7 +211,7 @@ func (self *VmValue) ToHexString() (interface{}, error) {
 	case arrayType:
 		var sstr []interface{}
 		for i := 0; i < len(self.array.Data); i++ {
-			t, err := self.array.Data[i].ToHexString()
+			t, err := self.array.Data[i].ConvertNeoVmTypeHexString()
 			if err != nil {
 				return nil, err
 			}
@@ -203,7 +224,6 @@ func (self *VmValue) ToHexString() (interface{}, error) {
 		panic("unreacheable!")
 	}
 }
-
 func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 	t, eof := source.NextByte()
 	if eof {
@@ -315,6 +335,13 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 }
 
 func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
+	b, err := self.CircularRefAndDepthDetection()
+	if err != nil {
+		return err
+	}
+	if b {
+		return fmt.Errorf("runtime serialize: can not serialize circular reference data")
+	}
 	switch self.valType {
 	case boolType:
 		sink.WriteByte(BooleanType)
@@ -379,6 +406,74 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 		panic("unreacheable!")
 	}
 	return nil
+}
+
+func (self *VmValue) CircularRefAndDepthDetection() (bool, error) {
+	return self.circularRefAndDepthDetection(make(map[uintptr]bool), 0)
+}
+
+func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, depth int) (bool, error) {
+	if depth > MAX_STRUCT_DEPTH {
+		return true,nil
+	}
+	switch self.valType {
+	case arrayType:
+		arr, err := self.AsArrayValue()
+		if err != nil {
+			return true, err
+		}
+		if len(arr.Data) ==0 {
+			return false, nil
+		}
+		p := reflect.ValueOf(arr).Pointer()
+		if visited[p] {
+			return true,nil
+		}
+		visited[p] = true
+		for _, v := range arr.Data {
+			return v.circularRefAndDepthDetection(visited, depth+1)
+		}
+		delete(visited, p)
+		return false, nil
+	case structType:
+		s, err := self.AsStructValue()
+		if err != nil {
+			return true, err
+		}
+		if len(s.Data) ==0 {
+			return false, nil
+		}
+		p := reflect.ValueOf(s).Pointer()
+		if visited[p] {
+			return true, nil
+		}
+		visited[p] = true
+
+		for _, v := range s.Data {
+			return v.circularRefAndDepthDetection(visited, depth+1)
+		}
+
+		delete(visited, p)
+		return false, nil
+	case mapType:
+		mp, err := self.AsMapValue()
+		if err != nil {
+			return true, err
+		}
+		p := reflect.ValueOf(mp).Pointer()
+		if visited[p] {
+			return true, nil
+		}
+		visited[p] = true
+		for _, v := range mp.Data {
+			return v.circularRefAndDepthDetection(visited, depth+1)
+		}
+		delete(visited, p)
+		return false, nil
+	default:
+		return true, nil
+	}
+	return false, nil
 }
 
 func (self *VmValue) AsInt64() (int64, error) {
