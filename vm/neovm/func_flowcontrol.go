@@ -68,6 +68,26 @@ func opCall(e *ExecutionEngine) (VMState, error) {
 	return opJmp(e)
 }
 
+func opDCALL(e *ExecutionEngine) (VMState, error) {
+	context := e.Context.Clone()
+	e.Context.SetInstructionPointer(int64(e.Context.GetInstructionPointer()))
+	e.PushContext(context)
+
+	dest, err := PopBigInt(e)
+	if err != nil {
+		return FAULT, errors.ERR_DCALL_OFFSET_ERROR
+	}
+	target := dest.Int64()
+
+	if target < 0 || int(target) >= len(e.Context.Code) {
+		return FAULT, errors.ERR_DCALL_OFFSET_ERROR
+	}
+
+	e.Context.SetInstructionPointer(target)
+
+	return NONE, nil
+}
+
 func opRet(e *ExecutionEngine) (VMState, error) {
 	e.PopContext()
 	return NONE, nil
