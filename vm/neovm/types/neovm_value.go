@@ -173,11 +173,11 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 	}
 	return nil
 }
-func (self *VmValue) ConvertNeoVmTypeHexString() (interface{}, error) {
+func (self *VmValue) ConvertNeoVmValueHexString() (interface{}, error) {
 	var count int
-	return self.convertNeoVmTypeHexString(&count)
+	return self.convertNeoVmValueHexString(&count)
 }
-func (self *VmValue) convertNeoVmTypeHexString(count *int) (interface{}, error) {
+func (self *VmValue) convertNeoVmValueHexString(count *int) (interface{}, error) {
 	if *count > MAX_COUNT {
 		return nil, fmt.Errorf("over max parameters convert length")
 	}
@@ -201,7 +201,7 @@ func (self *VmValue) convertNeoVmTypeHexString(count *int) (interface{}, error) 
 	case structType:
 		var sstr []interface{}
 		for i := 0; i < len(self.structval.Data); i++ {
-			t, err := self.structval.Data[i].ConvertNeoVmTypeHexString()
+			t, err := self.structval.Data[i].ConvertNeoVmValueHexString()
 			if err != nil {
 				return nil, err
 			}
@@ -211,7 +211,7 @@ func (self *VmValue) convertNeoVmTypeHexString(count *int) (interface{}, error) 
 	case arrayType:
 		var sstr []interface{}
 		for i := 0; i < len(self.array.Data); i++ {
-			t, err := self.array.Data[i].ConvertNeoVmTypeHexString()
+			t, err := self.array.Data[i].ConvertNeoVmValueHexString()
 			if err != nil {
 				return nil, err
 			}
@@ -471,7 +471,7 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 		delete(visited, p)
 		return false, nil
 	default:
-		return true, nil
+		return false, nil
 	}
 	return false, nil
 }

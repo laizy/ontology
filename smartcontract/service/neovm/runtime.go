@@ -98,7 +98,7 @@ func RuntimeNotify(service *NeoVmService, engine *vm.Executor) error {
 	}
 
 	context := service.ContextRef.CurrentContext()
-	states, err := item.ConvertNeoVmTypeHexString()
+	states, err := item.ConvertNeoVmValueHexString()
 	if err != nil {
 		return err
 	}

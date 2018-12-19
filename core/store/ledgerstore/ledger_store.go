@@ -21,6 +21,7 @@ package ledgerstore
 import (
 	"bytes"
 	"fmt"
+	vmtypes "github.com/ontio/ontology/vm/neovm/types"
 	"math"
 	"os"
 	"sort"
@@ -45,7 +46,6 @@ import (
 	"github.com/ontio/ontology/events"
 	"github.com/ontio/ontology/events/message"
 	"github.com/ontio/ontology/smartcontract"
-	scommon "github.com/ontio/ontology/smartcontract/common"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/service/native/global_params"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
@@ -704,6 +704,7 @@ func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, bloc
 			log.Debugf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), err)
 		}
 		SaveNotify(this.eventStore, txHash, notify)
+
 	}
 	return nil
 }
@@ -870,10 +871,21 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 		if gasCost < mixGas {
 			gasCost = mixGas
 		}
-		cv, err := scommon.ConvertNeoVmTypeHexString(result)
+		//TODO
+		vmValue := vmtypes.VmValue{}
+		source := common.NewZeroCopySource(result)
+		err = vmValue.Deserialize(source)
 		if err != nil {
-			return stf, err
+			return stf, fmt.Errorf("[PreExecuteContract] Deserialize error: %s", err)
 		}
+		cv, err := vmValue.ConvertNeoVmValueHexString()
+		if err != nil {
+			return stf, fmt.Errorf("[PreExecuteContract] ConvertNeoVmValueHexString error: %s", err)
+		}
+		//cv, err := scommon.ConvertNeoVmTypeHexString()
+		//if err != nil {
+		//	return stf, err
+		//}
 		return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: gasCost, Result: cv}, nil
 	} else if tx.TxType == types.Deploy {
 		deploy := tx.Payload.(*payload.DeployCode)
