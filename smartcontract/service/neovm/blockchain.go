@@ -45,7 +45,6 @@ func BlockChainGetHeader(service *NeoVmService, engine *vm.Executor) error {
 	if err != nil {
 		return err
 	}
-
 	l := len(data)
 	if l <= 5 {
 		b := vmtypes.BigIntFromBytes(data)
@@ -74,14 +73,10 @@ func BlockChainGetHeader(service *NeoVmService, engine *vm.Executor) error {
 
 // BlockChainGetBlock put blockchain's block to vm stack
 func BlockChainGetBlock(service *NeoVmService, engine *vm.Executor) error {
-	if engine.EvalStack.Count() < 1 {
-		return errors.NewErr("[BlockChainGetBlock] Too few input parameters ")
-	}
 	data, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
-
 	var block *types.Block
 	l := len(data)
 	if l <= 5 {
@@ -134,9 +129,6 @@ func BlockChainGetTransaction(service *NeoVmService, engine *vm.Executor) error 
 
 // BlockChainGetContract put blockchain's contract to vm stack
 func BlockChainGetContract(service *NeoVmService, engine *vm.Executor) error {
-	if engine.EvalStack.Count() < 1 {
-		return errors.NewErr("[GetContract] Too few input parameters ")
-	}
 	b, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
@@ -158,9 +150,6 @@ func BlockChainGetContract(service *NeoVmService, engine *vm.Executor) error {
 
 // BlockChainGetTransactionHeight put transaction in block height to vm stack
 func BlockChainGetTransactionHeight(service *NeoVmService, engine *vm.Executor) error {
-	if engine.EvalStack.Count() < 1 {
-		return errors.NewErr("[BlockChainGetTransactionHeight] Too few input parameters ")
-	}
 	d, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err

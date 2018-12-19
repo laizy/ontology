@@ -20,6 +20,7 @@ package neovm
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"reflect"
 	"sort"
@@ -74,16 +75,17 @@ func RuntimeSerialize(service *NeoVmService, engine *vm.Executor) error {
 	return engine.EvalStack.PushBytes(sink.Bytes())
 }
 
+//TODO check consistency with original implementation
 func RuntimeDeserialize(service *NeoVmService, engine *vm.Executor) error {
 	data, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
-		return err
+		return fmt.Errorf("[RuntimeDeserialize] PopAsBytes error: %s", err)
 	}
 	source := common.NewZeroCopySource(data)
 	vmValue := vmtypes.VmValue{}
 	err = vmValue.Deserialize(source)
 	if err != nil {
-		return err
+		return fmt.Errorf("[RuntimeDeserialize] Deserialize error: %s", err)
 	}
 	return engine.EvalStack.Push(vmValue)
 }

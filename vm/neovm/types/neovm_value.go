@@ -154,7 +154,7 @@ func (self *VmValue) BuildParamToNative(sink *common.ZeroCopySink) error {
 			}
 		}
 	default:
-		panic("unreacheable!")
+		return fmt.Errorf("convert neovm params to native invalid type support: %s", self.valType)
 	}
 	return nil
 }
@@ -200,7 +200,7 @@ func (self *VmValue) ToHexString() (interface{}, error) {
 	case interopType:
 		return common.ToHexString(self.interop.Data.ToArray()), nil
 	default:
-		return nil, fmt.Errorf("Unsupport type")
+		panic("unreacheable!")
 	}
 }
 
@@ -283,7 +283,10 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			if err != nil {
 				return err
 			}
-			mapValue.Set(keyValue, v)
+			err = mapValue.Set(keyValue, v)
+			if err != nil {
+				return err
+			}
 		}
 		*self = VmValueFromMapValue(mapValue)
 	case StructType:
@@ -305,7 +308,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		}
 		*self = VmValueFromStructVal(structValue)
 	default:
-		return errors.ERR_BAD_TYPE
+		panic("unreacheable!")
 
 	}
 	return nil
@@ -346,6 +349,7 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 		for k := range self.mapval.Data {
 			unsortKey = append(unsortKey, k)
 		}
+		//TODO check consistence
 		sort.Strings(unsortKey)
 		for _, key := range unsortKey {
 			keyVal, err := VmValueFromBytes([]byte(key))

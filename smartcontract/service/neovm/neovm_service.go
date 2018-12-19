@@ -150,11 +150,11 @@ func (this *NeoVmService) Invoke() ([]byte, error) {
 			return nil, io.EOF
 		}
 
-		if this.Engine.Context.GetInstructionPointer() < len(this.Engine.Context.Code) {
-			if ok := checkStackSize(this.Engine, opCode); !ok {
-				return nil, ERR_CHECK_STACK_SIZE
-			}
-		}
+		//if this.Engine.Context.GetInstructionPointer() < len(this.Engine.Context.Code) {
+		//	if ok := checkStackSize(this.Engine, opCode); !ok {
+		//		return nil, ERR_CHECK_STACK_SIZE
+		//	}
+		//}
 		if opCode >= vm.PUSHBYTES1 && opCode <= vm.PUSHBYTES75 {
 			if !this.ContextRef.CheckUseGas(OPCODE_GAS) {
 				return nil, ERR_GAS_INSUFFICIENT
@@ -202,7 +202,10 @@ func (this *NeoVmService) Invoke() ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			this.Engine.EvalStack.CopyTo(service.(*NeoVmService).Engine.EvalStack)
+			err = this.Engine.EvalStack.CopyTo(service.(*NeoVmService).Engine.EvalStack)
+			if err != nil {
+				return nil, fmt.Errorf("[Appcall] EvalStack CopyTo error:%x", err)
+			}
 			result, err := service.Invoke()
 			if err != nil {
 				return nil, err
@@ -273,35 +276,36 @@ func (this *NeoVmService) getContract(address scommon.Address) ([]byte, error) {
 	return dep.Code, nil
 }
 
-func checkStackSize(engine *vm.Executor, opcode vm.OpCode) bool {
-	size := 0
-	if opcode < vm.PUSH16 {
-		size = 1
-	} else {
-		switch opcode {
-		case vm.DEPTH, vm.DUP, vm.OVER, vm.TUCK:
-			size = 1
-		case vm.UNPACK:
-			if engine.EvalStack.Count() == 0 {
-				return false
-			}
-			item, err := engine.EvalStack.Peek(0)
-			if err != nil {
-				return false
-			}
-			arr, err := item.AsArrayValue()
-			if err == nil {
-				size = int(arr.Len())
-			}
-			struc, err := item.AsStructValue()
-			if err == nil {
-				size = int(struc.Len())
-			}
-		}
-	}
-	size += engine.EvalStack.Count() + engine.AltStack.Count()
-	if size > DUPLICATE_STACK_SIZE {
-		return false
-	}
-	return true
-}
+//TODO
+//func checkStackSize(engine *vm.Executor, opcode vm.OpCode) bool {
+//	size := 0
+//	if opcode < vm.PUSH16 {
+//		size = 1
+//	} else {
+//		switch opcode {
+//		case vm.DEPTH, vm.DUP, vm.OVER, vm.TUCK:
+//			size = 1
+//		case vm.UNPACK:
+//			if engine.EvalStack.Count() == 0 {
+//				return false
+//			}
+//			item, err := engine.EvalStack.Peek(0)
+//			if err != nil {
+//				return false
+//			}
+//			arr, err := item.AsArrayValue()
+//			if err == nil {
+//				size = int(arr.Len())
+//			}
+//			struc, err := item.AsStructValue()
+//			if err == nil {
+//				size = int(struc.Len())
+//			}
+//		}
+//	}
+//	size += engine.EvalStack.Count() + engine.AltStack.Count()
+//	if size > DUPLICATE_STACK_SIZE {
+//		return false
+//	}
+//	return true
+//}

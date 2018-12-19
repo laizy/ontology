@@ -108,11 +108,7 @@ func HeaderGetIndex(service *NeoVmService, engine *vm.Executor) error {
 	} else {
 		return fmt.Errorf("[HeaderGetIndex] Wrong type!")
 	}
-	err = engine.EvalStack.PushInt64(int64(data.Height))
-	if err != nil {
-		return fmt.Errorf("[HeaderGetIndex] PushInt64 error, %s", err)
-	}
-	return nil
+	return engine.EvalStack.PushInt64(int64(data.Height))
 }
 
 // HeaderGetTimestamp put header's timestamp to vm stack
@@ -129,11 +125,7 @@ func HeaderGetTimestamp(service *NeoVmService, engine *vm.Executor) error {
 	} else {
 		return errors.NewErr("[HeaderGetTimestamp] Wrong type!")
 	}
-	err = engine.EvalStack.PushInt64(int64(data.Timestamp))
-	if err != nil {
-		return fmt.Errorf("[HeaderGetTimestamp] PushInt64 error, %s", err)
-	}
-	return nil
+	return engine.EvalStack.PushInt64(int64(data.Timestamp))
 }
 
 // HeaderGetConsensusData put header's consensus data to vm stack
@@ -150,11 +142,7 @@ func HeaderGetConsensusData(service *NeoVmService, engine *vm.Executor) error {
 	} else {
 		return errors.NewErr("[HeaderGetConsensusData] Wrong type!")
 	}
-	err = engine.EvalStack.PushInt64(int64(data.ConsensusData))
-	if err != nil {
-		return fmt.Errorf("[HeaderGetConsensusData] PushInt64 error, %s", err)
-	}
-	return nil
+	return engine.EvalStack.PushInt64(int64(data.ConsensusData))
 }
 
 // HeaderGetNextConsensus put header's consensus to vm stack
@@ -171,9 +159,5 @@ func HeaderGetNextConsensus(service *NeoVmService, engine *vm.Executor) error {
 	} else {
 		return errors.NewErr("[HeaderGetNextConsensus] Wrong type!")
 	}
-	err = engine.EvalStack.PushBytes(data.NextBookkeeper[:])
-	if err != nil {
-		return fmt.Errorf("[HeaderGetNextConsensus] PushBytes error, %s", err)
-	}
-	return nil
+	return engine.EvalStack.PushBytes(data.NextBookkeeper[:])
 }

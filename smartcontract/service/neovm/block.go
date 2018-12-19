@@ -67,10 +67,13 @@ func BlockGetTransaction(service *NeoVmService, engine *vm.Executor) error {
 	if err != nil {
 		return err
 	}
-	if index > types.MAX_TX_SIZE {
+	if index < 0 || index > types.MAX_TX_SIZE {
 		return errors.NewErr("[BlockGetTransaction] index is more than MAX_TX_SIZE ")
 	}
 	if block, ok := i.Data.(*types.Block); ok {
+		if int(index) > len(block.Transactions) {
+			return errors.NewErr("[BlockGetTransaction] index is more than the amount fo transaction in the block ")
+		}
 		return engine.EvalStack.PushAsInteropValue(block.Transactions[index])
 
 	}

@@ -168,3 +168,15 @@ func (self *ValueStack) PopTripleAsIntVal() (left, middle, right types.IntValue,
 	left, err = self.PopAsIntValue()
 	return
 }
+
+func (self *ValueStack) PeekAsBytes(index int64) ([]byte, error) {
+	val, err := self.Peek(index)
+	if err != nil {
+		return nil, err
+	}
+	bs, err := val.AsBytes()
+	if err != nil {
+		return nil, err
+	}
+	return bs, nil
+}

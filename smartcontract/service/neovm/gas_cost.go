@@ -24,7 +24,6 @@ import (
 )
 
 func StoreGasCost(engine *vm.Executor) (uint64, error) {
-
 	key, err := engine.EvalStack.PeekNByteArray(1)
 	if err != nil {
 		return 0, err
