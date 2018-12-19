@@ -68,7 +68,7 @@ func BlockGetTransaction(service *NeoVmService, engine *vm.Executor) error {
 		return err
 	}
 	if block, ok := i.Data.(*types.Block); ok {
-		if index < 0 || int(index) > len(block.Transactions) {
+		if index < 0 || int(index) >= len(block.Transactions) {
 			return errors.NewErr("[BlockGetTransaction] index out of bounds")
 		}
 		return engine.EvalStack.PushAsInteropValue(block.Transactions[index])

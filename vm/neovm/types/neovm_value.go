@@ -169,7 +169,7 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 			}
 		}
 	default:
-		return fmt.Errorf("convert neovm params to native invalid type support: %s", self.valType)
+		panic("unreacheable!")
 	}
 	return nil
 }
@@ -328,7 +328,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		}
 		*self = VmValueFromStructVal(structValue)
 	default:
-		panic("unreacheable!")
+		return fmt.Errorf("[Deserialize] VmValue Deserialize failed, Unsupported type!")
 
 	}
 	return nil
