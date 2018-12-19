@@ -21,17 +21,17 @@ package neovm
 import (
 	"fmt"
 	"github.com/ontio/ontology/common"
+	scommon "github.com/ontio/ontology/smartcontract/common"
 	"github.com/ontio/ontology/vm/neovm/types"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
-	scommon "github.com/ontio/ontology/smartcontract/common"
 )
 
 func TestRuntimeSerialize(t *testing.T) {
 
 	bs := types.NewByteArray([]byte("test"))
-    arrStack := make([]types.StackItems, 0)
+	arrStack := make([]types.StackItems, 0)
 	arrStack = append(arrStack, bs)
 	stru := types.NewStruct(arrStack)
 	boo := types.NewBoolean(true)
@@ -44,21 +44,20 @@ func TestRuntimeSerialize(t *testing.T) {
 	bi2 := types.NewInteger(bigin2)
 	stru.Add(bi2)
 	res, err := SerializeStackItem(stru)
-    fmt.Println(common.ToHexString(res))
-	assert.Equal(t,err, nil)
+	fmt.Println(common.ToHexString(res))
+	assert.Equal(t, err, nil)
 
-    struStr,err := scommon.ConvertNeoVmTypeHexString(stru)
-    fmt.Println("struStr:", struStr)
+	struStr, err := scommon.ConvertNeoVmTypeHexString(stru)
+	fmt.Println("struStr:", struStr)
 
 	arr := types.NewArray([]types.StackItems{})
 	arr.Add(bs)
 	arr.Add(boo)
 	arr.Add(bi)
 	arr.Add(bi2)
-	arrRes,err := SerializeStackItem(arr)
+	arrRes, err := SerializeStackItem(arr)
 	assert.Equal(t, nil, err)
 	fmt.Println(common.ToHexString(arrRes))
-
 
 	m := types.NewMap()
 	m.Add(bs, arr)

@@ -30,7 +30,7 @@ func TestSerialize(t *testing.T) {
 	assert.Equal(t, common.ToHexString(sink.Bytes()), "810400047465737401010202e803020164")
 
 	structValueStr, err := structValue.ConvertNeoVmTypeHexString()
-    fmt.Println("structValueStr:", structValueStr)
+	fmt.Println("structValueStr:", structValueStr)
 
 	source := common.NewZeroCopySource(sink.Bytes())
 	vs := VmValue{}
@@ -45,7 +45,7 @@ func TestSerialize(t *testing.T) {
 	sinkArr := new(common.ZeroCopySink)
 	arrValue := VmValueFromArrayVal(arr)
 	arrValue.Serialize(sinkArr)
-	assert.Equal(t,common.ToHexString(sinkArr.Bytes()),"800400047465737401010202e803020164")
+	assert.Equal(t, common.ToHexString(sinkArr.Bytes()), "800400047465737401010202e803020164")
 
 	arrValue2 := VmValue{}
 	source = common.NewZeroCopySource(sinkArr.Bytes())

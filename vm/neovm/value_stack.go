@@ -56,7 +56,6 @@ func (self *ValueStack) Insert(index int64, t types.VmValue) error {
 	return nil
 }
 
-
 func (self *ValueStack) Peek(index int64) (value types.VmValue, err error) {
 	l := int64(len(self.data))
 	if index >= l {
