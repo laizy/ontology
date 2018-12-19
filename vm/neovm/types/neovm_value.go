@@ -177,7 +177,7 @@ func (self *VmValue) ConvertNeoVmTypeHexString() (interface{}, error) {
 	var count int
 	return self.convertNeoVmTypeHexString(&count)
 }
-func (self *VmValue) convertNeoVmTypeHexString(count *int) (interface{},error) {
+func (self *VmValue) convertNeoVmTypeHexString(count *int) (interface{}, error) {
 	if *count > MAX_COUNT {
 		return nil, fmt.Errorf("over max parameters convert length")
 	}
@@ -414,7 +414,7 @@ func (self *VmValue) CircularRefAndDepthDetection() (bool, error) {
 
 func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, depth int) (bool, error) {
 	if depth > MAX_STRUCT_DEPTH {
-		return true,nil
+		return true, nil
 	}
 	switch self.valType {
 	case arrayType:
@@ -422,12 +422,12 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 		if err != nil {
 			return true, err
 		}
-		if len(arr.Data) ==0 {
+		if len(arr.Data) == 0 {
 			return false, nil
 		}
 		p := reflect.ValueOf(arr).Pointer()
 		if visited[p] {
-			return true,nil
+			return true, nil
 		}
 		visited[p] = true
 		for _, v := range arr.Data {
@@ -440,7 +440,7 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 		if err != nil {
 			return true, err
 		}
-		if len(s.Data) ==0 {
+		if len(s.Data) == 0 {
 			return false, nil
 		}
 		p := reflect.ValueOf(s).Pointer()
