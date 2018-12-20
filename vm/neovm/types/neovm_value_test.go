@@ -2,8 +2,8 @@ package types
 
 import (
 	"fmt"
-	"github.com/magiconair/properties/assert"
 	"github.com/ontio/ontology/common"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
 )
@@ -29,7 +29,7 @@ func TestSerialize(t *testing.T) {
 	fmt.Println(common.ToHexString(sink.Bytes()))
 	assert.Equal(t, common.ToHexString(sink.Bytes()), "810400047465737401010202e803020164")
 
-	structValueStr, err := structValue.ConvertNeoVmTypeHexString()
+	structValueStr, err := structValue.ConvertNeoVmValueHexString()
 	fmt.Println("structValueStr:", structValueStr)
 
 	source := common.NewZeroCopySource(sink.Bytes())
