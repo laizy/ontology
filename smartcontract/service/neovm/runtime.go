@@ -122,11 +122,8 @@ func RuntimeGetTrigger(service *NeoVmService, engine *vm.Executor) error {
 	return engine.EvalStack.PushInt64(int64(0))
 }
 
-func RuntimeBase58ToAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 1 {
-		return errors.NewErr("[RuntimeBase58ToAddress] Too few input parameters")
-	}
-	item, err := vm.PopByteArray(engine)
+func RuntimeBase58ToAddress(service *NeoVmService, engine *vm.Executor) error {
+	item, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -134,15 +131,12 @@ func RuntimeBase58ToAddress(service *NeoVmService, engine *vm.ExecutionEngine) e
 	if err != nil {
 		return err
 	}
-	vm.PushData(engine, address[:])
-	return nil
+	return engine.EvalStack.PushBytes(address[:])
 }
 
-func RuntimeAddressToBase58(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 1 {
-		return errors.NewErr("[RuntimeAddressToBase58] Too few input parameters")
-	}
-	item, err := vm.PopByteArray(engine)
+func RuntimeAddressToBase58(service *NeoVmService, engine *vm.Executor) error {
+
+	item, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -150,13 +144,11 @@ func RuntimeAddressToBase58(service *NeoVmService, engine *vm.ExecutionEngine) e
 	if err != nil {
 		return err
 	}
-	vm.PushData(engine, []byte(address.ToBase58()))
-	return nil
+	return engine.EvalStack.PushBytes([]byte(address.ToBase58()))
 }
 
-func RuntimeGetCurrentBlockHash(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, service.BlockHash.ToArray())
-	return nil
+func RuntimeGetCurrentBlockHash(service *NeoVmService, engine *vm.Executor) error {
+	return engine.EvalStack.PushBytes(service.BlockHash.ToArray())
 }
 
 func SerializeStackItem(item vmtypes.StackItems) ([]byte, error) {
