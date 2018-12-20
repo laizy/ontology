@@ -234,8 +234,8 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 	if eof {
 		return io.ErrUnexpectedEOF
 	}
-	switch t {
-	case BooleanType:
+	switch NeoVmValueType(t) {
+	case boolType:
 		b, irregular, eof := source.NextBool()
 		if eof {
 			return io.ErrUnexpectedEOF
@@ -244,7 +244,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			return common.ErrIrregularData
 		}
 		*self = VmValueFromBool(b)
-	case ByteArrayType:
+	case bytearrayType:
 		data, _, irregular, eof := source.NextVarBytes()
 		if eof {
 			return io.ErrUnexpectedEOF
@@ -257,7 +257,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			return err
 		}
 		*self = value
-	case IntegerType:
+	case integerType:
 		data, _, irregular, eof := source.NextVarBytes()
 		if eof {
 			return io.ErrUnexpectedEOF
@@ -270,7 +270,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			return err
 		}
 		*self = value
-	case ArrayType:
+	case arrayType:
 		l, _, irregular, eof := source.NextVarUint()
 		if eof {
 			return io.ErrUnexpectedEOF
@@ -288,7 +288,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			arr.Append(v)
 		}
 		*self = VmValueFromArrayVal(arr)
-	case MapType:
+	case mapType:
 		l, _, irregular, eof := source.NextVarUint()
 		if eof {
 			return io.ErrUnexpectedEOF
@@ -314,7 +314,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			}
 		}
 		*self = VmValueFromMapValue(mapValue)
-	case StructType:
+	case structType:
 		l, _, irregular, eof := source.NextVarUint()
 		if eof {
 			return io.ErrUnexpectedEOF
