@@ -168,6 +168,9 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 				return err
 			}
 		}
+	case mapType:
+		//TODO
+		return errors.ERR_BAD_TYPE
 	default:
 		panic("unreacheable!")
 	}
