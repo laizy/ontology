@@ -204,7 +204,8 @@ func (self *VmValue) convertNeoVmValueHexString(count *int) (interface{}, error)
 	case structType:
 		var sstr []interface{}
 		for i := 0; i < len(self.structval.Data); i++ {
-			t, err := self.structval.Data[i].ConvertNeoVmValueHexString()
+			*count++
+			t, err := self.structval.Data[i].convertNeoVmValueHexString(count)
 			if err != nil {
 				return nil, err
 			}
@@ -214,7 +215,8 @@ func (self *VmValue) convertNeoVmValueHexString(count *int) (interface{}, error)
 	case arrayType:
 		var sstr []interface{}
 		for i := 0; i < len(self.array.Data); i++ {
-			t, err := self.array.Data[i].ConvertNeoVmValueHexString()
+			*count++
+			t, err := self.array.Data[i].convertNeoVmValueHexString(count)
 			if err != nil {
 				return nil, err
 			}
