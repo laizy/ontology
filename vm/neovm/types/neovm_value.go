@@ -14,17 +14,15 @@ import (
 	"github.com/ontio/ontology/vm/neovm/errors"
 )
 
-type NeoVmValueType uint8
-
 const (
-	boolType NeoVmValueType = iota
-	integerType
-	bigintType
-	bytearrayType
-	interopType
-	arrayType
-	structType
-	mapType
+	bytearrayType byte = 0x00
+	boolType      byte = 0x01
+	integerType   byte = 0x02
+	bigintType    byte = 0x03
+	interopType   byte = 0x40
+	arrayType     byte = 0x80
+	structType    byte = 0x81
+	mapType       byte = 0x82
 )
 
 const (
@@ -32,7 +30,7 @@ const (
 )
 
 type VmValue struct {
-	valType   NeoVmValueType
+	valType   byte
 	integer   int64
 	bigInt    *big.Int
 	byteArray []byte
@@ -234,7 +232,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 	if eof {
 		return io.ErrUnexpectedEOF
 	}
-	switch NeoVmValueType(t) {
+	switch t {
 	case boolType:
 		b, irregular, eof := source.NextBool()
 		if eof {
@@ -349,24 +347,24 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 	}
 	switch self.valType {
 	case boolType:
-		sink.WriteByte(BooleanType)
+		sink.WriteByte(boolType)
 		boo, err := self.AsBool()
 		if err != nil {
 			return err
 		}
 		sink.WriteBool(boo)
 	case bytearrayType:
-		sink.WriteByte(ByteArrayType)
+		sink.WriteByte(bytearrayType)
 		sink.WriteVarBytes(self.byteArray)
 	case bigintType:
-		sink.WriteByte(byte(IntegerType))
+		sink.WriteByte(integerType)
 		sink.WriteVarBytes(common.BigIntToNeoBytes(self.bigInt))
 	case integerType:
-		sink.WriteByte(byte(IntegerType))
+		sink.WriteByte(integerType)
 		t := big.NewInt(self.integer)
 		sink.WriteVarBytes(common.BigIntToNeoBytes(t))
 	case arrayType:
-		sink.WriteByte(ArrayType)
+		sink.WriteByte(arrayType)
 		sink.WriteVarUint(uint64(len(self.array.Data)))
 		for i := 0; i < len(self.array.Data); i++ {
 			err := self.array.Data[i].Serialize(sink)
@@ -375,7 +373,7 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 			}
 		}
 	case mapType:
-		sink.WriteByte(MapType)
+		sink.WriteByte(mapType)
 		sink.WriteVarUint(uint64(len(self.mapval.Data)))
 		var unsortKey []string
 		for k := range self.mapval.Data {
@@ -399,7 +397,7 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 			}
 		}
 	case structType:
-		sink.WriteByte(StructType)
+		sink.WriteByte(structType)
 		sink.WriteVarUint(uint64(len(self.structval.Data)))
 		for _, item := range self.structval.Data {
 			err := item.Serialize(sink)
@@ -430,7 +428,7 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 		if len(arr.Data) == 0 {
 			return false, nil
 		}
-		p := reflect.ValueOf(arr).Pointer()
+		p := reflect.ValueOf(arr.Data).Pointer()
 		if visited[p] {
 			return true, nil
 		}
@@ -448,7 +446,8 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 		if len(s.Data) == 0 {
 			return false, nil
 		}
-		p := reflect.ValueOf(s).Pointer()
+
+		p := reflect.ValueOf(s.Data).Pointer()
 		if visited[p] {
 			return true, nil
 		}
@@ -465,7 +464,7 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 		if err != nil {
 			return true, err
 		}
-		p := reflect.ValueOf(mp).Pointer()
+		p := reflect.ValueOf(mp.Data).Pointer()
 		if visited[p] {
 			return true, nil
 		}
