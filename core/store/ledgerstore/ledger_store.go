@@ -870,11 +870,6 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 		if gasCost < mixGas {
 			gasCost = mixGas
 		}
-		//TODO
-		//cv, err := scommon.ConvertNeoVmTypeHexString()
-		//if err != nil {
-		//	return stf, err
-		//}
 		return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: gasCost, Result: common.ToHexString(result)}, nil
 	} else if tx.TxType == types.Deploy {
 		deploy := tx.Payload.(*payload.DeployCode)
