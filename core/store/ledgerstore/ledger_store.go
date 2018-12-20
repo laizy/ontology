@@ -21,7 +21,6 @@ package ledgerstore
 import (
 	"bytes"
 	"fmt"
-	vmtypes "github.com/ontio/ontology/vm/neovm/types"
 	"math"
 	"os"
 	"sort"
@@ -872,21 +871,11 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 			gasCost = mixGas
 		}
 		//TODO
-		vmValue := vmtypes.VmValue{}
-		source := common.NewZeroCopySource(result)
-		err = vmValue.Deserialize(source)
-		if err != nil {
-			return stf, fmt.Errorf("[PreExecuteContract] Deserialize error: %s", err)
-		}
-		cv, err := vmValue.ConvertNeoVmValueHexString()
-		if err != nil {
-			return stf, fmt.Errorf("[PreExecuteContract] ConvertNeoVmValueHexString error: %s", err)
-		}
 		//cv, err := scommon.ConvertNeoVmTypeHexString()
 		//if err != nil {
 		//	return stf, err
 		//}
-		return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: gasCost, Result: cv}, nil
+		return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: gasCost, Result: common.ToHexString(result)}, nil
 	} else if tx.TxType == types.Deploy {
 		deploy := tx.Payload.(*payload.DeployCode)
 		return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: preGas[neovm.CONTRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.Code), preGas[neovm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil
