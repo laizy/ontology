@@ -104,8 +104,9 @@ func NewLedgerStore(dataDir string) (*LedgerStoreImp, error) {
 	}
 	ledgerStore.blockStore = blockStore
 
-	stateStore, err := NewStateStore(fmt.Sprintf("%s%s%s", dataDir, string(os.PathSeparator), DBDirState),
-		fmt.Sprintf("%s%s%s", dataDir, string(os.PathSeparator), MerkleTreeStorePath), STATE_HASH_HEIGHT)
+	dbPath := fmt.Sprintf("%s%s%s", dataDir, string(os.PathSeparator), DBDirState)
+	merklePath := fmt.Sprintf("%s%s%s", dataDir, string(os.PathSeparator), MerkleTreeStorePath)
+	stateStore, err := NewStateStore(dbPath, merklePath, STATE_HASH_HEIGHT)
 	if err != nil {
 		return nil, fmt.Errorf("NewStateStore error %s", err)
 	}
@@ -647,8 +648,9 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 	if block.Header.Height < STATE_HASH_HEIGHT {
 		result.MerkleRoot = common.UINT256_EMPTY
 	} else if block.Header.Height == STATE_HASH_HEIGHT {
-		res, err := calculateTotalStateHash(overlay)
-		if err != nil {
+		res, e := calculateTotalStateHash(overlay)
+		if e != nil {
+			err = e
 			return
 		}
 
