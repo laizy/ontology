@@ -332,6 +332,10 @@ func (this *P2PServer) connectSeeds() {
 		}
 	}
 
+	log.Errorf("netsplit: all seednodes list:%v", seedNodes)
+	log.Errorf("netsplit: connectted seednode list:%v", seedConnList)
+	log.Errorf("netsplit: disconnectted seednode list:%v", seedDisconn)
+	log.Errorf("netsplit: isseed:%v", isSeed)
 	if len(seedConnList) > 0 {
 		rand.Seed(time.Now().UnixNano())
 		index := rand.Intn(len(seedConnList))
@@ -339,11 +343,13 @@ func (this *P2PServer) connectSeeds() {
 		if isSeed && len(seedDisconn) > 0 {
 			index := rand.Intn(len(seedDisconn))
 			go this.network.Connect(seedDisconn[index], false)
+			log.Errorf("netsplit: try connect to one seednode %v", seedDisconn[index])
 		}
 	} else { //not found
 		for _, nodeAddr := range seedNodes {
 			go this.network.Connect(nodeAddr, false)
 		}
+		log.Errorf("netsplit: try connect to all seednodes %v", seedNodes)
 	}
 }
 
