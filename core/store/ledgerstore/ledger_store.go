@@ -20,7 +20,9 @@ package ledgerstore
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
+	"hash"
 	"math"
 	"os"
 	"sort"
@@ -28,8 +30,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"crypto/sha256"
 
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
@@ -647,40 +647,48 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 	if block.Header.Height < STATE_HASH_HEIGHT {
 		result.MerkleRoot = common.UINT256_EMPTY
 	} else if block.Header.Height == STATE_HASH_HEIGHT {
-		stateDiff := sha256.New()
-		iter := overlay.NewIterator([]byte{byte(scom.ST_CONTRACT)})
-		for has := iter.First(); has; has = iter.Next() {
-			key := iter.Key()
-			val := iter.Value()
-			stateDiff.Write(key)
-			stateDiff.Write(val)
-		}
-		iter.Release()
-		err = iter.Error()
+		res, err := calculateTotalStateHash(overlay)
 		if err != nil {
 			return
 		}
 
-		iter = overlay.NewIterator([]byte{byte(scom.ST_STORAGE)})
-		for has := iter.First(); has; has = iter.Next() {
-			key := iter.Key()
-			val := iter.Value()
-			stateDiff.Write(key)
-			stateDiff.Write(val)
-		}
-		iter.Release()
-		err = iter.Error()
-		if err != nil {
-			return
-		}
-
-		stateDiff.Sum(result.MerkleRoot[:0])
+		result.MerkleRoot = res
 		result.Hash = result.MerkleRoot
 	} else {
 		result.MerkleRoot = this.stateStore.GetStateMerkleRootWithNewHash(result.Hash)
 	}
 
 	return
+}
+
+func calculateTotalStateHash(overlay *overlaydb.OverlayDB) (result common.Uint256, err error) {
+	stateDiff := sha256.New()
+	iter := overlay.NewIterator([]byte{byte(scom.ST_CONTRACT)})
+	err = accumulateHash(stateDiff, iter)
+	iter.Release()
+	if err != nil {
+		return
+	}
+
+	iter = overlay.NewIterator([]byte{byte(scom.ST_STORAGE)})
+	err = accumulateHash(stateDiff, iter)
+	iter.Release()
+	if err != nil {
+		return
+	}
+
+	stateDiff.Sum(result[:0])
+	return
+}
+
+func accumulateHash(hasher hash.Hash, iter scom.StoreIterator) error {
+	for has := iter.First(); has; has = iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		hasher.Write(key)
+		hasher.Write(val)
+	}
+	return iter.Error()
 }
 
 func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block, result store.ExecuteResult) error {
