@@ -88,7 +88,7 @@ func (self *ChainStore) GetExecWriteSet(blkNum uint32) *overlaydb.MemDB {
 	if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
 		return blk.execResult.WriteSet
 	}
-	log.Errorf("GetExecWriteSet failed blkNum:%d", blkNum)
+	log.Infof("GetExecWriteSet failed blkNum:%d", blkNum)
 	return nil
 }
 
@@ -153,8 +153,8 @@ func (self *ChainStore) AddBlock(block *PendingBlock) error {
 			}
 			execResult, err := self.db.ExecuteBlock(blk.block.Block)
 			if err != nil {
-				log.Errorf("chainstore AddBlock GetBlockExecResult: %s", err)
-				return fmt.Errorf("GetBlockExecResult: %s", err)
+				log.Warnf("chainstore AddBlock GetBlockExecResult: %s", err)
+				break
 			}
 			self.SetExecuteResult(blk.block.getBlockNum(), &execResult)
 			self.needSubmitBlock = true

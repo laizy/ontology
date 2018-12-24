@@ -167,11 +167,11 @@ func (self *Syncer) run() {
 			}
 			for self.nextReqBlkNum <= self.targetBlkNum {
 				// FIXME: compete with ledger syncing
-				var blk *PendingBlock
+				blk := &PendingBlock{}
 				if self.nextReqBlkNum <= ledger.DefLedger.GetCurrentBlockHeight() {
 					blk, _ = self.server.chainStore.GetBlock(self.nextReqBlkNum)
 				}
-				if blk == nil {
+				if blk.block == nil {
 					blk.block = self.blockConsensusDone(self.pendingBlocks[self.nextReqBlkNum])
 					merkBlk := self.blockCheckMerkleRoot(self.pendingBlocks[self.nextReqBlkNum])
 					if blk == nil || merkBlk == nil {
