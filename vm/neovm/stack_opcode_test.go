@@ -57,59 +57,59 @@ func newVmValue(t *testing.T, data Value) types.VmValue {
 }
 
 func checkStackOpCode(t *testing.T, code OpCode, origin, expected []Value) {
+	checkAltStackOpCode(t, code, [2][]Value{origin, {}}, [2][]Value{expected, {}})
+}
+
+func checkAltStackOpCode(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
 	executor := NewExecutor([]byte{byte(code)})
-	for _, val := range origin {
+	for _, val := range origin[0] {
 		executor.EvalStack.Push(newVmValue(t, val))
+	}
+	for _, val := range origin[1] {
+		executor.AltStack.Push(newVmValue(t, val))
 	}
 	err := executor.Execute()
 	assert.Nil(t, err)
-	stack := executor.EvalStack
-	assert.Equal(t, len(expected), stack.Count())
+	assert.Equal(t, len(expected[0]), executor.EvalStack.Count())
+	assert.Equal(t, len(expected[1]), executor.AltStack.Count())
 
-	for i := 0; i < len(expected); i++ {
-		val := expected[len(expected)-i-1]
-		res, _ := stack.Pop()
-		exp := newVmValue(t, val)
-		assertEqual(t, res, exp)
+	stacks := [2]*ValueStack{executor.EvalStack, executor.AltStack}
+	for s, stack := range stacks {
+		expect := expected[s]
+		for i := 0; i < len(expect); i++ {
+			val := expect[len(expect)-i-1]
+			res, _ := stack.Pop()
+			exp := newVmValue(t, val)
+			assertEqual(t, res, exp)
+		}
 	}
 }
 
-func TestDUPFROMALTSTACK(t *testing.T) {
-	code := DUPFROMALTSTACK
-	executor := NewExecutor([]byte{byte(code)})
-	executor.AltStack.PushInt64(9999)
-	executor.EvalStack.PushInt64(8888)
-	executor.Execute()
-	val,err := executor.EvalStack.Pop()
-	assert.Equal(t, err, nil)
-	i, err := val.AsInt64()
-	assert.Equal(t, err, nil)
-	assert.Equal(t, int64(9999),i)
+func TestAltStackOpCode(t *testing.T) {
+	checkAltStackOpCode(t, DUPFROMALTSTACK, [2][]Value{
+		{8888},
+		{9999},
+	}, [2][]Value{
+		{8888, 9999},
+		{9999},
+	})
+
+	checkAltStackOpCode(t, TOALTSTACK, [2][]Value{
+		{8888},
+		{9999},
+	}, [2][]Value{
+		{},
+		{9999, 8888},
+	})
+
+	checkAltStackOpCode(t, FROMALTSTACK, [2][]Value{
+		{8888},
+		{9999},
+	}, [2][]Value{
+		{8888, 9999},
+		{},
+	})
 }
-
-func TestTOALTSTACK(t *testing.T){
-	code := TOALTSTACK
-	executor := NewExecutor([]byte{byte(code)})
-	executor.EvalStack.PushInt64(8888)
-	executor.Execute()
-	val,err := executor.AltStack.Pop()
-	i, err := val.AsInt64()
-	assert.Equal(t, err, nil)
-	assert.Equal(t, int64(8888),i)
-}
-
-func TestFROMALTSTACK(t *testing.T) {
-	code := FROMALTSTACK
-	executor := NewExecutor([]byte{byte(code)})
-	executor.AltStack.PushInt64(8888)
-	executor.Execute()
-	val,err := executor.EvalStack.Pop()
-	i, err := val.AsInt64()
-	assert.Equal(t, err, nil)
-	assert.Equal(t, int64(8888),i)
-}
-
-
 
 func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, SWAP, []Value{1, 2}, []Value{2, 1})
@@ -118,14 +118,13 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, XTUCK, []Value{2, 1}, []Value{2, 2})
 	checkStackOpCode(t, DEPTH, []Value{1, 2}, []Value{1, 2, 2})
 	checkStackOpCode(t, DROP, []Value{1, 2}, []Value{1})
-	checkStackOpCode(t, DUP, []Value{1, 2}, []Value{1, 2 ,2})
+	checkStackOpCode(t, DUP, []Value{1, 2}, []Value{1, 2, 2})
 	checkStackOpCode(t, NIP, []Value{1, 2}, []Value{2})
 	checkStackOpCode(t, OVER, []Value{1, 2}, []Value{1, 2, 1})
 	checkStackOpCode(t, PICK, []Value{3, 2, 1}, []Value{3, 2, 3})
 	checkStackOpCode(t, ROLL, []Value{3, 2, 1}, []Value{2, 3})
-	checkStackOpCode(t, ROT, []Value{3, 1,1 , 1}, []Value{1, 1, 1,3})
+	checkStackOpCode(t, ROT, []Value{3, 1, 1, 1}, []Value{1, 1, 1, 3})
 	checkStackOpCode(t, TUCK, []Value{1, 2}, []Value{2, 1, 2})
-
 
 	checkStackOpCode(t, INVERT, []Value{2}, []Value{-3})
 	checkStackOpCode(t, AND, []Value{1, 2}, []Value{0})
@@ -139,7 +138,7 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, NEGATE, []Value{1}, []Value{-1})
 	checkStackOpCode(t, ABS, []Value{-9999}, []Value{9999})
 	checkStackOpCode(t, NOT, []Value{1}, []Value{0})
-	
+
 	//SHL未实现
 	//checkStackOpCode(t, SHL, []int{1, 2}, []int{2})
 	//checkStackOpCode(t, SHR, []int{1, 2}, []int{2, 1})
@@ -199,15 +198,15 @@ func TestArrayOpCode(t *testing.T) {
 
 	checkStackOpCode(t, PICKITEM, []Value{[]Value{"ccc", "bbb", "aaa"}, 0}, []Value{"ccc"})
 
-	checkStackOpCode(t, WITHIN, []Value{1,2,3}, []Value{0})
+	checkStackOpCode(t, WITHIN, []Value{1, 2, 3}, []Value{0})
 }
 
 func TestStringOpcode(t *testing.T) {
 	checkStackOpCode(t, SIZE, []Value{"12345"}, []Value{5})
 	checkStackOpCode(t, CAT, []Value{"aaa", "bbb"}, []Value{"aaabbb"})
-	checkStackOpCode(t, SUBSTR, []Value{"aaabbb", 1,3}, []Value{"aab"})
-	checkStackOpCode(t, LEFT, []Value{"aaabbb", 3},[]Value{"aaa"})
-	checkStackOpCode(t, RIGHT, []Value{"aaabbb", 3},[]Value{"bbb"})
+	checkStackOpCode(t, SUBSTR, []Value{"aaabbb", 1, 3}, []Value{"aab"})
+	checkStackOpCode(t, LEFT, []Value{"aaabbb", 3}, []Value{"aaa"})
+	checkStackOpCode(t, RIGHT, []Value{"aaabbb", 3}, []Value{"bbb"})
 }
 
 func TestAssertEqual(t *testing.T) {
