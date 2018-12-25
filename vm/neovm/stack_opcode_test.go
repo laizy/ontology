@@ -110,47 +110,7 @@ func TestFROMALTSTACK(t *testing.T) {
 }
 
 
-func TestLEFT(t *testing.T){
-	code := LEFT
-	executor := NewExecutor([]byte{byte(code)})
-	executor.EvalStack.PushBytes([]byte("testhello"))
-	executor.EvalStack.PushInt64(3)
-	executor.Execute()
 
-	val,err := executor.EvalStack.Pop()
-	bs, err := val.AsBytes()
-	assert.Equal(t, err, nil)
-	bs2 := []byte("testhello")
-	assert.Equal(t, bs, bs2[:3])
-}
-func TestRIGHT(t *testing.T){
-	code := RIGHT
-	executor := NewExecutor([]byte{byte(code)})
-	executor.EvalStack.PushBytes([]byte("testhello"))
-	executor.EvalStack.PushInt64(3)
-	executor.Execute()
-
-	val,err := executor.EvalStack.Pop()
-	bs, err := val.AsBytes()
-	assert.Equal(t, err, nil)
-	bs2 := []byte("testhello")
-	assert.Equal(t, bs, bs2[len(bs2)-3:])
-}
-
-
-func TestWITHIN(t *testing.T) {
-	code := WITHIN
-	executor := NewExecutor([]byte{byte(code)})
-	executor.EvalStack.PushInt64(10000)
-	executor.EvalStack.PushInt64(9999)
-	executor.EvalStack.PushInt64(8888)
-	executor.Execute()
-
-	val,err := executor.EvalStack.Pop()
-	i, err := val.AsInt64()
-	assert.Equal(t, err, nil)
-	assert.Equal(t, i, int64(0))
-}
 func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, SWAP, []Value{1, 2}, []Value{2, 1})
 	checkStackOpCode(t, XDROP, []Value{3, 2, 1}, []Value{2})
@@ -179,12 +139,7 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, NEGATE, []Value{1}, []Value{-1})
 	checkStackOpCode(t, ABS, []Value{-9999}, []Value{9999})
 	checkStackOpCode(t, NOT, []Value{1}, []Value{0})
-	checkStackOpCode(t, NZ, []Value{1, 2}, []Value{1,1})
-	checkStackOpCode(t, ADD, []Value{1, 2}, []Value{3})
-	checkStackOpCode(t, SUB, []Value{1, 2}, []Value{-1})
-	checkStackOpCode(t, MUL, []Value{1, 2}, []Value{2})
-	checkStackOpCode(t, DIV, []Value{2, 1}, []Value{2})
-	checkStackOpCode(t, MOD, []Value{1, 2}, []Value{1})
+	
 	//SHL未实现
 	//checkStackOpCode(t, SHL, []int{1, 2}, []int{2})
 	//checkStackOpCode(t, SHR, []int{1, 2}, []int{2, 1})
@@ -244,6 +199,10 @@ func TestArrayOpCode(t *testing.T) {
 
 	checkStackOpCode(t, PICKITEM, []Value{[]Value{"ccc", "bbb", "aaa"}, 0}, []Value{"ccc"})
 
+	checkStackOpCode(t, WITHIN, []Value{1,2,3}, []Value{0})
+}
+
+func TestStringOpcode(t *testing.T) {
 	checkStackOpCode(t, SIZE, []Value{"12345"}, []Value{5})
 	checkStackOpCode(t, CAT, []Value{"aaa", "bbb"}, []Value{"aaabbb"})
 	checkStackOpCode(t, SUBSTR, []Value{"aaabbb", 1,3}, []Value{"aab"})
