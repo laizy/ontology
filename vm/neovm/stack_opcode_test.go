@@ -1,6 +1,7 @@
 package neovm
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -10,6 +11,7 @@ import (
 	"github.com/ontio/ontology/vm/neovm/interfaces"
 	"github.com/ontio/ontology/vm/neovm/types"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/ripemd160"
 )
 
 type Value interface{}
@@ -260,6 +262,16 @@ func TestStringOpcode(t *testing.T) {
 	checkStackOpCode(t, SUBSTR, []Value{"aaabbb", 1, 3}, []Value{"aab"})
 	checkStackOpCode(t, LEFT, []Value{"aaabbb", 3}, []Value{"aaa"})
 	checkStackOpCode(t, RIGHT, []Value{"aaabbb", 3}, []Value{"bbb"})
+}
+
+func TestHashOpCode(t *testing.T) {
+	data := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	temp := sha256.Sum256(data)
+	md := ripemd160.New()
+	md.Write(temp[:])
+	checkStackOpCode(t, HASH160, []Value{data}, []Value{md.Sum(nil)})
+	hash256 := sha256.Sum256(temp[:])
+	checkStackOpCode(t, HASH256, []Value{data}, []Value{hash256[:]})
 }
 
 func TestAssertEqual(t *testing.T) {
