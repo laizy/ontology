@@ -264,6 +264,30 @@ func TestStringOpcode(t *testing.T) {
 	checkStackOpCode(t, RIGHT, []Value{"aaabbb", 3}, []Value{"bbb"})
 }
 
+func TestPUSHDATA(t *testing.T) {
+	checkStackOpCode(t, PUSH0, []Value{9999}, []Value{9999, 0})
+	checkStackOpCode(t, PUSH1, []Value{9999}, []Value{9999, 1})
+	checkStackOpCode(t, PUSH2, []Value{9999}, []Value{9999, 2})
+	checkStackOpCode(t, PUSH4, []Value{9999}, []Value{9999, 4})
+	checkStackOpCode(t, PUSHM1, []Value{1}, []Value{1,int8(-1)})
+	checkStackOpCode(t, PUSH1, []Value{9999}, []Value{9999, 1})
+	checkStackOpCode(t, PUSH2, []Value{9999}, []Value{9999, 2})
+	checkStackOpCode(t, PUSH3, []Value{9999}, []Value{9999, 3})
+	checkStackOpCode(t, PUSH4, []Value{9999}, []Value{9999, 4})
+	checkStackOpCode(t, PUSH5, []Value{9999}, []Value{9999, 5})
+	checkStackOpCode(t, PUSH6, []Value{9999}, []Value{9999, 6})
+	checkStackOpCode(t, PUSH7, []Value{9999}, []Value{9999, 7})
+	checkStackOpCode(t, PUSH8, []Value{9999}, []Value{9999, 8})
+	checkStackOpCode(t, PUSH9, []Value{9999}, []Value{9999, 9})
+	checkStackOpCode(t, PUSH10, []Value{9999}, []Value{9999, 10})
+	checkStackOpCode(t, PUSH11, []Value{9999}, []Value{9999, 11})
+	checkStackOpCode(t, PUSH12, []Value{9999}, []Value{9999, 12})
+	checkStackOpCode(t, PUSH13, []Value{9999}, []Value{9999, 13})
+	checkStackOpCode(t, PUSH14, []Value{9999}, []Value{9999, 14})
+	checkStackOpCode(t, PUSH15, []Value{9999}, []Value{9999, 15})
+	checkStackOpCode(t, PUSH16, []Value{9999}, []Value{9999, 16})
+}
+
 func TestHashOpCode(t *testing.T) {
 	data := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 	temp := sha256.Sum256(data)
