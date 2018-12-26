@@ -14,13 +14,13 @@ import (
 
 type Value interface{}
 
-func value2json(t *testing.T, expect types.VmValue) []byte {
+func value2json(t *testing.T, expect types.VmValue) string {
 	e, err := expect.ConvertNeoVmValueHexString()
 	assert.Nil(t, err)
 	exp, err := json.Marshal(e)
 	assert.Nil(t, err)
 
-	return exp
+	return string(exp)
 }
 
 func assertEqual(t *testing.T, expect, actual types.VmValue) {
@@ -89,12 +89,24 @@ func checkStackOpCode(t *testing.T, code OpCode, origin, expected []Value) {
 }
 
 func checkAltStackOpCode(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
-	checkAltStackOpCodeOld(t, code, origin, expected)
-	checkAltStackOpCodeNew(t, code, origin, expected)
+	checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
+	checkAltStackOpCodeNew(t, []byte{byte(code)}, origin, expected)
 }
 
-func checkAltStackOpCodeNew(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
-	executor := NewExecutor([]byte{byte(code)})
+func checkMultiStackOpCode(t *testing.T, code []OpCode, origin, expected []Value) {
+	checkMultiAltStackOpCode(t, code, [2][]Value{origin, {}}, [2][]Value{expected, {}})
+}
+func checkMultiAltStackOpCode(t *testing.T, code []OpCode, origin [2][]Value, expected [2][]Value) {
+	var raw []byte
+	for _, c := range code {
+		raw = append(raw, byte(c))
+	}
+	checkAltStackOpCodeOld(t, raw, origin, expected)
+	checkAltStackOpCodeNew(t, raw, origin, expected)
+}
+
+func checkAltStackOpCodeNew(t *testing.T, code []byte, origin [2][]Value, expected [2][]Value) {
+	executor := NewExecutor(code)
 	for _, val := range origin[0] {
 		executor.EvalStack.Push(newVmValue(t, val))
 	}
@@ -230,6 +242,14 @@ func TestArrayOpCode(t *testing.T) {
 	checkStackOpCode(t, UNPACK, []Value{[]Value{"ccc", "bbb", "aaa"}}, []Value{"aaa", "bbb", "ccc", 3})
 
 	checkStackOpCode(t, PICKITEM, []Value{[]Value{"ccc", "bbb", "aaa"}, 0}, []Value{"ccc"})
+	checkStackOpCode(t, PICKITEM, []Value{[]Value{"ccc", "bbb", "aaa"}, 1}, []Value{"bbb"})
+
+	// reverse will pop the value from stack
+	checkStackOpCode(t, REVERSE, []Value{[]Value{"ccc", "bbb", "aaa"}}, []Value{})
+	checkMultiStackOpCode(t, []OpCode{TOALTSTACK, DUPFROMALTSTACK, REVERSE, FROMALTSTACK},
+		[]Value{[]Value{"ccc", "bbb", "aaa"}},
+		[]Value{[]Value{"aaa", "bbb", "ccc"}},
+	)
 
 	checkStackOpCode(t, WITHIN, []Value{1, 2, 3}, []Value{0})
 }
@@ -250,9 +270,9 @@ func TestAssertEqual(t *testing.T) {
 	assertEqual(t, val1, val2)
 }
 
-func checkAltStackOpCodeOld(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
+func checkAltStackOpCodeOld(t *testing.T, code []byte, origin [2][]Value, expected [2][]Value) {
 	executor := NewExecutionEngine()
-	context := NewExecutionContext([]byte{byte(code)})
+	context := NewExecutionContext(code)
 	executor.PushContext(context)
 	for _, val := range origin[0] {
 		executor.EvaluationStack.Push(newVmValueOld(t, val))
@@ -277,13 +297,13 @@ func checkAltStackOpCodeOld(t *testing.T, code OpCode, origin [2][]Value, expect
 	}
 }
 
-func oldValue2json(t *testing.T, expect types.StackItems) []byte {
+func oldValue2json(t *testing.T, expect types.StackItems) string {
 	e, err := common.ConvertNeoVmTypeHexString(expect)
 	assert.Nil(t, err)
 	exp, err := json.Marshal(e)
 	assert.Nil(t, err)
 
-	return exp
+	return string(exp)
 }
 
 func assertEqualOld(t *testing.T, expect, actual types.StackItems) {
