@@ -138,7 +138,7 @@ func (self *Server) constructHandshakeMsg() (*peerHandshakeMsg, error) {
 	msg := &peerHandshakeMsg{
 		CommittedBlockNumber: blkNum,
 		CommittedBlockHash:   blockhash,
-		CommittedBlockLeader: block.block.getProposer(),
+		CommittedBlockLeader: block.getProposer(),
 		ChainConfig:          self.config,
 	}
 
@@ -154,8 +154,8 @@ func (self *Server) constructHeartbeatMsg() (*peerHeartbeatMsg, error) {
 	}
 
 	bookkeepers := make([][]byte, 0)
-	endorsePks := block.block.Block.Header.Bookkeepers
-	sigData := block.block.Block.Header.SigData
+	endorsePks := block.Block.Header.Bookkeepers
+	sigData := block.Block.Header.SigData
 	if len(endorsePks) == len(sigData) {
 		for i := 0; i < len(endorsePks); i++ {
 			bookkeepers = append(bookkeepers, keypair.SerializePublicKey(endorsePks[i]))
@@ -168,7 +168,7 @@ func (self *Server) constructHeartbeatMsg() (*peerHeartbeatMsg, error) {
 	msg := &peerHeartbeatMsg{
 		CommittedBlockNumber: blkNum,
 		CommittedBlockHash:   blockhash,
-		CommittedBlockLeader: block.block.getProposer(),
+		CommittedBlockLeader: block.getProposer(),
 		Endorsers:            bookkeepers,
 		EndorsersSig:         sigData,
 		ChainConfigView:      self.config.View,
@@ -216,18 +216,18 @@ func (self *Server) constructProposalMsg(blkNum uint32, sysTxs, userTxs []*types
 		return nil, fmt.Errorf("failed to get prevBlock (%d)", blkNum-1)
 	}
 	blocktimestamp := uint32(time.Now().Unix())
-	if prevBlk.block.Block.Header.Timestamp >= blocktimestamp {
-		blocktimestamp = prevBlk.block.Block.Header.Timestamp + 1
+	if prevBlk.Block.Header.Timestamp >= blocktimestamp {
+		blocktimestamp = prevBlk.Block.Header.Timestamp + 1
 	}
 
-	vrfValue, vrfProof, err := computeVrf(self.account.PrivateKey, blkNum, prevBlk.block.getVrfValue())
+	vrfValue, vrfProof, err := computeVrf(self.account.PrivateKey, blkNum, prevBlk.getVrfValue())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vrf and proof: %s", err)
 	}
 
-	lastConfigBlkNum := prevBlk.block.Info.LastConfigBlockNum
-	if prevBlk.block.Info.NewChainConfig != nil {
-		lastConfigBlkNum = prevBlk.block.getBlockNum()
+	lastConfigBlkNum := prevBlk.Info.LastConfigBlockNum
+	if prevBlk.Info.NewChainConfig != nil {
+		lastConfigBlkNum = prevBlk.getBlockNum()
 	}
 	if chainconfig != nil {
 		lastConfigBlkNum = blkNum

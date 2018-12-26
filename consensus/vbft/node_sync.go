@@ -167,31 +167,31 @@ func (self *Syncer) run() {
 			}
 			for self.nextReqBlkNum <= self.targetBlkNum {
 				// FIXME: compete with ledger syncing
-				blk := &PendingBlock{}
+				var blk *Block
 				if self.nextReqBlkNum <= ledger.DefLedger.GetCurrentBlockHeight() {
 					blk, _ = self.server.chainStore.GetBlock(self.nextReqBlkNum)
 				}
-				if blk.block == nil {
-					blk.block = self.blockConsensusDone(self.pendingBlocks[self.nextReqBlkNum])
+				if blk == nil {
+					blk = self.blockConsensusDone(self.pendingBlocks[self.nextReqBlkNum])
 					merkBlk := self.blockCheckMerkleRoot(self.pendingBlocks[self.nextReqBlkNum])
 					if blk == nil || merkBlk == nil {
 						break
 					}
-					if blk.block.getPrevBlockMerkleRoot() != merkBlk.getPrevBlockMerkleRoot() {
+					if blk.getPrevBlockMerkleRoot() != merkBlk.getPrevBlockMerkleRoot() {
 						break
 					}
 				} else {
-					if blk.block.getPrevBlockMerkleRoot() != self.server.chainStore.GetExecMerkleRoot(blkNum-1) {
+					if blk.getPrevBlockMerkleRoot() != self.server.chainStore.GetExecMerkleRoot(blkNum-1) {
 						break
 					}
 				}
 				if blk == nil {
 					break
 				}
-				prevHash := blk.block.getPrevBlockHash()
+				prevHash := blk.getPrevBlockHash()
 				log.Debugf("server %d syncer, sealed block %d, proposer %d, prevhash: %s",
-					self.server.Index, self.nextReqBlkNum, blk.block.getProposer(), prevHash.ToHexString())
-				if err := self.server.fastForwardBlock(blk.block); err != nil {
+					self.server.Index, self.nextReqBlkNum, blk.getProposer(), prevHash.ToHexString())
+				if err := self.server.fastForwardBlock(blk); err != nil {
 					log.Errorf("server %d syncer, fastforward block %d failed %s",
 						self.server.Index, self.nextReqBlkNum, err)
 					break

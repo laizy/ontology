@@ -54,7 +54,7 @@ type CandidateInfo struct {
 	commitDone bool
 
 	// server sealed block for this round
-	SealedBlock *PendingBlock
+	SealedBlock *Block
 
 	// candidate msgs for this round
 	Proposals  []*blockProposalMsg
@@ -631,7 +631,7 @@ func (pool *BlockPool) setBlockSealed(block *Block, forEmpty bool) error {
 	}
 
 	if c.SealedBlock != nil {
-		if c.SealedBlock.block.getProposer() == block.getProposer() {
+		if c.SealedBlock.getProposer() == block.getProposer() {
 			return nil
 		}
 		return fmt.Errorf("double seal for block %d", blkNum)
@@ -643,19 +643,15 @@ func (pool *BlockPool) setBlockSealed(block *Block, forEmpty bool) error {
 
 	if !forEmpty {
 		// remove empty block
-		c.SealedBlock = &PendingBlock{
-			block: &Block{
-				Block: block.Block,
-				Info:  block.Info,
-			},
+		c.SealedBlock = &Block{
+			Block: block.Block,
+			Info:  block.Info,
 		}
 	} else {
 		// replace with empty block
-		c.SealedBlock = &PendingBlock{
-			block: &Block{
-				Block: block.EmptyBlock,
-				Info:  block.Info,
-			},
+		c.SealedBlock = &Block{
+			Block: block.EmptyBlock,
+			Info:  block.Info,
 		}
 	}
 
@@ -667,14 +663,14 @@ func (pool *BlockPool) setBlockSealed(block *Block, forEmpty bool) error {
 	return nil
 }
 
-func (pool *BlockPool) getSealedBlock(blockNum uint32) (*PendingBlock, common.Uint256) {
+func (pool *BlockPool) getSealedBlock(blockNum uint32) (*Block, common.Uint256) {
 	pool.lock.RLock()
 	defer pool.lock.RUnlock()
 
 	// get from cached candidate blocks
 	c := pool.candidateBlocks[blockNum]
 	if c != nil && c.SealedBlock != nil {
-		h := c.SealedBlock.block.Block.Hash()
+		h := c.SealedBlock.Block.Hash()
 		if bytes.Compare(h[:], common.UINT256_EMPTY[:]) != 0 {
 			return c.SealedBlock, h
 		}
@@ -687,7 +683,7 @@ func (pool *BlockPool) getSealedBlock(blockNum uint32) (*PendingBlock, common.Ui
 		log.Errorf("getSealedBlock %d err:%v", blockNum, err)
 		return nil, common.Uint256{}
 	}
-	return blk, blk.block.Block.Hash()
+	return blk, blk.Block.Hash()
 }
 
 func (pool *BlockPool) findConsensusEmptyProposal(blockNum uint32) (*blockProposalMsg, error) {

@@ -36,6 +36,7 @@ import (
 	"github.com/ontio/ontology/consensus/vbft/config"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/payload"
+	"github.com/ontio/ontology/core/store"
 	"github.com/ontio/ontology/core/store/overlaydb"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/core/utils"
@@ -206,16 +207,14 @@ func (self *Server) Halt() error {
 func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 	log.Infof("persist block: %d, %x", block.Header.Height, block.Hash())
 
-	//self.incrValidator.AddBlock(block)
 	if block.Header.Height <= self.completedBlockNum {
 		log.Infof("server %d, persist block %d, vs completed %d",
 			self.Index, block.Header.Height, self.completedBlockNum)
 		return
 	}
-
 	self.completedBlockNum = block.Header.Height
 	self.incrValidator.AddBlock(block)
-	if self.nonConsensusNode() {
+	{
 		self.chainStore.ReloadFromLedger()
 		self.metaLock.Lock()
 		if self.GetCommittedBlockNo() >= self.currentBlockNum {
@@ -265,24 +264,25 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 	if err != nil {
 		return err
 	}
-	chainStore.SetBlock(chainStore.GetChainedBlockNum(), block)
+	pendingBlock := &PendingBlock{block: block, execResult: &store.ExecuteResult{}}
+	chainStore.SetBlock(chainStore.GetChainedBlockNum(), pendingBlock)
 	var cfg vconfig.ChainConfig
-	if block.block.getNewChainConfig() != nil {
-		cfg = *block.block.getNewChainConfig()
-		self.LastConfigBlockNum = block.block.getLastConfigBlockNum()
+	if block.getNewChainConfig() != nil {
+		cfg = *block.getNewChainConfig()
+		self.LastConfigBlockNum = block.getLastConfigBlockNum()
 	} else {
 		cfgBlock := block
-		if block.block.getLastConfigBlockNum() != math.MaxUint32 {
-			cfgBlock, err = chainStore.GetBlock(block.block.getLastConfigBlockNum())
+		if block.getLastConfigBlockNum() != math.MaxUint32 {
+			cfgBlock, err = chainStore.GetBlock(block.getLastConfigBlockNum())
 			if err != nil {
 				return fmt.Errorf("failed to get cfg block: %s", err)
 			}
 		}
-		if cfgBlock.block.getNewChainConfig() == nil {
+		if cfgBlock.getNewChainConfig() == nil {
 			panic("failed to get chain config from config block")
 		}
-		cfg = *cfgBlock.block.getNewChainConfig()
-		self.LastConfigBlockNum = cfgBlock.block.getLastConfigBlockNum()
+		cfg = *cfgBlock.getNewChainConfig()
+		self.LastConfigBlockNum = cfgBlock.getLastConfigBlockNum()
 	}
 	self.metaLock.Lock()
 	self.config = &cfg
@@ -314,7 +314,7 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 		return fmt.Errorf("failed to get sealed block (%d)", self.GetCommittedBlockNo())
 	}
 
-	self.currentParticipantConfig, err = self.buildParticipantConfig(self.GetCurrentBlockNo(), block.block, self.config)
+	self.currentParticipantConfig, err = self.buildParticipantConfig(self.GetCurrentBlockNo(), block, self.config)
 	if err != nil {
 		return fmt.Errorf("failed to build participant config: %s", err)
 	}
@@ -332,13 +332,13 @@ func (self *Server) updateChainConfig() error {
 	if block == nil {
 		return fmt.Errorf("GetBlockInfo failed,block is nil:%d", self.completedBlockNum)
 	}
-	if block.block.Info.NewChainConfig == nil {
+	if block.Info.NewChainConfig == nil {
 		return fmt.Errorf("GetNewChainConfig nil,%d", self.completedBlockNum)
 	}
 	log.Infof("updateChainConfig blkNum:%d", self.completedBlockNum)
 	self.metaLock.Lock()
-	self.config = block.block.Info.NewChainConfig
-	self.LastConfigBlockNum = block.block.getLastConfigBlockNum()
+	self.config = block.Info.NewChainConfig
+	self.LastConfigBlockNum = block.getLastConfigBlockNum()
 	self.metaLock.Unlock()
 
 	self.metaLock.RLock()
@@ -441,14 +441,12 @@ func (self *Server) initialize() error {
 		log.Errorf("failed to load config: %s", err)
 		return fmt.Errorf("failed to load config: %s", err)
 	}
-	/*
-		merkleRoot, err := self.ledger.GetStateMerkleRoot(store.GetChainedBlockNum())
-		if err != nil {
-			log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", store.GetChainedBlockNum(), err)
-			return fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", store.GetChainedBlockNum(), err)
-		}
-		self.chainStore.SetExecMerkeRoot(merkleRoot)
-	*/
+	merkleRoot, err := self.ledger.GetStateMerkleRoot(store.GetChainedBlockNum())
+	if err != nil {
+		log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", store.GetChainedBlockNum(), err)
+		return fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", store.GetChainedBlockNum(), err)
+	}
+	self.chainStore.SetExecMerkleRoot(store.GetChainedBlockNum(), merkleRoot)
 	writeSet := overlaydb.NewMemDB(1, 1)
 	self.chainStore.SetExecWriteSet(store.GetChainedBlockNum(), writeSet)
 	self.chainStore.needSubmitBlock = false
@@ -645,12 +643,12 @@ func (self *Server) updateParticipantConfig() error {
 		return fmt.Errorf("failed to get sealed block (%d)", blkNum-1)
 	}
 	chainconfig := self.config
-	if block.block.Info.NewChainConfig != nil {
-		chainconfig = block.block.Info.NewChainConfig
+	if block.Info.NewChainConfig != nil {
+		chainconfig = block.Info.NewChainConfig
 	}
 	var err error
 	self.metaLock.Lock()
-	if cfg, err := self.buildParticipantConfig(blkNum, block.block, chainconfig); err == nil {
+	if cfg, err := self.buildParticipantConfig(blkNum, block, chainconfig); err == nil {
 		self.currentParticipantConfig = cfg
 	}
 	self.metaLock.Unlock()
@@ -975,7 +973,7 @@ func (self *Server) onConsensusMsg(peerIdx uint32, msg ConsensusMsg, msgHash com
 				blk, _ := self.blockPool.getSealedBlock(pMsg.BlockNum)
 				if blk != nil {
 					pmsg = &blockProposalMsg{
-						Block: blk.block,
+						Block: blk,
 					}
 				}
 			}
@@ -998,7 +996,7 @@ func (self *Server) onConsensusMsg(peerIdx uint32, msg ConsensusMsg, msgHash com
 			return
 		}
 		blk, blkHash := self.blockPool.getSealedBlock(pMsg.BlockNum)
-		msg, err := self.constructBlockFetchRespMsg(pMsg.BlockNum, blk.block, blkHash)
+		msg, err := self.constructBlockFetchRespMsg(pMsg.BlockNum, blk, blkHash)
 		if err != nil {
 			log.Errorf("server %d, failed to handle blockfetch %d from %d: %s",
 				self.Index, pMsg.BlockNum, peerIdx, err)
@@ -1034,7 +1032,7 @@ func (self *Server) onConsensusMsg(peerIdx uint32, msg ConsensusMsg, msgHash com
 			}
 			blkInfos = append(blkInfos, &BlockInfo_{
 				BlockNum: startBlkNum,
-				Proposer: blk.block.getProposer(),
+				Proposer: blk.getProposer(),
 			})
 			if len(blkInfos) >= maxCnt {
 				break
@@ -1074,8 +1072,8 @@ func (self *Server) processProposalMsg(msg *blockProposalMsg) {
 		log.Errorf("BlockPrposalMessage check blocknum:%d,prevhash:%s,msg prevhash:%s", msg.GetBlockNum(), prevBlkHash.ToHexString(), msgPrevBlkHash.ToHexString())
 		return
 	}
-	if self.LastConfigBlockNum != math.MaxUint32 && blk.block.Info.LastConfigBlockNum != self.LastConfigBlockNum {
-		log.Errorf("BlockPrposalMessage  check LastConfigBlockNum blocknum:%d,prvLastConfigBlockNum:%d,self LastConfigBlockNum:%d", msg.GetBlockNum(), blk.block.Info.LastConfigBlockNum, self.LastConfigBlockNum)
+	if self.LastConfigBlockNum != math.MaxUint32 && blk.Info.LastConfigBlockNum != self.LastConfigBlockNum {
+		log.Errorf("BlockPrposalMessage  check LastConfigBlockNum blocknum:%d,prvLastConfigBlockNum:%d,self LastConfigBlockNum:%d", msg.GetBlockNum(), blk.Info.LastConfigBlockNum, self.LastConfigBlockNum)
 		return
 	}
 	if msg.Block.getPrevBlockMerkleRoot() != self.chainStore.GetExecMerkleRoot(msgBlkNum-1) {
@@ -1085,8 +1083,8 @@ func (self *Server) processProposalMsg(msg *blockProposalMsg) {
 		return
 	}
 	cfg := vconfig.ChainConfig{}
-	if blk.block.getNewChainConfig() != nil {
-		cfg = *blk.block.getNewChainConfig()
+	if blk.getNewChainConfig() != nil {
+		cfg = *blk.getNewChainConfig()
 		if cfg.Hash() != self.config.Hash() {
 			log.Errorf("processProposalMsg chainconfig unqeual to blockinfo cfg,view:(%d,%d),N:(%d,%d),C:(%d,%d),BlockMsgDelay:(%d,%d),HashMsgDelay:(%d,%d),PeerHandshakeTimeout:(%d,%d),posTable:(%v,%v),MaxBlockChangeView:(%d,%d)", cfg.View, self.config.View, cfg.N, self.config.N, cfg.C,
 				self.config.C, cfg.BlockMsgDelay, self.config.BlockMsgDelay, cfg.HashMsgDelay, self.config.HashMsgDelay, cfg.PeerHandshakeTimeout, self.config.PeerHandshakeTimeout, cfg.PosTable, self.config.PosTable, cfg.MaxBlockChangeView, self.config.MaxBlockChangeView)
@@ -1094,7 +1092,7 @@ func (self *Server) processProposalMsg(msg *blockProposalMsg) {
 		}
 	}
 
-	prevBlockTimestamp := blk.block.Block.Header.Timestamp
+	prevBlockTimestamp := blk.Block.Header.Timestamp
 	currentBlockTimestamp := msg.Block.Block.Header.Timestamp
 	if currentBlockTimestamp <= prevBlockTimestamp || currentBlockTimestamp > uint32(time.Now().Add(time.Minute*10).Unix()) {
 		log.Errorf("BlockPrposalMessage check  blocknum:%d,prevBlockTimestamp:%d,currentBlockTimestamp:%d", msg.GetBlockNum(), prevBlockTimestamp, currentBlockTimestamp)
@@ -1108,7 +1106,7 @@ func (self *Server) processProposalMsg(msg *blockProposalMsg) {
 			self.Index, msg.Block.getProposer(), msgBlkNum)
 		return
 	}
-	if err := verifyVrf(proposerPk, msgBlkNum, blk.block.getVrfValue(), msg.Block.getVrfValue(), msg.Block.getVrfProof()); err != nil {
+	if err := verifyVrf(proposerPk, msgBlkNum, blk.getVrfValue(), msg.Block.getVrfValue(), msg.Block.getVrfProof()); err != nil {
 		log.Errorf("server %d failed to verify vrf of block %d proposal from %d",
 			self.Index, msgBlkNum, msg.Block.getProposer())
 		return
@@ -2088,7 +2086,7 @@ func (self *Server) checkNeedUpdateChainConfig(blockNum uint32) bool {
 		log.Errorf("failed to get prevBlock (%d)", blockNum-1)
 		return false
 	}
-	lastConfigBlkNum := prevBlk.block.getLastConfigBlockNum()
+	lastConfigBlkNum := prevBlk.getLastConfigBlockNum()
 	if (blockNum - lastConfigBlkNum) >= self.config.MaxBlockChangeView {
 		return true
 	}

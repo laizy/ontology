@@ -71,8 +71,13 @@ func (self *ChainStore) GetExecMerkleRoot(blkNum uint32) common.Uint256 {
 	if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
 		return blk.execResult.MerkleRoot
 	}
-	log.Errorf("GetExecMerkleRoot failed blkNum:%d", blkNum)
-	return common.Uint256{}
+	merkleRoot, err := self.server.ledger.GetStateMerkleRoot(blkNum)
+	if err != nil {
+		log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blkNum, err)
+		return common.Uint256{}
+	} else {
+		return merkleRoot
+	}
 
 }
 
@@ -88,16 +93,7 @@ func (self *ChainStore) GetExecWriteSet(blkNum uint32) *overlaydb.MemDB {
 	if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
 		return blk.execResult.WriteSet
 	}
-	log.Infof("GetExecWriteSet failed blkNum:%d", blkNum)
 	return nil
-}
-
-func (self *ChainStore) SetExecuteResult(blkNum uint32, execResult *store.ExecuteResult) {
-	if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
-		blk.execResult = execResult
-	} else {
-		log.Errorf("SetExecuteResult failed blkNum:%d", blkNum)
-	}
 }
 
 func (self *ChainStore) ReloadFromLedger() {
@@ -117,64 +113,50 @@ func (self *ChainStore) ReloadFromLedger() {
 	}
 }
 
-func (self *ChainStore) AddBlock(block *PendingBlock) error {
+func (self *ChainStore) AddBlock(block *Block) error {
 	if block == nil {
 		return fmt.Errorf("try add nil block")
 	}
 
-	if block.block.getBlockNum() <= self.GetChainedBlockNum() {
-		log.Warnf("chain store adding chained block(%d, %d)", block.block.getBlockNum(), self.GetChainedBlockNum())
+	if block.getBlockNum() <= self.GetChainedBlockNum() {
+		log.Warnf("chain store adding chained block(%d, %d)", block.getBlockNum(), self.GetChainedBlockNum())
 		return nil
 	}
 
-	if block.block.Block.Header == nil {
+	if block.Block.Header == nil {
 		panic("nil block header")
 	}
-	self.pendingBlocks[block.block.getBlockNum()] = block
-
 	blkNum := self.GetChainedBlockNum() + 1
 	for {
-		if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
-			log.Infof("ledger adding chained block (%d, %d)", blkNum, self.GetChainedBlockNum())
-
-			var err error
-			if self.needSubmitBlock {
-				if submitBlk, present := self.pendingBlocks[blkNum-1]; submitBlk != nil && present {
-					err := self.db.SubmitBlock(submitBlk.block.Block, *submitBlk.execResult)
-					if err != nil && blkNum > self.GetChainedBlockNum() {
-						return fmt.Errorf("ledger add submitBlk (%d, %d) failed: %s", blkNum, self.GetChainedBlockNum(), err)
-					}
-					if _, present := self.pendingBlocks[blkNum-2]; present {
-						delete(self.pendingBlocks, blkNum-2)
-					}
-				} else {
-					break
+		var err error
+		if self.needSubmitBlock {
+			if submitBlk, present := self.pendingBlocks[blkNum-1]; submitBlk != nil && present {
+				err := self.db.SubmitBlock(submitBlk.block.Block, *submitBlk.execResult)
+				if err != nil && blkNum > self.GetChainedBlockNum() {
+					return fmt.Errorf("ledger add submitBlk (%d, %d) failed: %s", blkNum, self.GetChainedBlockNum(), err)
 				}
-			}
-			execResult, err := self.db.ExecuteBlock(blk.block.Block)
-			if err != nil {
-				log.Warnf("chainstore AddBlock GetBlockExecResult: %s", err)
+				if _, present := self.pendingBlocks[blkNum-2]; present {
+					delete(self.pendingBlocks, blkNum-2)
+				}
+			} else {
 				break
 			}
-			self.SetExecuteResult(blk.block.getBlockNum(), &execResult)
-			self.needSubmitBlock = true
-			self.server.pid.Tell(
-				&message.BlockConsensusComplete{
-					Block: blk.block.Block,
-				})
-			self.chainedBlockNum = blkNum
-			/*
-				if blkNum != self.db.GetCurrentBlockHeight() {
-					log.Errorf("!!! chain store added chained block (%d, %d): %s",
-						blkNum, self.db.GetCurrentBlockHeight(), err)
-				}
-			*/
-			blkNum++
-		} else {
-			break
 		}
+		execResult, err := self.db.ExecuteBlock(block.Block)
+		if err != nil {
+			log.Errorf("chainstore AddBlock GetBlockExecResult: %s", err)
+			return fmt.Errorf("chainstore AddBlock GetBlockExecResult: %s", err)
+		}
+		self.pendingBlocks[blkNum] = &PendingBlock{block: block, execResult: &execResult}
+		self.needSubmitBlock = true
+		self.server.pid.Tell(
+			&message.BlockConsensusComplete{
+				Block: block.Block,
+			})
+		self.chainedBlockNum = blkNum
+		blkNum++
+		break
 	}
-
 	return nil
 }
 
@@ -182,12 +164,10 @@ func (self *ChainStore) SetBlock(blkNum uint32, blk *PendingBlock) {
 	self.pendingBlocks[blkNum] = blk
 }
 
-func (self *ChainStore) GetBlock(blockNum uint32) (*PendingBlock, error) {
-
+func (self *ChainStore) GetBlock(blockNum uint32) (*Block, error) {
 	if blk, present := self.pendingBlocks[blockNum]; present {
-		return blk, nil
+		return blk.block, nil
 	}
-
 	block, err := self.db.GetBlockByHeight(uint32(blockNum))
 	if err != nil {
 		return nil, err
@@ -197,16 +177,5 @@ func (self *ChainStore) GetBlock(blockNum uint32) (*PendingBlock, error) {
 		log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
 		return nil, fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
 	}
-	blockInfo, err := initVbftBlock(block, merkleRoot)
-	if err != nil {
-		return nil, err
-	}
-	pendingBlock := &PendingBlock{
-		block: blockInfo,
-		execResult: &store.ExecuteResult{
-			MerkleRoot: merkleRoot,
-		},
-	}
-	return pendingBlock, nil
-	//return initVbftBlock(block, merkleRoot)
+	return initVbftBlock(block, merkleRoot)
 }

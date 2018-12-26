@@ -130,10 +130,13 @@ func (blk *Block) Deserialize(data []byte) error {
 			}
 		}
 	}
-	merkleRoot, eof := source.NextHash()
-	if eof {
-		log.Errorf("Block Deserialize merkleRoot")
-		return io.ErrUnexpectedEOF
+	var merkleRoot common.Uint256
+	if source.Len() > 0 {
+		merkleRoot, eof = source.NextHash()
+		if eof {
+			log.Errorf("Block Deserialize merkleRoot")
+			return io.ErrUnexpectedEOF
+		}
 	}
 	blk.Block = block
 	blk.EmptyBlock = emptyBlock
