@@ -719,6 +719,10 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 				return FAULT, err
 			}
 		}
+		err = self.EvalStack.PushInt64(int64(l))
+		if err != nil {
+			return FAULT, err
+		}
 	case PICKITEM:
 		item, index, err := self.EvalStack.PopPair()
 		if err != nil {
