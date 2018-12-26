@@ -157,10 +157,14 @@ func TestAltStackOpCode(t *testing.T) {
 		{},
 	})
 }
+func TestStackOpCode2(t *testing.T) {
+	checkStackOpCode(t, XSWAP, []Value{3, 2, 1}, []Value{2, 3})
+}
 
 func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, SWAP, []Value{1, 2}, []Value{2, 1})
 	checkStackOpCode(t, XDROP, []Value{3, 2, 1}, []Value{2})
+	checkStackOpCode(t, XDROP, []Value{3, 2, 0}, []Value{3})
 	checkStackOpCode(t, XSWAP, []Value{3, 2, 1}, []Value{2, 3})
 	checkStackOpCode(t, XTUCK, []Value{2, 1}, []Value{2, 2})
 	checkStackOpCode(t, DEPTH, []Value{1, 2}, []Value{1, 2, 2})
@@ -171,6 +175,7 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, PICK, []Value{3, 2, 1}, []Value{3, 2, 3})
 	checkStackOpCode(t, ROLL, []Value{3, 2, 1}, []Value{2, 3})
 	checkStackOpCode(t, ROT, []Value{3, 1, 1, 1}, []Value{1, 1, 1, 3})
+	checkStackOpCode(t, ROT, []Value{1, 2, 3}, []Value{2, 3, 1})
 	checkStackOpCode(t, TUCK, []Value{1, 2}, []Value{2, 1, 2})
 
 	checkStackOpCode(t, INVERT, []Value{2}, []Value{-3})

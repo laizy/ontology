@@ -74,9 +74,9 @@ func (self *ValueStack) Remove(index int64) (value types.VmValue, err error) {
 		err = errors.ERR_INDEX_OUT_OF_BOUND
 		return
 	}
-	index = l - index
-	value = self.data[index-1]
-	self.data = append(self.data[:index-1], self.data[index:]...)
+	index = l - index - 1
+	value = self.data[index]
+	self.data = append(self.data[:index], self.data[index+1:]...)
 	return
 }
 

@@ -216,7 +216,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 			return FAULT, err
 		}
 
-	case XDROP:
+	case XDROP: // XDROP is zero based
 		n, err := self.EvalStack.PopAsInt64()
 		if err != nil {
 			return FAULT, err
@@ -317,7 +317,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 
 		// todo: clearly define the behave when n ==0 and stack is empty
-		val, err := self.EvalStack.Remove(n)
+		val, err := self.EvalStack.Remove(n - 1)
 		if err != nil {
 			return FAULT, err
 		}
