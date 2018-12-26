@@ -136,7 +136,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 			return FAULT, err
 		}
 	case PUSHM1, PUSH1, PUSH2, PUSH3, PUSH4, PUSH5, PUSH6, PUSH7, PUSH8, PUSH9, PUSH10, PUSH11, PUSH12, PUSH13, PUSH14, PUSH15, PUSH16:
-		val := int64(opcode - PUSH1 + 1)
+		val := int64(opcode) - int64(PUSH1) + 1
 		err := self.EvalStack.Push(types.VmValueFromInt64(val))
 		if err != nil {
 			return FAULT, err

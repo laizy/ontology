@@ -269,7 +269,7 @@ func TestPUSHDATA(t *testing.T) {
 	checkStackOpCode(t, PUSH1, []Value{9999}, []Value{9999, 1})
 	checkStackOpCode(t, PUSH2, []Value{9999}, []Value{9999, 2})
 	checkStackOpCode(t, PUSH4, []Value{9999}, []Value{9999, 4})
-	checkStackOpCode(t, PUSHM1, []Value{1}, []Value{1,int8(-1)})
+	checkStackOpCode(t, PUSHM1, []Value{1}, []Value{1, -1})
 	checkStackOpCode(t, PUSH1, []Value{9999}, []Value{9999, 1})
 	checkStackOpCode(t, PUSH2, []Value{9999}, []Value{9999, 2})
 	checkStackOpCode(t, PUSH3, []Value{9999}, []Value{9999, 3})
