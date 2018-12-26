@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ontio/ontology/smartcontract/common"
 	"github.com/ontio/ontology/vm/neovm/interfaces"
 	"github.com/ontio/ontology/vm/neovm/types"
 	"github.com/stretchr/testify/assert"
@@ -56,11 +57,43 @@ func newVmValue(t *testing.T, data Value) types.VmValue {
 	}
 }
 
+func newVmValueOld(t *testing.T, data Value) types.StackItems {
+	switch v := data.(type) {
+	case int8, int16, int32, int64, int, uint8, uint16, uint32, uint64, *big.Int, big.Int:
+		val := types.NewInteger(ToBigInt(v))
+		return val
+	case bool:
+		return types.NewBoolean(v)
+	case []byte:
+		val := types.NewByteArray(v)
+		return val
+	case string:
+		val := types.NewByteArray([]byte(v))
+		return val
+	case []Value:
+		var arr []types.StackItems
+		for _, item := range v {
+			arr = append(arr, newVmValueOld(t, item))
+		}
+
+		return types.NewArray(arr)
+	case interfaces.Interop:
+		return types.NewInteropInterface(v)
+	default:
+		panic(fmt.Sprintf("newVmValue Invalid Type:%t", v))
+	}
+}
+
 func checkStackOpCode(t *testing.T, code OpCode, origin, expected []Value) {
 	checkAltStackOpCode(t, code, [2][]Value{origin, {}}, [2][]Value{expected, {}})
 }
 
 func checkAltStackOpCode(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
+	checkAltStackOpCodeOld(t, code, origin, expected)
+	checkAltStackOpCodeNew(t, code, origin, expected)
+}
+
+func checkAltStackOpCodeNew(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
 	executor := NewExecutor([]byte{byte(code)})
 	for _, val := range origin[0] {
 		executor.EvalStack.Push(newVmValue(t, val))
@@ -194,7 +227,7 @@ func TestArrayOpCode(t *testing.T) {
 
 	checkStackOpCode(t, PACK, []Value{"aaa", "bbb", "ccc", 3}, []Value{[]Value{"ccc", "bbb", "aaa"}})
 
-	checkStackOpCode(t, UNPACK, []Value{[]Value{"ccc", "bbb", "aaa"}}, []Value{"aaa", "bbb", "ccc"})
+	checkStackOpCode(t, UNPACK, []Value{[]Value{"ccc", "bbb", "aaa"}}, []Value{"aaa", "bbb", "ccc", 3})
 
 	checkStackOpCode(t, PICKITEM, []Value{[]Value{"ccc", "bbb", "aaa"}, 0}, []Value{"ccc"})
 
@@ -215,4 +248,44 @@ func TestAssertEqual(t *testing.T) {
 	val2 := newVmValue(t, buf)
 
 	assertEqual(t, val1, val2)
+}
+
+func checkAltStackOpCodeOld(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
+	executor := NewExecutionEngine()
+	context := NewExecutionContext([]byte{byte(code)})
+	executor.PushContext(context)
+	for _, val := range origin[0] {
+		executor.EvaluationStack.Push(newVmValueOld(t, val))
+	}
+	for _, val := range origin[1] {
+		executor.AltStack.Push(newVmValueOld(t, val))
+	}
+	err := executor.Execute()
+	assert.Nil(t, err)
+	assert.Equal(t, len(expected[0]), executor.EvaluationStack.Count())
+	assert.Equal(t, len(expected[1]), executor.AltStack.Count())
+
+	stacks := [2]*RandomAccessStack{executor.EvaluationStack, executor.AltStack}
+	for s, stack := range stacks {
+		expect := expected[s]
+		for i := 0; i < len(expect); i++ {
+			val := expect[len(expect)-i-1]
+			res := stack.Pop()
+			exp := newVmValueOld(t, val)
+			assertEqualOld(t, res, exp)
+		}
+	}
+}
+
+func oldValue2json(t *testing.T, expect types.StackItems) []byte {
+	e, err := common.ConvertNeoVmTypeHexString(expect)
+	assert.Nil(t, err)
+	exp, err := json.Marshal(e)
+	assert.Nil(t, err)
+
+	return exp
+}
+
+func assertEqualOld(t *testing.T, expect, actual types.StackItems) {
+	assert.Equal(t, oldValue2json(t, expect), oldValue2json(t, actual))
 }
