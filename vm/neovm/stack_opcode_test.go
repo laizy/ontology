@@ -158,9 +158,6 @@ func TestAltStackOpCode(t *testing.T) {
 		{},
 	})
 }
-func TestStackOpCode2(t *testing.T) {
-	checkStackOpCode(t, XSWAP, []Value{3, 2, 1}, []Value{2, 3})
-}
 
 func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, SWAP, []Value{1, 2}, []Value{2, 1})
@@ -192,7 +189,7 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, ABS, []Value{-9999}, []Value{9999})
 	checkStackOpCode(t, NOT, []Value{1}, []Value{0})
 
-	//SHL未实现
+	//TODO: SHL未实现
 	//checkStackOpCode(t, SHL, []int{1, 2}, []int{2})
 	//checkStackOpCode(t, SHR, []int{1, 2}, []int{2, 1})
 	checkStackOpCode(t, BOOLAND, []Value{1, 2}, []Value{1})
