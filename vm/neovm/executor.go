@@ -308,7 +308,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		var n int64
 		var err error
 		if opcode == ROT {
-			n = 3
+			n = 2
 		} else {
 			n, err = self.EvalStack.PopAsInt64()
 			if err != nil {
@@ -317,7 +317,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 
 		// todo: clearly define the behave when n ==0 and stack is empty
-		val, err := self.EvalStack.Remove(n - 1)
+		val, err := self.EvalStack.Remove(n)
 		if err != nil {
 			return FAULT, err
 		}

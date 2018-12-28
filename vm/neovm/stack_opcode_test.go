@@ -91,7 +91,7 @@ func checkStackOpCode(t *testing.T, code OpCode, origin, expected []Value) {
 }
 
 func checkAltStackOpCode(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
-	checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
+	//checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
 	checkAltStackOpCodeNew(t, []byte{byte(code)}, origin, expected)
 }
 
@@ -127,6 +127,8 @@ func checkAltStackOpCodeNew(t *testing.T, code []byte, origin [2][]Value, expect
 			val := expect[len(expect)-i-1]
 			res, _ := stack.Pop()
 			exp := newVmValue(t, val)
+			fmt.Println("res: ", res)
+			fmt.Println("exp: ", exp)
 			assertEqual(t, res, exp)
 		}
 	}
@@ -166,7 +168,7 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, XDROP, []Value{3, 2, 1}, []Value{2})
 	checkStackOpCode(t, XDROP, []Value{3, 2, 0}, []Value{3})
 	checkStackOpCode(t, XSWAP, []Value{3, 2, 1}, []Value{2, 3})
-	checkStackOpCode(t, XTUCK, []Value{2, 1}, []Value{2, 2})
+	checkStackOpCode(t, XTUCK, []Value{3, 2, 1}, []Value{3, 2, 2})
 	checkStackOpCode(t, DEPTH, []Value{1, 2}, []Value{1, 2, 2})
 	checkStackOpCode(t, DROP, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, DUP, []Value{1, 2}, []Value{1, 2, 2})
@@ -174,7 +176,7 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, OVER, []Value{1, 2}, []Value{1, 2, 1})
 	checkStackOpCode(t, PICK, []Value{3, 2, 1}, []Value{3, 2, 3})
 	checkStackOpCode(t, ROLL, []Value{3, 2, 1}, []Value{2, 3})
-	checkStackOpCode(t, ROT, []Value{3, 1, 1, 1}, []Value{1, 1, 1, 3})
+	checkStackOpCode(t, ROT, []Value{4, 3, 2, 1}, []Value{4, 2, 1, 3})
 	checkStackOpCode(t, ROT, []Value{1, 2, 3}, []Value{2, 3, 1})
 	checkStackOpCode(t, TUCK, []Value{1, 2}, []Value{2, 1, 2})
 
@@ -333,6 +335,8 @@ func checkAltStackOpCodeOld(t *testing.T, code []byte, origin [2][]Value, expect
 			val := expect[len(expect)-i-1]
 			res := stack.Pop()
 			exp := newVmValueOld(t, val)
+			fmt.Println("old res:", res)
+			fmt.Println("old exp:", exp)
 			assertEqualOld(t, res, exp)
 		}
 	}
