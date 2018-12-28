@@ -50,7 +50,7 @@ func (self *ValueStack) Insert(index int64, t types.VmValue) error {
 	if index > l || index < 0 {
 		return errors.ERR_INDEX_OUT_OF_BOUND
 	}
-	index = l - index
+	index = l - index - 1
 	self.data = append(self.data, self.data[l-1])
 	copy(self.data[index+1:l], self.data[index:])
 	self.data[index] = t
@@ -63,8 +63,8 @@ func (self *ValueStack) Peek(index int64) (value types.VmValue, err error) {
 		err = errors.ERR_INDEX_OUT_OF_BOUND
 		return
 	}
-	index = l - index
-	value = self.data[index-1]
+	index = l - index - 1
+	value = self.data[index]
 	return
 }
 
@@ -74,19 +74,10 @@ func (self *ValueStack) Remove(index int64) (value types.VmValue, err error) {
 		err = errors.ERR_INDEX_OUT_OF_BOUND
 		return
 	}
-	index = l - index
-	value = self.data[index-1]
-	self.data = append(self.data[:index-1], self.data[index:]...)
+	index = l - index - 1
+	value = self.data[index]
+	self.data = append(self.data[:index], self.data[index+1:]...)
 	return
-}
-
-func (self *ValueStack) Set(index int, t types.VmValue) error {
-	l := len(self.data)
-	if index >= l || index < 0 {
-		return errors.ERR_INDEX_OUT_OF_BOUND
-	}
-	self.data[index] = t
-	return nil
 }
 
 func (self *ValueStack) Push(t types.VmValue) error {

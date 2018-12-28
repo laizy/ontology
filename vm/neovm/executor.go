@@ -235,7 +235,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		if err != nil {
 			return FAULT, err
 		}
-	case XTUCK:
+	case XTUCK:// one-based
 		n, err := self.EvalStack.PopAsInt64()
 		if err != nil {
 			return FAULT, err
@@ -246,7 +246,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 			return FAULT, err
 		}
 
-		err = self.EvalStack.Insert(n, val)
+		err = self.EvalStack.Insert(n-1, val)
 		if err != nil {
 			return FAULT, err
 		}
