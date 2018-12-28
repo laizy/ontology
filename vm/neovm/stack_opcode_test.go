@@ -127,8 +127,6 @@ func checkAltStackOpCodeNew(t *testing.T, code []byte, origin [2][]Value, expect
 			val := expect[len(expect)-i-1]
 			res, _ := stack.Pop()
 			exp := newVmValue(t, val)
-			fmt.Println("res: ", res)
-			fmt.Println("exp: ", exp)
 			assertEqual(t, res, exp)
 		}
 	}
@@ -335,8 +333,6 @@ func checkAltStackOpCodeOld(t *testing.T, code []byte, origin [2][]Value, expect
 			val := expect[len(expect)-i-1]
 			res := stack.Pop()
 			exp := newVmValueOld(t, val)
-			fmt.Println("old res:", res)
-			fmt.Println("old exp:", exp)
 			assertEqualOld(t, res, exp)
 		}
 	}
