@@ -1,9 +1,11 @@
 package neovm
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/crypto/ripemd160"
 	"math/big"
 	"testing"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/ontio/ontology/vm/neovm/interfaces"
 	"github.com/ontio/ontology/vm/neovm/types"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/ripemd160"
 )
 
 type Value interface{}
@@ -91,7 +92,7 @@ func checkStackOpCode(t *testing.T, code OpCode, origin, expected []Value) {
 }
 
 func checkAltStackOpCode(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
-	//checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
+	checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
 	checkAltStackOpCodeNew(t, []byte{byte(code)}, origin, expected)
 }
 
@@ -301,6 +302,16 @@ func TestHashOpCode(t *testing.T) {
 	checkStackOpCode(t, HASH160, []Value{data}, []Value{md.Sum(nil)})
 	hash256 := sha256.Sum256(temp[:])
 	checkStackOpCode(t, HASH256, []Value{data}, []Value{hash256[:]})
+
+	sh := sha1.New()
+	sh.Write(data)
+	hash := sh.Sum(nil)
+	checkStackOpCode(t, SHA1, []Value{data}, []Value{hash[:]})
+
+	sh = sha256.New()
+	sh.Write(data)
+	hash = sh.Sum(nil)
+	checkStackOpCode(t, SHA256, []Value{data}, []Value{hash[:]})
 }
 
 func TestAssertEqual(t *testing.T) {
