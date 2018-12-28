@@ -51,6 +51,19 @@ func OpenBlockStore(db *ledger.Ledger, server *Server) (*ChainStore, error) {
 	}, nil
 }
 
+func (self *ChainStore) Load() error {
+	merkleRoot, err := self.db.GetStateMerkleRoot(self.chainedBlockNum)
+	if err != nil {
+		log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", self.chainedBlockNum, err)
+		return fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", self.chainedBlockNum, err)
+	}
+	self.SetExecMerkleRoot(self.chainedBlockNum, merkleRoot)
+	writeSet := overlaydb.NewMemDB(1, 1)
+	self.SetExecWriteSet(self.chainedBlockNum, writeSet)
+	self.needSubmitBlock = false
+	return nil
+}
+
 func (self *ChainStore) close() {
 	// TODO: any action on ledger actor??
 }
@@ -172,10 +185,13 @@ func (self *ChainStore) GetBlock(blockNum uint32) (*Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	merkleRoot, err := self.db.GetStateMerkleRoot(blockNum)
-	if err != nil {
-		log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
-		return nil, fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
+	prevmerkleRoot := common.Uint256{}
+	if blockNum > 1 {
+		prevmerkleRoot, err = self.db.GetStateMerkleRoot(blockNum - 1)
+		if err != nil {
+			log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
+			return nil, fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
+		}
 	}
-	return initVbftBlock(block, merkleRoot)
+	return initVbftBlock(block, prevmerkleRoot)
 }

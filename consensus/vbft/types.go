@@ -145,7 +145,7 @@ func (blk *Block) Deserialize(data []byte) error {
 	return nil
 }
 
-func initVbftBlock(block *types.Block, merkleRoot common.Uint256) (*Block, error) {
+func initVbftBlock(block *types.Block, prevmerkleRoot common.Uint256) (*Block, error) {
 	if block == nil {
 		return nil, fmt.Errorf("nil block in initVbftBlock")
 	}
@@ -158,6 +158,6 @@ func initVbftBlock(block *types.Block, merkleRoot common.Uint256) (*Block, error
 	return &Block{
 		Block:               block,
 		Info:                blkInfo,
-		PrevBlockMerkleRoot: merkleRoot,
+		PrevBlockMerkleRoot: prevmerkleRoot,
 	}, nil
 }

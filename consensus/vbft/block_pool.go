@@ -644,14 +644,16 @@ func (pool *BlockPool) setBlockSealed(block *Block, forEmpty bool) error {
 	if !forEmpty {
 		// remove empty block
 		c.SealedBlock = &Block{
-			Block: block.Block,
-			Info:  block.Info,
+			Block:               block.Block,
+			Info:                block.Info,
+			PrevBlockMerkleRoot: block.PrevBlockMerkleRoot,
 		}
 	} else {
 		// replace with empty block
 		c.SealedBlock = &Block{
-			Block: block.EmptyBlock,
-			Info:  block.Info,
+			Block:               block.EmptyBlock,
+			Info:                block.Info,
+			PrevBlockMerkleRoot: block.PrevBlockMerkleRoot,
 		}
 	}
 

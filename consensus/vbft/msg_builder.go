@@ -100,7 +100,7 @@ func DeserializeVbftMsg(msgPayload []byte) (ConsensusMsg, error) {
 	case BlockFetchRespMessage:
 		t := &BlockFetchRespMsg{}
 		if err := t.Deserialize(m.Payload); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal msg (type: %d): %s", m.Type, err)
+			return nil, fmt.Errorf("failed to Deserialize msg (type: %d): %s", m.Type, err)
 		}
 		return t, nil
 	case ProposalFetchMessage:

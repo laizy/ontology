@@ -357,7 +357,7 @@ func (msg *BlockFetchRespMsg) Deserialize(data []byte) error {
 	}
 	blk := &Block{}
 	if err := blk.Deserialize(buffer.Bytes()); err != nil {
-		return fmt.Errorf("unmarshal block type: %s", err)
+		return fmt.Errorf("Deserialize block type: %s", err)
 	}
 	msg.BlockData = blk
 	return nil

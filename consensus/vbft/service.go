@@ -37,7 +37,6 @@ import (
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/store"
-	"github.com/ontio/ontology/core/store/overlaydb"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/core/utils"
 	"github.com/ontio/ontology/events"
@@ -214,7 +213,7 @@ func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 	}
 	self.completedBlockNum = block.Header.Height
 	self.incrValidator.AddBlock(block)
-	{
+	if self.nonConsensusNode() {
 		self.chainStore.ReloadFromLedger()
 		self.metaLock.Lock()
 		if self.GetCommittedBlockNo() >= self.currentBlockNum {
@@ -266,6 +265,9 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 	}
 	pendingBlock := &PendingBlock{block: block, execResult: &store.ExecuteResult{}}
 	chainStore.SetBlock(chainStore.GetChainedBlockNum(), pendingBlock)
+	if err := self.chainStore.Load(); err != nil {
+		return fmt.Errorf("ChainStore initialize failed:%s", err)
+	}
 	var cfg vconfig.ChainConfig
 	if block.getNewChainConfig() != nil {
 		cfg = *block.getNewChainConfig()
@@ -441,15 +443,6 @@ func (self *Server) initialize() error {
 		log.Errorf("failed to load config: %s", err)
 		return fmt.Errorf("failed to load config: %s", err)
 	}
-	merkleRoot, err := self.ledger.GetStateMerkleRoot(store.GetChainedBlockNum())
-	if err != nil {
-		log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", store.GetChainedBlockNum(), err)
-		return fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", store.GetChainedBlockNum(), err)
-	}
-	self.chainStore.SetExecMerkleRoot(store.GetChainedBlockNum(), merkleRoot)
-	writeSet := overlaydb.NewMemDB(1, 1)
-	self.chainStore.SetExecWriteSet(store.GetChainedBlockNum(), writeSet)
-	self.chainStore.needSubmitBlock = false
 	log.Infof("chain config loaded from local, current blockNum: %d", self.GetCurrentBlockNo())
 
 	// add all consensus peers to peer_pool
