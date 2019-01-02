@@ -217,7 +217,25 @@ func (this *LedgerStoreImp) InitLedgerStoreWithGenesisBlock(genesisBlock *types.
 	}
 	// check and fix imcompatible states
 	err = this.stateStore.CheckStorage()
+
+	ts := time.Now()
+	this.benchHash()
+	te := time.Now()
+	fmt.Printf("time escapted: %ds", te.Sub(ts).Seconds())
 	return err
+}
+
+func (this *LedgerStoreImp) benchHash() {
+	overlay := this.stateStore.NewOverlayDB()
+
+	res, e := calculateTotalStateHash(overlay)
+	if e != nil {
+		panic(fmt.Sprintf("calculate hash error: %v", e))
+	}
+
+	fmt.Printf("state hash is :%s", res.ToHexString())
+
+	return
 }
 
 func (this *LedgerStoreImp) hasAlreadyInitGenesisBlock() (bool, error) {
