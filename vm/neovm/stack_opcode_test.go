@@ -270,7 +270,7 @@ func TestStringOpcode(t *testing.T) {
 	checkStackOpCode(t, RIGHT, []Value{"aaabbb", 3}, []Value{"bbb"})
 }
 
-func TestPUSHDATA(t *testing.T) {
+func TestPUSH(t *testing.T) {
 	checkStackOpCode(t, PUSH0, []Value{9999}, []Value{9999, 0})
 	checkStackOpCode(t, PUSH1, []Value{9999}, []Value{9999, 1})
 	checkStackOpCode(t, PUSH2, []Value{9999}, []Value{9999, 2})
@@ -292,6 +292,18 @@ func TestPUSHDATA(t *testing.T) {
 	checkStackOpCode(t, PUSH14, []Value{9999}, []Value{9999, 14})
 	checkStackOpCode(t, PUSH15, []Value{9999}, []Value{9999, 15})
 	checkStackOpCode(t, PUSH16, []Value{9999}, []Value{9999, 16})
+
+}
+
+func TestPushData(t *testing.T) {
+	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA1), byte(1), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA1), byte(1), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+
+	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA2), byte(0x01), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA2), byte(0x01), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+
+	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA4), byte(0x01), byte(0x00), byte(0x00), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA4), byte(0x01), byte(0x00), byte(0x00), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
 }
 
 func TestHashOpCode(t *testing.T) {
