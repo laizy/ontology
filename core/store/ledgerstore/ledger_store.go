@@ -62,7 +62,7 @@ const (
 	HEADER_INDEX_BATCH_SIZE = uint32(2000) //Bath size of saving header index
 )
 
-const STATE_HASH_HEIGHT = 1500000
+const STATE_HASH_HEIGHT = 100
 
 var (
 	//Storage save path.
