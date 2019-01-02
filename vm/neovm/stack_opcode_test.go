@@ -53,6 +53,12 @@ func newVmValue(t *testing.T, data Value) types.VmValue {
 		}
 
 		return types.VmValueFromArrayVal(arr)
+	case map[interface{}]interface{}:
+		mp := types.NewMapValue()
+		for key, value := range v {
+			mp.Set(newVmValue(t, key), newVmValue(t, value))
+		}
+		return types.VmValueFromMapValue(mp)
 	case interfaces.Interop:
 		return types.VmValueFromInteropValue(types.NewInteropValue(v))
 	default:
@@ -80,6 +86,12 @@ func newVmValueOld(t *testing.T, data Value) types.StackItems {
 		}
 
 		return types.NewArray(arr)
+	case map[interface{}]interface{}:
+		mp := types.NewMap()
+		for k, value := range v {
+			mp.Add(newVmValueOld(t, k), newVmValueOld(t, value))
+		}
+		return mp
 	case interfaces.Interop:
 		return types.NewInteropInterface(v)
 	default:
@@ -104,7 +116,7 @@ func checkMultiAltStackOpCode(t *testing.T, code []OpCode, origin [2][]Value, ex
 	for _, c := range code {
 		raw = append(raw, byte(c))
 	}
-	checkAltStackOpCodeOld(t, raw, origin, expected)
+	//checkAltStackOpCodeOld(t, raw, origin, expected)
 	checkAltStackOpCodeNew(t, raw, origin, expected)
 }
 
@@ -256,6 +268,23 @@ func TestArrayOpCode(t *testing.T) {
 		[]Value{[]Value{"aaa", "bbb", "ccc"}},
 	)
 
+	checkMultiStackOpCode(t, []OpCode{SWAP, TOALTSTACK, DUPFROMALTSTACK, SWAP, APPEND, FROMALTSTACK},
+		[]Value{[]Value{"aaa", "bbb", "ccc"}, "eee"},
+		[]Value{[]Value{"aaa", "bbb", "ccc", "eee"}},
+	)
+
+	//TODO  map remove test
+	//mp := make(map[interface{}]interface{}, 0)
+	//mp["key"] = "value"
+	//mp["key2"] = "value2"
+	//
+	//mp2 := make(map[interface{}]interface{}, 0)
+	//mp2["key2"] = "value2"
+	//checkMultiStackOpCode(t, []OpCode{SWAP, TOALTSTACK, DUPFROMALTSTACK, SWAP, REMOVE, FROMALTSTACK},
+	//	[]Value{mp, "key"},
+	//	[]Value{mp2},
+	//)
+
 	checkStackOpCode(t, WITHIN, []Value{1, 2, 3}, []Value{0})
 }
 
@@ -352,6 +381,8 @@ func checkAltStackOpCodeOld(t *testing.T, code []byte, origin [2][]Value, expect
 			val := expect[len(expect)-i-1]
 			res := stack.Pop()
 			exp := newVmValueOld(t, val)
+			fmt.Println("res: ", res)
+			fmt.Println("exp: ", exp)
 			assertEqualOld(t, res, exp)
 		}
 	}
