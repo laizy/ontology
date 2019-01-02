@@ -291,6 +291,17 @@ func TestPUSHDATA(t *testing.T) {
 	checkStackOpCode(t, PUSH16, []Value{9999}, []Value{9999, 16})
 }
 
+func TestPushData(t *testing.T) {
+	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA1), byte(1), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA1), byte(1), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+
+	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA2), byte(0x01), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA2), byte(0x01), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+
+	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA4), byte(0x01), byte(0x00), byte(0x00), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA4), byte(0x01), byte(0x00), byte(0x00), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
+}
+
 func TestHashOpCode(t *testing.T) {
 	data := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 	temp := sha256.Sum256(data)
