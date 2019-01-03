@@ -104,7 +104,7 @@ func checkStackOpCode(t *testing.T, code OpCode, origin, expected []Value) {
 }
 
 func checkAltStackOpCode(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
-	//checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
+	checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
 	checkAltStackOpCodeNew(t, []byte{byte(code)}, origin, expected)
 }
 
