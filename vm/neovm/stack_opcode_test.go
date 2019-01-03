@@ -331,6 +331,20 @@ func TestPushData(t *testing.T) {
 	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA4), byte(0x01), byte(0x00), byte(0x00), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
 }
 
+func TestPushBytes(t *testing.T) {
+	checkAltStackOpCodeOld(t, []byte{byte(PUSHBYTES1), byte(1)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 1}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(PUSHBYTES1), byte(1)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 1}, {}})
+	code := make([]byte, 0)
+	code = append(code, byte(PUSHBYTES75))
+	for i := 0; i < int(PUSHBYTES75); i++ {
+		code = append(code, byte(1))
+	}
+	code2 := make([]byte, len(code)-1, cap(code))
+	copy(code2, code[1:])
+	checkAltStackOpCodeOld(t, code, [2][]Value{[]Value{}, {}}, [2][]Value{[]Value{code2}, {}})
+	checkAltStackOpCodeNew(t, code, [2][]Value{[]Value{}, {}}, [2][]Value{[]Value{code2}, {}})
+}
+
 func TestHashOpCode(t *testing.T) {
 	data := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 	temp := sha256.Sum256(data)
@@ -381,8 +395,6 @@ func checkAltStackOpCodeOld(t *testing.T, code []byte, origin [2][]Value, expect
 			val := expect[len(expect)-i-1]
 			res := stack.Pop()
 			exp := newVmValueOld(t, val)
-			fmt.Println("res: ", res)
-			fmt.Println("exp: ", exp)
 			assertEqualOld(t, res, exp)
 		}
 	}
