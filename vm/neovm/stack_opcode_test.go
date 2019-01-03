@@ -116,7 +116,7 @@ func checkMultiAltStackOpCode(t *testing.T, code []OpCode, origin [2][]Value, ex
 	for _, c := range code {
 		raw = append(raw, byte(c))
 	}
-	//checkAltStackOpCodeOld(t, raw, origin, expected)
+	checkAltStackOpCodeOld(t, raw, origin, expected)
 	checkAltStackOpCodeNew(t, raw, origin, expected)
 }
 
