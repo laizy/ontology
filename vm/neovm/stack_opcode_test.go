@@ -104,7 +104,7 @@ func checkStackOpCode(t *testing.T, code OpCode, origin, expected []Value) {
 }
 
 func checkAltStackOpCode(t *testing.T, code OpCode, origin [2][]Value, expected [2][]Value) {
-	checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
+	//checkAltStackOpCodeOld(t, []byte{byte(code)}, origin, expected)
 	checkAltStackOpCodeNew(t, []byte{byte(code)}, origin, expected)
 }
 
@@ -201,9 +201,8 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, ABS, []Value{-9999}, []Value{9999})
 	checkStackOpCode(t, NOT, []Value{1}, []Value{0})
 
-	//TODO: SHL未实现
-	//checkStackOpCode(t, SHL, []int{1, 2}, []int{2})
-	//checkStackOpCode(t, SHR, []int{1, 2}, []int{2, 1})
+	checkStackOpCode(t, SHL, []Value{1, 2}, []Value{4})
+	checkStackOpCode(t, SHR, []Value{4, 1}, []Value{2})
 	checkStackOpCode(t, BOOLAND, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, BOOLOR, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, NUMEQUAL, []Value{1, 2}, []Value{0})
