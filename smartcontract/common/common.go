@@ -98,6 +98,96 @@ func convertNeoVmTypeHexString(item interface{}, count *int) (interface{}, error
 	}
 }
 
+func Stringify(item interface{}) (string, error) {
+	var count int
+	return stringify(item, &count)
+}
+func stringify(item interface{}, count *int) (string, error) {
+	if item == nil {
+		return "", nil
+	}
+	if *count > MAX_COUNT {
+		return "", errors.New("over max parameters convert length")
+	}
+	switch v := item.(type) {
+	case *types.Boolean:
+		b, err := v.GetByteArray()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("bytes(hex:%x)", b), nil
+	case *types.ByteArray:
+		bs, err := v.GetByteArray()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("bytes(hex:%x)", bs), nil
+	case *types.Integer:
+		b, err := v.GetByteArray()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("bytes(hex:%x)", b), nil
+	case *types.Array:
+		arr, err := v.GetArray()
+		if err != nil {
+			return "", nil
+		}
+		data := ""
+		for _, v := range arr {
+			s, err := Dump(v)
+			if err != nil {
+				return "", err
+			}
+			data += s + ", "
+		}
+		return fmt.Sprintf("array[%d]{%s}", len(arr), data), nil
+	case *types.Map:
+		m, err := v.GetMap()
+		if err != nil {
+			return "", err
+		}
+		var unsortKey []string
+		for k, _ := range m {
+			s, err := Dump(k)
+			if err != nil {
+				return "", err
+			}
+			unsortKey = append(unsortKey, s)
+		}
+		sort.Strings(unsortKey)
+		data := ""
+		sortedKey, err := v.GetMapSortedKey()
+		if err != nil {
+			return "", err
+		}
+		for _, key := range sortedKey {
+			value := m[key]
+			val, err := Dump(value)
+			if err != nil {
+				return "", nil
+			}
+			data += fmt.Sprintf("%x: %s,", key, val)
+		}
+		return fmt.Sprintf("map[%d]{%s}", len(m), data), nil
+	case *types.Struct:
+		s, err := v.GetStruct()
+		if err != nil {
+			return "", err
+		}
+		data := ""
+		for _, v := range s {
+			vs, err := Dump(v)
+			if err != nil {
+				return "", nil
+			}
+			data += vs + ", "
+		}
+		return fmt.Sprintf("struct[%d]{%s}", len(s), data), nil
+	default:
+		panic("unreacheable!")
+	}
+}
 func Dump(item interface{}) (string, error) {
 	var count int
 	return dump(item, &count)
@@ -116,19 +206,19 @@ func dump(item interface{}, count *int) (string, error) {
 			return "", err
 		}
 		return fmt.Sprintf("bool(%v)", b), nil
-	case types.ByteArray:
+	case *types.ByteArray:
 		bs, err := v.GetByteArray()
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("bytes(hex:%x)", bs), nil
-	case types.Integer:
+	case *types.Integer:
 		b, err := v.GetBigInteger()
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("int(%d)", b), nil
-	case types.Array:
+	case *types.Array:
 		arr, err := v.GetArray()
 		if err != nil {
 			return "", nil
@@ -142,7 +232,7 @@ func dump(item interface{}, count *int) (string, error) {
 			data += s + ", "
 		}
 		return fmt.Sprintf("array[%d]{%s}", len(arr), data), nil
-	case types.Map:
+	case *types.Map:
 		m, err := v.GetMap()
 		if err != nil {
 			return "", err
@@ -157,10 +247,34 @@ func dump(item interface{}, count *int) (string, error) {
 		}
 		sort.Strings(unsortKey)
 		data := ""
-		for _, key := range unsortKey {
-
-			data += fmt.Sprintf("%x: %s,", key)
+		sortedKey, err := v.GetMapSortedKey()
+		if err != nil {
+			return "", err
 		}
+		for _, key := range sortedKey {
+			value := m[key]
+			val, err := Dump(value)
+			if err != nil {
+				return "", nil
+			}
+			data += fmt.Sprintf("%x: %s,", key, val)
+		}
+		return fmt.Sprintf("map[%d]{%s}", len(m), data), nil
+	case *types.Struct:
+		s, err := v.GetStruct()
+		if err != nil {
+			return "", err
+		}
+		data := ""
+		for _, v := range s {
+			vs, err := Dump(v)
+			if err != nil {
+				return "", nil
+			}
+			data += vs + ", "
+		}
+		return fmt.Sprintf("struct[%d]{%s}", len(s), data), nil
+	default:
+		panic("unreacheable!")
 	}
-	return "", nil
 }
