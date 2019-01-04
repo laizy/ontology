@@ -566,6 +566,8 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 			if err != nil {
 				return FAULT, err
 			}
+		default:
+			panic("unreachable")
 		}
 		b := types.VmValueFromIntValue(res)
 		err = self.EvalStack.Push(b)
