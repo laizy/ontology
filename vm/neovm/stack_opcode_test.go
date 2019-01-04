@@ -18,8 +18,8 @@ import (
 type Value interface{}
 
 func value2json(t *testing.T, expect types.VmValue) string {
-	e, err := expect.ConvertNeoVmValueHexString()
-	assert.Nil(t, err)
+	//e, err := expect.ConvertNeoVmValueHexString()
+	e := expect.Stringify()
 	exp, err := json.Marshal(e)
 	assert.Nil(t, err)
 
@@ -117,7 +117,7 @@ func checkMultiAltStackOpCode(t *testing.T, code []OpCode, origin [2][]Value, ex
 		raw = append(raw, byte(c))
 	}
 	checkAltStackOpCodeOld(t, raw, origin, expected)
-	checkAltStackOpCodeNew(t, raw, origin, expected)
+	//checkAltStackOpCodeNew(t, raw, origin, expected)
 }
 
 func checkAltStackOpCodeNew(t *testing.T, code []byte, origin [2][]Value, expected [2][]Value) {
@@ -272,7 +272,7 @@ func TestArrayOpCode(t *testing.T) {
 		[]Value{[]Value{"aaa", "bbb", "ccc", "eee"}},
 	)
 
-	checkStackOpCode(t, WITHIN, []Value{1, 2, 3}, []Value{0})
+	checkStackOpCode(t, WITHIN, []Value{1, 2, 3}, []Value{false})
 }
 
 func TestMapValue(t *testing.T) {
@@ -281,12 +281,12 @@ func TestMapValue(t *testing.T) {
 	mp["key2"] = "value2"
 
 	//TODO  map remove test
-	//mp2 := make(map[interface{}]interface{}, 0)
-	//mp2["key2"] = "value2"
-	//checkMultiStackOpCode(t, []OpCode{SWAP, TOALTSTACK, DUPFROMALTSTACK, SWAP, REMOVE, FROMALTSTACK},
-	//	[]Value{mp, "key"},
-	//	[]Value{mp2},
-	//)
+	mp2 := make(map[interface{}]interface{}, 0)
+	mp2["key2"] = "value2"
+	checkMultiStackOpCode(t, []OpCode{SWAP, TOALTSTACK, DUPFROMALTSTACK, SWAP, REMOVE, FROMALTSTACK},
+		[]Value{mp, "key"},
+		[]Value{mp2},
+	)
 
 	//TODO old vm not support
 	checkMultiStackOpCode(t, []OpCode{HASKEY}, []Value{mp, "key"}, []Value{true})
@@ -332,7 +332,7 @@ func TestPushData(t *testing.T) {
 
 	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA2), byte(0x01), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
 	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA2), byte(0x01), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
-
+	//
 	checkAltStackOpCodeOld(t, []byte{byte(PUSHDATA4), byte(0x01), byte(0x00), byte(0x00), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
 	checkAltStackOpCodeNew(t, []byte{byte(PUSHDATA4), byte(0x01), byte(0x00), byte(0x00), byte(0x00), byte(2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, 2}, {}})
 }
@@ -407,7 +407,8 @@ func checkAltStackOpCodeOld(t *testing.T, code []byte, origin [2][]Value, expect
 }
 
 func oldValue2json(t *testing.T, expect types.StackItems) string {
-	e, err := common.ConvertNeoVmTypeHexString(expect)
+	//e, err := common.ConvertNeoVmTypeHexString(expect)
+	e, err := common.Stringify(expect)
 	assert.Nil(t, err)
 	exp, err := json.Marshal(e)
 	assert.Nil(t, err)
