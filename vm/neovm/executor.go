@@ -923,11 +923,6 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 				return FAULT, err
 			}
 		}
-		/*
-			HASKEY    OpCode = 0xCB
-			KEYS      OpCode = 0xCC
-			VALUES    OpCode = 0xCD
-		*/
 	case HASKEY:
 		item, key, err := self.EvalStack.PopPair()
 		if err != nil {
