@@ -614,34 +614,25 @@ func (self *VmValue) GetMapKey() (string, error) {
 	return string(val), nil
 }
 
-func (self *VmValue) Stringify() string {
+func (self *VmValue) Stringify() (string, error) {
 	b, err := self.CircularRefAndDepthDetection()
 	if err != nil {
-		return fmt.Sprintf("error: %v", err)
+		return "", fmt.Errorf("error: %v", err)
 	}
 	if b {
-		return "error: can not serialize circular reference data"
+		return "", fmt.Errorf("error: can not serialize circular reference data")
 	}
+	return self.stringify(), nil
+}
+func (self *VmValue) stringify() string {
 	switch self.valType {
-	case boolType:
-		boo, _ := self.AsBool()
-		if boo {
-			return fmt.Sprintf("bytes(hex:%x)", []byte{1})
-		} else {
-			return fmt.Sprintf("bytes(hex:%x)", []byte{0})
-		}
-	case bytearrayType:
-		return fmt.Sprintf("bytes(hex:%x)", self.byteArray)
-	case bigintType:
-		return fmt.Sprintf("bytes(hex:%x)", common.BigIntToNeoBytes(self.bigInt))
-	case integerType:
-		b := new(big.Int)
-		b.SetInt64(self.integer)
-		return fmt.Sprintf("bytes(hex:%x)", common.BigIntToNeoBytes(b))
+	case boolType, bytearrayType, bigintType, integerType:
+		bs, _ := self.AsBytes()
+		return fmt.Sprintf("bytes(hex:%x)", bs)
 	case arrayType:
 		data := ""
 		for _, v := range self.array.Data {
-			data += v.Dump() + ", "
+			data += v.stringify() + ", "
 		}
 		return fmt.Sprintf("array[%d]{%s}", len(self.array.Data), data)
 	case mapType:
@@ -653,13 +644,13 @@ func (self *VmValue) Stringify() string {
 		data := ""
 		for _, key := range unsortKey {
 			v := self.mapval.Data[key]
-			data += fmt.Sprintf("%x: %s,", key, v.Dump())
+			data += fmt.Sprintf("%x: %s,", key, v.stringify())
 		}
 		return fmt.Sprintf("map[%d]{%s}", len(self.mapval.Data), data)
 	case structType:
 		data := ""
 		for _, v := range self.structval.Data {
-			data += v.Dump() + ", "
+			data += v.stringify() + ", "
 		}
 		return fmt.Sprintf("struct[%d]{%s}", len(self.structval.Data), data)
 	default:
@@ -669,28 +660,26 @@ func (self *VmValue) Stringify() string {
 }
 
 //only for debug/testing
-func (self *VmValue) Dump() string {
+
+func (self *VmValue) Dump() (string, error){
 	b, err := self.CircularRefAndDepthDetection()
 	if err != nil {
-		return fmt.Sprintf("error: %v", err)
+		return "", fmt.Errorf("error: %v", err)
 	}
 	if b {
-		return "error: can not serialize circular reference data"
+		return "", fmt.Errorf("error: can not serialize circular reference data")
 	}
+	return self.dump(), nil
+}
+func (self *VmValue) dump() string {
 	switch self.valType {
-	case boolType:
-		boo, _ := self.AsBool()
-		return fmt.Sprintf("bool(%v)", boo)
-	case bytearrayType:
-		return fmt.Sprintf("bytes(hex:%x)", self.byteArray)
-	case bigintType:
-		return fmt.Sprintf("int(%d)", self.bigInt)
-	case integerType:
-		return fmt.Sprintf("int(%d)", self.integer)
+	case boolType, bytearrayType, bigintType, integerType:
+		bs, _ := self.AsBytes()
+		return fmt.Sprintf("bytes(%v)", bs)
 	case arrayType:
 		data := ""
 		for _, v := range self.array.Data {
-			data += v.Dump() + ", "
+			data += v.dump() + ", "
 		}
 		return fmt.Sprintf("array[%d]{%s}", len(self.array.Data), data)
 	case mapType:
@@ -702,13 +691,13 @@ func (self *VmValue) Dump() string {
 		data := ""
 		for _, key := range unsortKey {
 			v := self.mapval.Data[key]
-			data += fmt.Sprintf("%x: %s,", key, v.Dump())
+			data += fmt.Sprintf("%x: %s,", key, v.dump())
 		}
 		return fmt.Sprintf("map[%d]{%s}", len(self.mapval.Data), data)
 	case structType:
 		data := ""
 		for _, v := range self.structval.Data {
-			data += v.Dump() + ", "
+			data += v.dump() + ", "
 		}
 		return fmt.Sprintf("struct[%d]{%s}", len(self.structval.Data), data)
 	default:
