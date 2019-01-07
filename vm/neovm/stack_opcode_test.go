@@ -19,7 +19,8 @@ type Value interface{}
 
 func value2json(t *testing.T, expect types.VmValue) string {
 	//e, err := expect.ConvertNeoVmValueHexString()
-	e := expect.Stringify()
+	e, err := expect.Stringify()
+	assert.Nil(t, err)
 	exp, err := json.Marshal(e)
 	assert.Nil(t, err)
 
@@ -117,7 +118,7 @@ func checkMultiAltStackOpCode(t *testing.T, code []OpCode, origin [2][]Value, ex
 		raw = append(raw, byte(c))
 	}
 	checkAltStackOpCodeOld(t, raw, origin, expected)
-	//checkAltStackOpCodeNew(t, raw, origin, expected)
+	checkAltStackOpCodeNew(t, raw, origin, expected)
 }
 
 func checkAltStackOpCodeNew(t *testing.T, code []byte, origin [2][]Value, expected [2][]Value) {
@@ -192,25 +193,25 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, AND, []Value{1, 2}, []Value{0})
 	checkStackOpCode(t, OR, []Value{1, 2}, []Value{3})
 	checkStackOpCode(t, XOR, []Value{1, 2}, []Value{3})
-	checkStackOpCode(t, EQUAL, []Value{1, 2}, []Value{0})
+	checkStackOpCode(t, EQUAL, []Value{1, 2}, []Value{false})
 
 	checkStackOpCode(t, INC, []Value{1}, []Value{2})
 	checkStackOpCode(t, DEC, []Value{2}, []Value{1})
 	checkStackOpCode(t, SIGN, []Value{1}, []Value{1})
 	checkStackOpCode(t, NEGATE, []Value{1}, []Value{-1})
 	checkStackOpCode(t, ABS, []Value{-9999}, []Value{9999})
-	checkStackOpCode(t, NOT, []Value{1}, []Value{0})
+	checkStackOpCode(t, NOT, []Value{true}, []Value{false})
 
 	checkStackOpCode(t, SHL, []Value{1, 2}, []Value{4})
 	checkStackOpCode(t, SHR, []Value{4, 1}, []Value{2})
 	checkStackOpCode(t, BOOLAND, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, BOOLOR, []Value{1, 2}, []Value{1})
-	checkStackOpCode(t, NUMEQUAL, []Value{1, 2}, []Value{0})
+	checkStackOpCode(t, NUMEQUAL, []Value{1, 2}, []Value{false})
 	checkStackOpCode(t, NUMNOTEQUAL, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, LT, []Value{1, 2}, []Value{1})
-	checkStackOpCode(t, GT, []Value{1, 2}, []Value{0})
+	checkStackOpCode(t, GT, []Value{1, 2}, []Value{false})
 	checkStackOpCode(t, LTE, []Value{1, 2}, []Value{1})
-	checkStackOpCode(t, GTE, []Value{1, 2}, []Value{0})
+	checkStackOpCode(t, GTE, []Value{1, 2}, []Value{false})
 	checkStackOpCode(t, MIN, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, MAX, []Value{1, 2}, []Value{2})
 
@@ -288,7 +289,6 @@ func TestMapValue(t *testing.T) {
 		[]Value{mp2},
 	)
 
-	//TODO old vm not support
 	checkMultiStackOpCode(t, []OpCode{HASKEY}, []Value{mp, "key"}, []Value{true})
 	checkMultiStackOpCode(t, []OpCode{KEYS}, []Value{mp}, []Value{[]Value{"key", "key2"}})
 	checkMultiStackOpCode(t, []OpCode{VALUES}, []Value{mp}, []Value{[]Value{"value", "value2"}})
