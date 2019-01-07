@@ -661,7 +661,7 @@ func (self *VmValue) stringify() string {
 
 //only for debug/testing
 
-func (self *VmValue) Dump() (string, error){
+func (self *VmValue) Dump() (string, error) {
 	b, err := self.CircularRefAndDepthDetection()
 	if err != nil {
 		return "", fmt.Errorf("error: %v", err)
@@ -673,9 +673,15 @@ func (self *VmValue) Dump() (string, error){
 }
 func (self *VmValue) dump() string {
 	switch self.valType {
-	case boolType, bytearrayType, bigintType, integerType:
+	case boolType:
 		bs, _ := self.AsBytes()
-		return fmt.Sprintf("bytes(%v)", bs)
+		return fmt.Sprintf("bool(%v)", bs)
+	case integerType:
+		return fmt.Sprintf("int(%d)", self.integer)
+	case bigintType:
+		return fmt.Sprintf("int(%d)", self.integer)
+	case bytearrayType:
+		return fmt.Sprintf("bytes(hex:%d)", self.byteArray)
 	case arrayType:
 		data := ""
 		for _, v := range self.array.Data {

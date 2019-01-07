@@ -21,8 +21,6 @@ package common
 import (
 	"errors"
 	"fmt"
-	"sort"
-
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/vm/neovm/types"
@@ -143,7 +141,8 @@ func stringify(item types.StackItems, count *int) (string, error) {
 		}
 		for _, key := range sortedKey {
 			value := m[key]
-			val, err := Stringify(value)
+			*count++
+			val, err := stringify(value, count)
 			if err != nil {
 				return "", nil
 			}
@@ -181,12 +180,24 @@ func dump(item types.StackItems, count *int) (string, error) {
 		return "", errors.New("over max parameters convert length")
 	}
 	switch v := item.(type) {
-	case *types.Boolean, *types.ByteArray, *types.Integer:
+	case *types.Boolean:
 		b, err := v.GetBoolean()
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("bool(%v)", b), nil
+	case *types.ByteArray:
+		b, err := v.GetByteArray()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("bytes(hex:%x)", b), nil
+	case *types.Integer:
+		b, err := v.GetBigInteger()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("int(%d)", b), nil
 	case *types.Array:
 		arr, err := v.GetArray()
 		if err != nil {
@@ -207,16 +218,6 @@ func dump(item types.StackItems, count *int) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		var unsortKey []string
-		for k, _ := range m {
-			*count++
-			s, err := dump(k, count)
-			if err != nil {
-				return "", err
-			}
-			unsortKey = append(unsortKey, s)
-		}
-		sort.Strings(unsortKey)
 		data := ""
 		sortedKey, err := v.GetMapSortedKey()
 		if err != nil {
@@ -224,7 +225,8 @@ func dump(item types.StackItems, count *int) (string, error) {
 		}
 		for _, key := range sortedKey {
 			value := m[key]
-			val, err := Dump(value)
+			*count++
+			val, err := dump(value, count)
 			if err != nil {
 				return "", nil
 			}

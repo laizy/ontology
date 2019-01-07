@@ -21,6 +21,7 @@ package neovm
 import (
 	"crypto/sha1"
 	"crypto/sha256"
+	"fmt"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/core/signature"
 	"github.com/ontio/ontology/vm/neovm/errors"
@@ -918,6 +919,8 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 			if err != nil {
 				return FAULT, err
 			}
+		default:
+			return FAULT, fmt.Errorf("[REMOVE] not support datatype")
 		}
 	case HASKEY:
 		item, key, err := self.EvalStack.PopPair()
