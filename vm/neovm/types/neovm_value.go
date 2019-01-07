@@ -614,6 +614,7 @@ func (self *VmValue) GetMapKey() (string, error) {
 	return string(val), nil
 }
 
+//only for debug/testing
 func (self *VmValue) Stringify() (string, error) {
 	b, err := self.CircularRefAndDepthDetection()
 	if err != nil {
@@ -660,7 +661,6 @@ func (self *VmValue) stringify() string {
 }
 
 //only for debug/testing
-
 func (self *VmValue) Dump() (string, error) {
 	b, err := self.CircularRefAndDepthDetection()
 	if err != nil {

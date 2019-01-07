@@ -95,7 +95,7 @@ func convertNeoVmTypeHexString(item types.StackItems, count *int) (interface{}, 
 		return nil, errors.New("[ConvertTypes] Invalid Types!")
 	}
 }
-
+//only for debug/testing
 func Stringify(item types.StackItems) (string, error) {
 	var count int
 	return stringify(item, &count)
@@ -168,6 +168,7 @@ func stringify(item types.StackItems, count *int) (string, error) {
 		return "", fmt.Errorf("[Stringify] Invalid Types!")
 	}
 }
+//only for debug/testing
 func Dump(item types.StackItems) (string, error) {
 	var count int
 	return dump(item, &count)
