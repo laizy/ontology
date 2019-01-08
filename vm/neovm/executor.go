@@ -181,7 +181,6 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 	case DCALL:
 		caller := context.Clone()
-		caller.SetInstructionPointer(int64(caller.GetInstructionPointer()))
 		self.PushContext(caller)
 		target, err := self.EvalStack.PopAsInt64()
 		if err != nil {
