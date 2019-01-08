@@ -344,7 +344,7 @@ func TestFlowControl(t *testing.T) {
 	checkMultiStackOpCode(t, []OpCode{PUSH3, DCALL, PUSH0, PUSH1}, nil, []Value{1})
 	checkMultiOpCode(t, []byte{byte(CALL), byte(0x03), byte(0x00), byte(PUSH2)}, nil, []Value{2})
 	checkMultiOpCode(t, []byte{byte(JMP), byte(0x03), byte(0x00), byte(PUSH2)}, nil, []Value{2})
-	checkMultiOpCode(t, []byte{byte(JMPIF), byte(0x03), byte(0x00), byte(PUSH2)}, []Value{8}, []Value{2})
+	checkMultiOpCode(t, []byte{byte(JMPIF), byte(0x03), byte(0x00), byte(PUSH2)}, []Value{true}, []Value{2})
 	checkMultiOpCode(t, []byte{byte(JMPIFNOT), byte(0x03), byte(0x00), byte(PUSH2)}, []Value{true}, []Value{2})
 }
 
