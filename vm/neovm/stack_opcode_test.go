@@ -334,7 +334,7 @@ func TestPUSHDATA(t *testing.T) {
 
 func TestFlowControl(t *testing.T) {
 	checkMultiStackOpCode(t, []OpCode{PUSH3, DCALL, PUSH0, PUSH1}, nil, []Value{1})
-	checkMultiAltStackOpCode(t, []byte{ byte(CALL), byte(0x01), byte(0x00), byte(PUSH2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8,byte(0x00), 2}, {}})
+	checkMultiAltStackOpCode(t, []byte{byte(CALL), byte(0x01), byte(0x00), byte(PUSH2)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, byte(0x00), 2}, {}})
 
 	checkMultiAltStackOpCode(t, []byte{byte(JMP), byte(0x01), byte(0x00)}, [2][]Value{[]Value{8}, {}}, [2][]Value{[]Value{8, byte(0x00)}, {}})
 
