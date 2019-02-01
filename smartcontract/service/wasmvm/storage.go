@@ -18,121 +18,79 @@
 package wasmvm
 
 import (
-	"bytes"
+	"errors"
+	"math"
 
-	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/core/states"
-	scommon "github.com/ontio/ontology/core/store/common"
-	"github.com/ontio/ontology/errors"
-	"github.com/ontio/ontology/vm/wasmvm/exec"
-	"github.com/ontio/ontology/vm/wasmvm/memory"
-	"github.com/ontio/ontology/vm/wasmvm/util"
+	"github.com/go-interpreter/wagon/exec"
 )
 
-//======================store apis here============================================
-func (this *WasmVmService) putstore(engine *exec.ExecutionEngine) (bool, error) {
-	vm := engine.GetVM()
-	envCall := vm.GetEnvCall()
-	params := envCall.GetParams()
-	if len(params) != 2 {
-		return false, errors.NewErr("[putstore] parameter count error")
-	}
-
-	key, err := vm.GetPointerMemory(params[0])
+func (self *Runtime) StorageRead(proc *exec.Process, keyPtr uint32, klen uint32, val uint32, vlen uint32, offset uint32) uint32 {
+	self.checkGas(STORAGE_GET_GAS)
+	keybytes := make([]byte, klen)
+	_, err := proc.ReadAt(keybytes, int64(keyPtr))
 	if err != nil {
-		return false, err
-	}
-	if len(key) > 1024 {
-		return false, errors.NewErr("[putstore] Get Storage key to long")
+		panic(err)
 	}
 
-	value, err := vm.GetPointerMemory(params[1])
+	key, err := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
 	if err != nil {
-		return false, err
+		panic(err)
 	}
-	k, err := serializeStorageKey(vm.ContractAddress, []byte(util.TrimBuffToString(key)))
+	item, err := self.Service.CacheDB.Get(key)
 	if err != nil {
-		return false, err
-	}
-	this.CloneCache.Add(scommon.ST_STORAGE, k, &states.StorageItem{Value: value})
-
-	vm.RestoreCtx()
-
-	return true, nil
-}
-
-func (this *WasmVmService) getstore(engine *exec.ExecutionEngine) (bool, error) {
-	vm := engine.GetVM()
-	envCall := vm.GetEnvCall()
-	params := envCall.GetParams()
-
-	if len(params) != 1 {
-		return false, errors.NewErr("[getstore] parameter count error ")
-	}
-
-	key, err := vm.GetPointerMemory(params[0])
-	if err != nil {
-		return false, err
-	}
-	k, err := serializeStorageKey(vm.ContractAddress, []byte(util.TrimBuffToString(key)))
-	if err != nil {
-		return false, err
-	}
-	item, err := this.CloneCache.Get(scommon.ST_STORAGE, k)
-	if err != nil {
-		return false, err
+		panic(err)
 	}
 
 	if item == nil {
-		vm.RestoreCtx()
-		if envCall.GetReturns() {
-			vm.PushResult(uint64(memory.VM_NIL_POINTER))
-		}
-		return true, nil
-	}
-	idx, err := vm.SetPointerMemory(item.(*states.StorageItem).Value)
-	if err != nil {
-		return false, err
+		return math.MaxUint32
 	}
 
-	vm.RestoreCtx()
-	if envCall.GetReturns() {
-		vm.PushResult(uint64(idx))
+	if uint32(len(item)) < offset {
+		panic(errors.New("offset is invalid"))
 	}
-	return true, nil
+	_, err = proc.WriteAt(item[offset:offset+vlen], int64(val))
+
+	if err != nil {
+		panic(err)
+	}
+	return uint32(len(item))
 }
 
-func (this *WasmVmService) deletestore(engine *exec.ExecutionEngine) (bool, error) {
+func (self *Runtime) StorageWrite(proc *exec.Process, keyPtr uint32, keylen uint32, valPtr uint32, valLen uint32) {
 
-	vm := engine.GetVM()
-	envCall := vm.GetEnvCall()
-	params := envCall.GetParams()
-
-	if len(params) != 1 {
-		return false, errors.NewErr("[deletestore] parameter count error")
-	}
-
-	key, err := vm.GetPointerMemory(params[0])
+	keybytes := make([]byte, keylen)
+	_, err := proc.ReadAt(keybytes, int64(keyPtr))
 	if err != nil {
-		return false, err
+		panic(err)
 	}
 
-	k, err := serializeStorageKey(vm.ContractAddress, []byte(util.TrimBuffToString(key)))
+	valbytes := make([]byte, valLen)
+	_, err = proc.ReadAt(valbytes, int64(valPtr))
 	if err != nil {
-		return false, err
+		panic(err)
 	}
 
-	this.CloneCache.Delete(scommon.ST_STORAGE, k)
-	vm.RestoreCtx()
+	cost := uint64(((len(keybytes)+len(valbytes)-1)/1024 + 1)) * STORAGE_PUT_GAS
+	self.checkGas(cost)
 
-	return true, nil
+	key, err := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
+	if err != nil {
+		panic(err)
+	}
+
+	self.Service.CacheDB.Put(key, valbytes)
 }
 
-func serializeStorageKey(contractAddress common.Address, key []byte) ([]byte, error) {
-	bf := new(bytes.Buffer)
-	storageKey := &states.StorageKey{ContractAddress: contractAddress, Key: key}
-	if _, err := storageKey.Serialize(bf); err != nil {
-		return []byte{}, errors.NewErr("[serializeStorageKey] StorageKey serialize error!")
+func (self *Runtime) StorageDelete(proc *exec.Process, keyPtr uint32, keylen uint32) {
+	self.checkGas(STORAGE_DELETE_GAS)
+	keybytes := make([]byte, keylen)
+	_, err := proc.ReadAt(keybytes, int64(keyPtr))
+	if err != nil {
+		panic(err)
 	}
-	return bf.Bytes(), nil
+	key, err := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
+	if err != nil {
+		panic(err)
+	}
+	self.Service.CacheDB.Delete(key)
 }
