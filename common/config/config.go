@@ -24,7 +24,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	"io"
+	"os"
 
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
@@ -671,4 +673,35 @@ func (this *OntologyConfig) getDefNetworkIDFromGenesisConfig(genCfg *GenesisConf
 	}
 	data := sha256.Sum256(configData)
 	return binary.LittleEndian.Uint32(data[0:4]), nil
+}
+
+type DebugOption struct {
+	OpenFilesCacheCapacity int
+	WriteBuffer            int
+	BlockCacheCapacity     int
+	NumBlockPerSecond      int
+}
+
+func defaultOpt() DebugOption {
+	return DebugOption{
+		OpenFilesCacheCapacity: 500,
+		WriteBuffer:            4 * opt.MiB,
+		BlockCacheCapacity:     8 * opt.MiB,
+		NumBlockPerSecond:      100,
+	}
+}
+
+func GetDebugOption() DebugOption {
+	opt := defaultOpt()
+	val, ok := os.LookupEnv("debug_option")
+	if ok == false {
+		return opt
+	}
+	err := json.Unmarshal([]byte(val), &opt)
+	if err != nil {
+		fmt.Printf("unmarshal debug_option:%s, error: %v", val, err)
+		return defaultOpt()
+	}
+	fmt.Printf("debug optionnnnnnnnnnnnnnnnnnnnnn:%v\n", opt)
+	return opt
 }
