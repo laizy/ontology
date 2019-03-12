@@ -89,7 +89,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	m, err := wasm.ReadModule(bytes.NewReader(code.Code), func(name string) (*wasm.Module, error) {
 		switch name {
 		case "env":
-			return NewHostModule(host), nil
+			return NewHostModule(), nil
 		}
 		return nil, fmt.Errorf("module %q unknown", name)
 	})
@@ -101,10 +101,17 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 		return nil, errors.NewErr("[Call]No export in wasm!")
 	}
 
-	vm, err := exec.NewVM(m, WASM_MEM_LIMITATION)
+	//todo : cache this
+	compiled, err := exec.CompileModule(m)
+	if err != nil {
+		return nil, err
+	}
+
+	vm, err := exec.NewVMWithCompiled(compiled, WASM_MEM_LIMITATION)
 	if err != nil {
 		return nil, VM_INIT_FAULT
 	}
+	vm.HostData = host
 	if this.PreExec {
 		this.GasLimit = uint64(VM_STEP_LIMIT)
 	}

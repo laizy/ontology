@@ -56,17 +56,20 @@ type Runtime struct {
 	CallOutPut []byte
 }
 
-func (self *Runtime) TimeStamp(proc *exec.Process) uint64 {
+func TimeStamp(proc *exec.Process) uint64 {
+	self := proc.HostData().(*Runtime)
 	self.checkGas(TIME_STAMP_GAS)
 	return uint64(self.Service.Time)
 }
 
-func (self *Runtime) BlockHeight(proc *exec.Process) uint32 {
+func BlockHeight(proc *exec.Process) uint32 {
+	self := proc.HostData().(*Runtime)
 	self.checkGas(BLOCK_HEGHT_GAS)
 	return self.Service.Height
 }
 
-func (self *Runtime) SelfAddress(proc *exec.Process, dst uint32) {
+func SelfAddress(proc *exec.Process, dst uint32) {
+	self := proc.HostData().(*Runtime)
 	self.checkGas(SELF_ADDRESS_GAS)
 	selfaddr := self.Service.ContextRef.CurrentContext().ContractAddress
 	_, err := proc.WriteAt(selfaddr[:], int64(dst))
@@ -75,7 +78,8 @@ func (self *Runtime) SelfAddress(proc *exec.Process, dst uint32) {
 	}
 }
 
-func (self *Runtime) CallerAddress(proc *exec.Process, dst uint32) {
+func CallerAddress(proc *exec.Process, dst uint32) {
+	self := proc.HostData().(*Runtime)
 	self.checkGas(CALLER_ADDRESS_GAS)
 	if self.Service.ContextRef.CallingContext() != nil {
 		calleraddr := self.Service.ContextRef.CallingContext().ContractAddress
@@ -92,7 +96,8 @@ func (self *Runtime) CallerAddress(proc *exec.Process, dst uint32) {
 
 }
 
-func (self *Runtime) EntryAddress(proc *exec.Process, dst uint32) {
+func EntryAddress(proc *exec.Process, dst uint32) {
+	self := proc.HostData().(*Runtime)
 	self.checkGas(ENTRY_ADDRESS_GAS)
 	entryAddress := self.Service.ContextRef.EntryContext().ContractAddress
 	_, err := proc.WriteAt(entryAddress[:], int64(dst))
@@ -101,7 +106,8 @@ func (self *Runtime) EntryAddress(proc *exec.Process, dst uint32) {
 	}
 }
 
-func (self *Runtime) Checkwitness(proc *exec.Process, dst uint32) uint32 {
+func Checkwitness(proc *exec.Process, dst uint32) uint32 {
+	self := proc.HostData().(*Runtime)
 	self.checkGas(CHECKWITNESS_GAS)
 	var addr common.Address
 	_, err := proc.ReadAt(addr[:], int64(dst))
@@ -120,7 +126,8 @@ func (self *Runtime) Checkwitness(proc *exec.Process, dst uint32) uint32 {
 	return 0
 }
 
-func (self *Runtime) Ret(proc *exec.Process, ptr uint32, len uint32) {
+func Ret(proc *exec.Process, ptr uint32, len uint32) {
+	self := proc.HostData().(*Runtime)
 	bs := make([]byte, len)
 	_, err := proc.ReadAt(bs, int64(ptr))
 	if err != nil {
@@ -131,7 +138,7 @@ func (self *Runtime) Ret(proc *exec.Process, ptr uint32, len uint32) {
 	proc.Terminate()
 }
 
-func (self *Runtime) Debug(proc *exec.Process, ptr uint32, len uint32) {
+func Debug(proc *exec.Process, ptr uint32, len uint32) {
 	bs := make([]byte, len)
 	_, err := proc.ReadAt(bs, int64(ptr))
 	if err != nil {
@@ -142,7 +149,8 @@ func (self *Runtime) Debug(proc *exec.Process, ptr uint32, len uint32) {
 	log.Debugf("[WasmContract]Debug:%s\n", bs)
 }
 
-func (self *Runtime) Notify(proc *exec.Process, ptr uint32, len uint32) {
+func Notify(proc *exec.Process, ptr uint32, len uint32) {
+	self := proc.HostData().(*Runtime)
 	bs := make([]byte, len)
 	_, err := proc.ReadAt(bs, int64(ptr))
 	if err != nil {
@@ -155,29 +163,34 @@ func (self *Runtime) Notify(proc *exec.Process, ptr uint32, len uint32) {
 	self.Service.ContextRef.PushNotifications(notifys)
 }
 
-func (self *Runtime) InputLength(proc *exec.Process) uint32 {
+func InputLength(proc *exec.Process) uint32 {
+	self := proc.HostData().(*Runtime)
 	return uint32(len(self.Input))
 }
 
-func (self *Runtime) GetInput(proc *exec.Process, dst uint32) {
+func GetInput(proc *exec.Process, dst uint32) {
+	self := proc.HostData().(*Runtime)
 	_, err := proc.WriteAt(self.Input, int64(dst))
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (self *Runtime) CallOutputLength(proc *exec.Process) uint32 {
+func CallOutputLength(proc *exec.Process) uint32 {
+	self := proc.HostData().(*Runtime)
 	return uint32(len(self.CallOutPut))
 }
 
-func (self *Runtime) GetCallOut(proc *exec.Process, dst uint32) {
+func GetCallOut(proc *exec.Process, dst uint32) {
+	self := proc.HostData().(*Runtime)
 	_, err := proc.WriteAt(self.CallOutPut, int64(dst))
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (self *Runtime) GetCurrentTxHash(proc *exec.Process, ptr uint32) uint32 {
+func GetCurrentTxHash(proc *exec.Process, ptr uint32) uint32 {
+	self := proc.HostData().(*Runtime)
 	self.checkGas(CURRENT_TX_HASH_GAS)
 
 	txhash := self.Service.Tx.Hash()
@@ -190,7 +203,7 @@ func (self *Runtime) GetCurrentTxHash(proc *exec.Process, ptr uint32) uint32 {
 	return uint32(length)
 }
 
-func (self *Runtime) RaiseException(proc *exec.Process, ptr uint32, len uint32) {
+func RaiseException(proc *exec.Process, ptr uint32, len uint32) {
 	bs := make([]byte, len)
 	_, err := proc.ReadAt(bs, int64(ptr))
 	if err != nil {
@@ -201,7 +214,8 @@ func (self *Runtime) RaiseException(proc *exec.Process, ptr uint32, len uint32) 
 	panic(fmt.Errorf("[RaiseException]Contract RaiseException:%s\n", bs))
 }
 
-func (self *Runtime) CallContract(proc *exec.Process, contractAddr uint32, inputPtr uint32, inputLen uint32) uint32 {
+func CallContract(proc *exec.Process, contractAddr uint32, inputPtr uint32, inputLen uint32) uint32 {
+	self := proc.HostData().(*Runtime)
 
 	self.checkGas(CALL_CONTRACT_GAS)
 	contractAddrbytes := make([]byte, 20)
@@ -328,7 +342,7 @@ func (self *Runtime) CallContract(proc *exec.Process, contractAddr uint32, input
 	return uint32(len(self.CallOutPut))
 }
 
-func NewHostModule(host *Runtime) *wasm.Module {
+func NewHostModule() *wasm.Module {
 	m := wasm.NewModule()
 	m.Types = &wasm.SectionTypes{
 		Entries: []wasm.FunctionSig{
@@ -399,117 +413,117 @@ func NewHostModule(host *Runtime) *wasm.Module {
 	m.FunctionIndexSpace = []wasm.Function{
 		{ //0
 			Sig:  &m.Types.Entries[0],
-			Host: reflect.ValueOf(host.TimeStamp),
+			Host: reflect.ValueOf(TimeStamp),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //1
 			Sig:  &m.Types.Entries[1],
-			Host: reflect.ValueOf(host.BlockHeight),
+			Host: reflect.ValueOf(BlockHeight),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //2
 			Sig:  &m.Types.Entries[1],
-			Host: reflect.ValueOf(host.InputLength),
+			Host: reflect.ValueOf(InputLength),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //3
 			Sig:  &m.Types.Entries[1],
-			Host: reflect.ValueOf(host.CallOutputLength),
+			Host: reflect.ValueOf(CallOutputLength),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //4
 			Sig:  &m.Types.Entries[2],
-			Host: reflect.ValueOf(host.SelfAddress),
+			Host: reflect.ValueOf(SelfAddress),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //5
 			Sig:  &m.Types.Entries[2],
-			Host: reflect.ValueOf(host.CallerAddress),
+			Host: reflect.ValueOf(CallerAddress),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //6
 			Sig:  &m.Types.Entries[2],
-			Host: reflect.ValueOf(host.EntryAddress),
+			Host: reflect.ValueOf(EntryAddress),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //7
 			Sig:  &m.Types.Entries[2],
-			Host: reflect.ValueOf(host.GetInput),
+			Host: reflect.ValueOf(GetInput),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //8
 			Sig:  &m.Types.Entries[2],
-			Host: reflect.ValueOf(host.GetCallOut),
+			Host: reflect.ValueOf(GetCallOut),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //9
 			Sig:  &m.Types.Entries[3],
-			Host: reflect.ValueOf(host.Checkwitness),
+			Host: reflect.ValueOf(Checkwitness),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //10
 			Sig:  &m.Types.Entries[3],
-			Host: reflect.ValueOf(host.GetCurrentBlockHash),
+			Host: reflect.ValueOf(GetCurrentBlockHash),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //11
 			Sig:  &m.Types.Entries[3],
-			Host: reflect.ValueOf(host.GetCurrentTxHash),
+			Host: reflect.ValueOf(GetCurrentTxHash),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //12
 			Sig:  &m.Types.Entries[4],
-			Host: reflect.ValueOf(host.Ret),
+			Host: reflect.ValueOf(Ret),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //13
 			Sig:  &m.Types.Entries[4],
-			Host: reflect.ValueOf(host.Notify),
+			Host: reflect.ValueOf(Notify),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //14
 			Sig:  &m.Types.Entries[4],
-			Host: reflect.ValueOf(host.Debug),
+			Host: reflect.ValueOf(Debug),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //15
 			Sig:  &m.Types.Entries[5],
-			Host: reflect.ValueOf(host.CallContract),
+			Host: reflect.ValueOf(CallContract),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //16
 			Sig:  &m.Types.Entries[6],
-			Host: reflect.ValueOf(host.StorageRead),
+			Host: reflect.ValueOf(StorageRead),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //17
 			Sig:  &m.Types.Entries[7],
-			Host: reflect.ValueOf(host.StorageWrite),
+			Host: reflect.ValueOf(StorageWrite),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //18
 			Sig:  &m.Types.Entries[4],
-			Host: reflect.ValueOf(host.StorageDelete),
+			Host: reflect.ValueOf(StorageDelete),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //19
 			Sig:  &m.Types.Entries[9],
-			Host: reflect.ValueOf(host.ContractCreate),
+			Host: reflect.ValueOf(ContractCreate),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //20
 			Sig:  &m.Types.Entries[9],
-			Host: reflect.ValueOf(host.ContractMigrate),
+			Host: reflect.ValueOf(ContractMigrate),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //21
 			Sig:  &m.Types.Entries[10],
-			Host: reflect.ValueOf(host.ContractDelete),
+			Host: reflect.ValueOf(ContractDelete),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //22
 			Sig:  &m.Types.Entries[4],
-			Host: reflect.ValueOf(host.RaiseException),
+			Host: reflect.ValueOf(RaiseException),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 	}
