@@ -282,7 +282,7 @@ func (this *BlockSyncMgr) checkTimeout() {
 		}
 	}
 	this.lock.RUnlock()
-	curHeaderHeight := this.relayer.CurrentHeight()
+	curHeaderHeight := this.relayer.CurrHeaderHeight()
 	curBlockHeight := this.relayer.CurrentHeight()
 
 	for height, flightInfo := range headerTimeoutFlights {
