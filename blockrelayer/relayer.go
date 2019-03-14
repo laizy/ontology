@@ -76,14 +76,14 @@ func Open(pt string) (*Storage, error) {
 func (self *Storage) SaveBlock(block *types.Block) error {
 
 	sink := common.NewZeroCopySink(nil)
-	headerLen, err := block.SerializeExt(sink)
+	headerLen,unsignedLen, err := block.SerializeExt(sink)
 	if err != nil {
 		log.Errorf("serialize block err: %v", err)
 		return err
 	}
 	raw := sink.Bytes()
 	self.task <- &SaveTask{
-		block: &RawBlock{Hash: block.Hash(), HeaderSize: headerLen, Height: block.Header.Height, Payload: raw},
+		block: &RawBlock{Hash: block.Hash(), HeaderSize: headerLen, unSignedHeaderSize:unsignedLen, Height: block.Header.Height, Payload: raw},
 	}
 
 	return nil
@@ -261,6 +261,7 @@ type RawBlock struct {
 	Hash       common.Uint256
 	Height     uint32
 	HeaderSize uint32
+	unSignedHeaderSize uint32
 	Payload    []byte
 }
 
@@ -531,6 +532,7 @@ func (self *StorageBackend) saveBlock(block *RawBlock) error {
 		hash:       block.Hash,
 		height:     block.Height,
 		headerSize: uint32(block.HeaderSize),
+		unSignedHeaderSize: block.unSignedHeaderSize,
 		size:       uint32(block.Size()),
 		offset:     self.currInfo.blockOffset,
 	}
