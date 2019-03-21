@@ -889,17 +889,13 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		val, err := self.EvalStack.Pop()
 		switch val.GetType() {
 		case types.StructType:
-			array, err := val.AsStructValue()
-			if err != nil {
-				return FAULT, err
-			}
+			array, _ := val.AsStructValue()
 			array.Append(item)
 		case types.ArrayType:
-			array, err := val.AsArrayValue()
-			if err != nil {
-				return FAULT, err
-			}
+			array, _ := val.AsArrayValue()
 			array.Append(item)
+		default:
+			return FAULT, fmt.Errorf("[executor] ExecuteOp APPEND error, unknow datatype")
 		}
 	case REVERSE:
 		array, err := self.EvalStack.PopAsArray()
