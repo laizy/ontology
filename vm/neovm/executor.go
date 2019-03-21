@@ -895,7 +895,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 			array, _ := val.AsArrayValue()
 			array.Append(item)
 		default:
-			return FAULT, fmt.Errorf("[executor] ExecuteOp APPEND error, unknow datatype")
+			return FAULT, fmt.Errorf("[executor] ExecuteOp APPEND error, unknown datatype")
 		}
 	case REVERSE:
 		array, err := self.EvalStack.PopAsArray()
