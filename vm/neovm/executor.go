@@ -886,11 +886,21 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		if err != nil {
 			return FAULT, err
 		}
-		array, err := self.EvalStack.PopAsArray()
-		if err != nil {
-			return FAULT, err
+		val, err := self.EvalStack.Pop()
+		switch val.GetType() {
+		case types.StructType:
+			array, err := val.AsStructValue()
+			if err != nil {
+				return FAULT, err
+			}
+			array.Append(item)
+		case types.ArrayType:
+			array, err := val.AsArrayValue()
+			if err != nil {
+				return FAULT, err
+			}
+			array.Append(item)
 		}
-		array.Append(item)
 	case REVERSE:
 		array, err := self.EvalStack.PopAsArray()
 		if err != nil {
