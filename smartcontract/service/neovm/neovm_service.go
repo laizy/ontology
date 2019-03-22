@@ -136,6 +136,7 @@ func (this *NeoVmService) Invoke() (*vmty.VmValue, error) {
 	}
 	this.ContextRef.PushContext(&context.Context{ContractAddress: scommon.AddressFromVmCode(this.Code), Code: this.Code})
 	this.Engine.PushContext(vm.NewExecutionContext(this.Code))
+	var gasTable  [256]uint64
 	for {
 		//check the execution step count
 		if this.PreExec && !this.ContextRef.CheckExecStep() {
@@ -162,11 +163,16 @@ func (this *NeoVmService) Invoke() (*vmty.VmValue, error) {
 				return nil, ERR_GAS_INSUFFICIENT
 			}
 		} else {
-
-			opExec := vm.OpExecList[opCode]
-			price, err := GasPrice(this.GasTable, this.Engine, opExec.Name)
-			if err != nil {
-				return nil, err
+			price := gasTable[opCode]
+			if price == 0 {
+				opExec := vm.OpExecList[opCode]
+				p, err := GasPrice(this.GasTable, this.Engine, opExec.Name)
+				if err != nil {
+					return nil, err
+				}
+				price = p
+				// note: this works because the gas fee for opcode is constant
+				gasTable[opCode] = price
 			}
 			if !this.ContextRef.CheckUseGas(price) {
 				return nil, ERR_GAS_INSUFFICIENT
