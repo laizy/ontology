@@ -283,7 +283,10 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 			if err != nil {
 				return err
 			}
-			arr.Append(v)
+			err = arr.Append(v)
+			if err != nil {
+				return err
+			}
 		}
 		*self = VmValueFromArrayVal(arr)
 	case mapType:
@@ -378,18 +381,15 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 		for k := range self.mapval.Data {
 			unsortKey = append(unsortKey, k)
 		}
-		//TODO check consistence
 		sort.Strings(unsortKey)
 		for _, key := range unsortKey {
-			keyVal, err := VmValueFromBytes([]byte(key))
-			if err != nil {
-				return err
-			}
+			val := self.mapval.Data[key]
+			keyVal := val[0]
 			err = keyVal.Serialize(sink)
 			if err != nil {
 				return err
 			}
-			value := self.mapval.Data[key]
+			value := val[1]
 			err = value.Serialize(sink)
 			if err != nil {
 				return err
@@ -469,7 +469,7 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 		}
 		visited[p] = true
 		for _, v := range mp.Data {
-			return v.circularRefAndDepthDetection(visited, depth+1)
+			return v[1].circularRefAndDepthDetection(visited, depth+1)
 		}
 		delete(visited, p)
 		return false, nil
@@ -642,7 +642,7 @@ func (self *VmValue) stringify() string {
 		sort.Strings(unsortKey)
 		data := ""
 		for _, key := range unsortKey {
-			v := self.mapval.Data[key]
+			v := self.mapval.Data[key][1]
 			data += fmt.Sprintf("%x: %s,", key, v.stringify())
 		}
 		return fmt.Sprintf("map[%d]{%s}", len(self.mapval.Data), data)
@@ -694,7 +694,7 @@ func (self *VmValue) dump() string {
 		sort.Strings(unsortKey)
 		data := ""
 		for _, key := range unsortKey {
-			v := self.mapval.Data[key]
+			v := self.mapval.Data[key][1]
 			data += fmt.Sprintf("%x: %s,", key, v.dump())
 		}
 		return fmt.Sprintf("map[%d]{%s}", len(self.mapval.Data), data)

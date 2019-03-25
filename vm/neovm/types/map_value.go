@@ -5,11 +5,11 @@ import (
 )
 
 type MapValue struct {
-	Data map[string]VmValue
+	Data map[string][2]VmValue
 }
 
 func NewMapValue() *MapValue {
-	return &MapValue{Data: make(map[string]VmValue)}
+	return &MapValue{Data: make(map[string][2]VmValue)}
 }
 func (this *MapValue) Set(key, value VmValue) error {
 	skey, err := key.GetMapKey()
@@ -17,12 +17,12 @@ func (this *MapValue) Set(key, value VmValue) error {
 		return err
 	}
 
-	this.Data[skey] = value
+	this.Data[skey] = [2]VmValue{key, value}
 	return nil
 }
 
 func (this *MapValue) Reset() {
-	this.Data = make(map[string]VmValue)
+	this.Data = make(map[string][2]VmValue)
 }
 
 func (this *MapValue) Remove(key VmValue) error {
@@ -43,7 +43,8 @@ func (this *MapValue) Get(key VmValue) (value VmValue, ok bool, err error) {
 		return
 	}
 
-	value, ok = this.Data[skey]
+	val, ok := this.Data[skey]
+	value = val[1]
 	return
 }
 
@@ -63,7 +64,7 @@ func (this *MapValue) GetValues() ([]VmValue, error) {
 	}
 	values := make([]VmValue, len(this.Data))
 	for j, v := range keys {
-		values[j] = this.Data[v]
+		values[j] = this.Data[v][1]
 	}
 	return values, nil
 }
