@@ -140,11 +140,11 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 	case bytearrayType:
 		sink.WriteVarBytes(self.byteArray)
 	case boolType:
-		bool, err := self.AsBool()
+		b, err := self.AsBool()
 		if err != nil {
 			return err
 		}
-		sink.WriteBool(bool)
+		sink.WriteBool(b)
 	case integerType:
 		bs, err := self.AsBytes()
 		if err != nil {
@@ -331,8 +331,7 @@ func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 		}
 		*self = VmValueFromStructVal(structValue)
 	default:
-		return fmt.Errorf("[Deserialize] VmValue Deserialize failed, Unsupported type!")
-
+		return errors.ERR_BAD_TYPE
 	}
 	return nil
 }
@@ -477,7 +476,6 @@ func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, dept
 	default:
 		return false, nil
 	}
-	return false, nil
 }
 
 func (self *VmValue) AsInt64() (int64, error) {
