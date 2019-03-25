@@ -64,7 +64,7 @@ func TestSerialize(t *testing.T) {
 	mValue := VmValueFromMapValue(m)
 	sinkMap := new(common.ZeroCopySink)
 	mValue.Serialize(sinkMap)
-	assert.Equal(t,"82030201640101000474657374800400047465737401010202e8030201640202e803810400047465737401010202e803020164", common.ToHexString(sinkMap.Bytes()))
+	assert.Equal(t, "82030201640101000474657374800400047465737401010202e8030201640202e803810400047465737401010202e803020164", common.ToHexString(sinkMap.Bytes()))
 }
 
 func TestStructValue_Clone(t *testing.T) {
@@ -79,8 +79,7 @@ func TestStructValue_Clone(t *testing.T) {
 
 	uint64Value := VmValueFromUint64(uint64(100))
 
-
-	m:=NewMapValue()
+	m := NewMapValue()
 	m.Set(bsValue, bsValue)
 	s := NewStructValue()
 	s.Append(bsValue)
@@ -88,10 +87,10 @@ func TestStructValue_Clone(t *testing.T) {
 	s.Append(biginValue)
 	s.Append(uint64Value)
 	s.Append(VmValueFromMapValue(m))
-	s2,_ := s.Clone()
+	s2, _ := s.Clone()
 	structValue := VmValueFromStructVal(s)
 	m2 := s2.Data[s2.Len()-1]
-	mm2,_ := m2.AsMapValue()
+	mm2, _ := m2.AsMapValue()
 	mm2.Set(bsValue, uint64Value)
 	structValue2 := VmValueFromStructVal(s2)
 	assert.Equal(t, structValue.Equals(structValue2), true)

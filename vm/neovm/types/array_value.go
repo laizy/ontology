@@ -13,7 +13,6 @@ type ArrayValue struct {
 
 const initArraySize = 16
 
-
 func NewArrayValue() *ArrayValue {
 	return &ArrayValue{Data: make([]VmValue, 0, initArraySize)}
 }

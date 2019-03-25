@@ -991,17 +991,13 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		if err != nil {
 			return FAULT, err
 		}
-		keys, err := mapValue.GetMapSortedKey()
+		keys := mapValue.GetMapSortedKey()
 		if err != nil {
 			return FAULT, err
 		}
 		arr := types.NewArrayValue()
 		for _, v := range keys {
-			t, err := types.VmValueFromBytes([]byte(v))
-			if err != nil {
-				return FAULT, err
-			}
-			err = arr.Append(t)
+			err = arr.Append(v)
 			if err != nil {
 				return FAULT, err
 			}
