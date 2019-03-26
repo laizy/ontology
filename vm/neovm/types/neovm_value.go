@@ -377,12 +377,8 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 	case mapType:
 		sink.WriteByte(mapType)
 		sink.WriteVarUint(uint64(len(self.mapval.Data)))
-		var unsortKey []string
-		for k := range self.mapval.Data {
-			unsortKey = append(unsortKey, k)
-		}
-		sort.Strings(unsortKey)
-		for _, key := range unsortKey {
+		keys := self.mapval.getMapSortedKey()
+		for _, key := range keys {
 			val := self.mapval.Data[key]
 			keyVal := val[0]
 			err = keyVal.Serialize(sink)
@@ -635,13 +631,9 @@ func (self *VmValue) stringify() string {
 		}
 		return fmt.Sprintf("array[%d]{%s}", len(self.array.Data), data)
 	case mapType:
-		var unsortKey []string
-		for k := range self.mapval.Data {
-			unsortKey = append(unsortKey, k)
-		}
-		sort.Strings(unsortKey)
+		keys := self.mapval.getMapSortedKey()
 		data := ""
-		for _, key := range unsortKey {
+		for _, key := range keys {
 			v := self.mapval.Data[key][1]
 			data += fmt.Sprintf("%x: %s,", key, v.stringify())
 		}
