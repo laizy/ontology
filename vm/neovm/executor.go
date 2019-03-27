@@ -19,6 +19,7 @@
 package neovm
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
@@ -592,17 +593,33 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		if err != nil {
 			return FAULT, err
 		}
-	case NUMEQUAL, NUMNOTEQUAL, LT, GT, LTE, GTE:
-		left, right, err := self.EvalStack.PopPairAsIntVal()
+	case NUMNOTEQUAL, NUMEQUAL:
+		// note : pop as bytes to avoid hard-fork because previous version missing check
+		// whether the params are a valid 32 byte integer
+		left, right, err := self.EvalStack.PopPairAsBytes()
 		if err != nil {
 			return FAULT, err
 		}
 		var val bool
 		switch opcode {
 		case NUMEQUAL:
-			val = left.Cmp(right) == 0
+			val = bytes.Equal(left, right)
 		case NUMNOTEQUAL:
-			val = left.Cmp(right) != 0
+			val = !bytes.Equal(left, right)
+		default:
+			panic("unreachable")
+		}
+		err = self.EvalStack.PushBool(val)
+		if err != nil {
+			return FAULT, err
+		}
+	case LT, GT, LTE, GTE:
+		left, right, err := self.EvalStack.PopPairAsIntVal()
+		if err != nil {
+			return FAULT, err
+		}
+		var val bool
+		switch opcode {
 		case LT:
 			val = left.Cmp(right) < 0
 		case GT:
