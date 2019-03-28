@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The ontology Authors
+ * This file is part of The ontology library.
+ *
+ * The ontology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The ontology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neovm
 
 import (
@@ -20,6 +38,13 @@ func (self *ValueStack) PopAsBool() (bool, error) {
 
 func (self *ValueStack) PushInt64(val int64) error {
 	return self.Push(types.VmValueFromInt64(val))
+}
+
+func (self *ValueStack) PushUint64(val uint64) error {
+	return self.Push(types.VmValueFromUint64(val))
+}
+func (self *ValueStack) PushUint32(val uint32) error {
+	return self.Push(types.VmValueFromUint64(uint64(val)))
 }
 
 func (self *ValueStack) PopAsInt64() (int64, error) {

@@ -67,6 +67,9 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.Executor) error {
 
 func RuntimeSerialize(service *NeoVmService, engine *vm.Executor) error {
 	val, err := engine.EvalStack.Pop()
+	if err != nil {
+		return err
+	}
 	sink := new(common.ZeroCopySink)
 	err = val.Serialize(sink)
 	if err != nil {
@@ -135,7 +138,6 @@ func RuntimeBase58ToAddress(service *NeoVmService, engine *vm.Executor) error {
 }
 
 func RuntimeAddressToBase58(service *NeoVmService, engine *vm.Executor) error {
-
 	item, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
@@ -347,8 +349,6 @@ func DeserializeStackItem(r io.Reader) (items vmtypes.StackItems, err error) {
 	default:
 		return nil, errors.NewErr("unknown type")
 	}
-
-	return nil, nil
 }
 
 func CircularRefAndDepthDetection(value vmtypes.StackItems) bool {
@@ -424,5 +424,4 @@ func circularRefAndDepthDetection(value vmtypes.StackItems, visited map[uintptr]
 		return false
 	}
 
-	return false
 }

@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"github.com/ontio/ontology-crypto/keypair"
+	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/signature"
 	"github.com/ontio/ontology/vm/neovm/constants"
 	"github.com/ontio/ontology/vm/neovm/errors"
@@ -152,8 +153,11 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 	case JMP, JMPIF, JMPIFNOT, CALL:
 		if opcode == CALL {
 			caller := context.Clone()
-			caller.SetInstructionPointer(int64(caller.GetInstructionPointer() + 2))
-			err := self.PushContext(caller)
+			err := caller.SetInstructionPointer(int64(caller.GetInstructionPointer() + 2))
+			if err != nil {
+				return FAULT, err
+			}
+			err = self.PushContext(caller)
 			if err != nil {
 				return FAULT, err
 			}
@@ -184,7 +188,10 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 
 		if needJmp {
-			context.SetInstructionPointer(int64(offset))
+			err := context.SetInstructionPointer(int64(offset))
+			if err != nil {
+				return FAULT, err
+			}
 		}
 	case DCALL:
 		caller := context.Clone()
@@ -199,8 +206,13 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		if target < 0 || target >= int64(len(self.Context.Code)) {
 			return FAULT, errors.ERR_DCALL_OFFSET_ERROR
 		}
-		self.Context.SetInstructionPointer(target)
+		err = self.Context.SetInstructionPointer(target)
+		if err != nil {
+			return FAULT, err
+		}
 	case RET:
+		// omit handle error is ok, if context stack is empty, self.Context will be nil
+		// which will be checked outside before the next opcode call
 		self.Context, _ = self.PopContext()
 	case DUPFROMALTSTACK:
 		val, err := self.AltStack.Peek(0)
@@ -592,17 +604,35 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		if err != nil {
 			return FAULT, err
 		}
-	case NUMEQUAL, NUMNOTEQUAL, LT, GT, LTE, GTE:
+	case NUMNOTEQUAL, NUMEQUAL:
+		// note : pop as bytes to avoid hard-fork because previous version missing check
+		// whether the params are a valid 32 byte integer
+		left, right, err := self.EvalStack.PopPairAsBytes()
+		if err != nil {
+			return FAULT, err
+		}
+		l := common.BigIntFromNeoBytes(left)
+		r := common.BigIntFromNeoBytes(right)
+		var val bool
+		switch opcode {
+		case NUMEQUAL:
+			val = l.Cmp(r) == 0
+		case NUMNOTEQUAL:
+			val = l.Cmp(r) != 0
+		default:
+			panic("unreachable")
+		}
+		err = self.EvalStack.PushBool(val)
+		if err != nil {
+			return FAULT, err
+		}
+	case LT, GT, LTE, GTE:
 		left, right, err := self.EvalStack.PopPairAsIntVal()
 		if err != nil {
 			return FAULT, err
 		}
 		var val bool
 		switch opcode {
-		case NUMEQUAL:
-			val = left.Cmp(right) == 0
-		case NUMNOTEQUAL:
-			val = left.Cmp(right) != 0
 		case LT:
 			val = left.Cmp(right) < 0
 		case GT:
@@ -868,7 +898,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 		array := types.NewArrayValue()
 		for i := int64(0); i < count; i++ {
-			err = array.Append(types.VmValueFromInt64(0))
+			err = array.Append(types.VmValueFromBool(false))
 			if err != nil {
 				return FAULT, err
 			}
@@ -887,7 +917,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 		array := types.NewStructValue()
 		for i := int64(0); i < count; i++ {
-			array.Append(types.VmValueFromInt64(0))
+			array.Append(types.VmValueFromBool(false))
 		}
 		err = self.EvalStack.Push(types.VmValueFromStructVal(array))
 		if err != nil {
