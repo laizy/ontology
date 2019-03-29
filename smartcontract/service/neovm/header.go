@@ -142,7 +142,7 @@ func HeaderGetConsensusData(service *NeoVmService, engine *vm.Executor) error {
 	} else {
 		return errors.NewErr("[HeaderGetConsensusData] Wrong type!")
 	}
-	return engine.EvalStack.PushInt64(int64(data.ConsensusData))
+	return engine.EvalStack.PushUint64(data.ConsensusData)
 }
 
 // HeaderGetNextConsensus put header's consensus to vm stack

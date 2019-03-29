@@ -21,6 +21,9 @@ func (self *ValueStack) PopAsBool() (bool, error) {
 func (self *ValueStack) PushInt64(val int64) error {
 	return self.Push(types.VmValueFromInt64(val))
 }
+func (self *ValueStack) PushUint64(val uint64) error {
+	return self.Push(types.VmValueFromUint64(val))
+}
 
 func (self *ValueStack) PopAsInt64() (int64, error) {
 	val, err := self.Pop()
