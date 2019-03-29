@@ -108,7 +108,7 @@ func HeaderGetIndex(service *NeoVmService, engine *vm.Executor) error {
 	} else {
 		return fmt.Errorf("[HeaderGetIndex] Wrong type!")
 	}
-	return engine.EvalStack.PushInt64(int64(data.Height))
+	return engine.EvalStack.PushUint32(data.Height)
 }
 
 // HeaderGetTimestamp put header's timestamp to vm stack
@@ -125,7 +125,7 @@ func HeaderGetTimestamp(service *NeoVmService, engine *vm.Executor) error {
 	} else {
 		return errors.NewErr("[HeaderGetTimestamp] Wrong type!")
 	}
-	return engine.EvalStack.PushInt64(int64(data.Timestamp))
+	return engine.EvalStack.PushUint32(data.Timestamp)
 }
 
 // HeaderGetConsensusData put header's consensus data to vm stack
