@@ -348,10 +348,10 @@ func TestStructValue(t *testing.T) {
 	s5.Append(types.VmValueFromStructVal(s3))
 
 	//checkMultiStackOpCode(t, []OpCode{PICKITEM}, []Value{s, int64(1)}, []Value{"value"})
-	//checkAltStackOpCodeNew(t, []byte{byte(PICKITEM)}, [2][]Value{[]Value{s, int64(1)}, {}}, [2][]Value{[]Value{[]byte("value")}, {}})
-	//checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK),byte(PUSH1), byte(DUPFROMALTSTACK),byte(PUSH2),byte(XSWAP), byte(SETITEM), byte(FROMALTSTACK)},
-	//	[2][]Value{[]Value{[]byte("value2"),s}},
-	//	[2][]Value{[]Value{s4}})
+	checkAltStackOpCodeNew(t, []byte{byte(PICKITEM)}, [2][]Value{[]Value{s, int64(1)}, {}}, [2][]Value{[]Value{[]byte("value")}, {}})
+	checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK), byte(PUSH1), byte(DUPFROMALTSTACK), byte(PUSH2), byte(XSWAP), byte(SETITEM), byte(FROMALTSTACK)},
+		[2][]Value{[]Value{[]byte("value2"), s}},
+		[2][]Value{[]Value{s4}})
 
 	checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK), byte(PUSH1), byte(DUPFROMALTSTACK), byte(PUSH2), byte(XSWAP), byte(SETITEM), byte(FROMALTSTACK)},
 		[2][]Value{[]Value{s3, s}},
@@ -371,6 +371,8 @@ func TestStructValue(t *testing.T) {
 
 	checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK), byte(DUPFROMALTSTACK), byte(PUSH1), byte(XSWAP), byte(APPEND), byte(FROMALTSTACK)},
 		[2][]Value{[]Value{s3, s6}}, [2][]Value{[]Value{s7}})
+
+	checkAltStackOpCodeNew(t, []byte{byte(PUSH1), byte(PICKITEM)}, [2][]Value{[]Value{s7}}, [2][]Value{[]Value{s3}})
 }
 
 func TestStringOpcode(t *testing.T) {
