@@ -245,6 +245,8 @@ func TestArithmetic(t *testing.T) {
 	checkStackOpCode(t, DIV, []Value{3, 2}, []Value{1})
 	checkStackOpCode(t, DIV, []Value{103, 2}, []Value{51})
 
+	checkStackOpCode(t, MOD, []Value{1, 2}, []Value{1})
+
 	checkStackOpCode(t, MAX, []Value{3, 2}, []Value{3})
 	checkStackOpCode(t, MAX, []Value{-3, 2}, []Value{2})
 
@@ -332,17 +334,43 @@ func TestStructValue(t *testing.T) {
 	s.Append(k)
 	s.Append(v)
 
+	s4 := types.NewStructValue()
+	v2, err := types.VmValueFromBytes([]byte("value2"))
+	assert.Equal(t, err, nil)
+	s4.Append(k)
+	s4.Append(v2)
+
+	s3 := types.NewStructValue()
+	s3.Append(k)
+
+	s5 := types.NewStructValue()
+	s5.Append(k)
+	s5.Append(types.VmValueFromStructVal(s3))
+
 	//checkMultiStackOpCode(t, []OpCode{PICKITEM}, []Value{s, int64(1)}, []Value{"value"})
-	checkAltStackOpCodeNew(t, []byte{byte(PICKITEM)}, [2][]Value{[]Value{s, int64(1)}, {}}, [2][]Value{[]Value{[]byte("value")}, {}})
-	checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK), byte(DUPFROMALTSTACK), byte(SETITEM), byte(FROMALTSTACK)},
-		[2][]Value{[]Value{s, int64(1), []byte("value2")}, {}},
-		[2][]Value{[]Value{[]byte("value2")}, {}})
+	//checkAltStackOpCodeNew(t, []byte{byte(PICKITEM)}, [2][]Value{[]Value{s, int64(1)}, {}}, [2][]Value{[]Value{[]byte("value")}, {}})
+	//checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK),byte(PUSH1), byte(DUPFROMALTSTACK),byte(PUSH2),byte(XSWAP), byte(SETITEM), byte(FROMALTSTACK)},
+	//	[2][]Value{[]Value{[]byte("value2"),s}},
+	//	[2][]Value{[]Value{s4}})
+
+	checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK), byte(PUSH1), byte(DUPFROMALTSTACK), byte(PUSH2), byte(XSWAP), byte(SETITEM), byte(FROMALTSTACK)},
+		[2][]Value{[]Value{s3, s}},
+		[2][]Value{[]Value{s5}})
 
 	s2 := types.NewStructValue()
 	s2.Append(types.VmValueFromBool(false))
 	checkAltStackOpCodeNew(t, []byte{byte(NEWSTRUCT)},
 		[2][]Value{[]Value{int64(1)}}, [2][]Value{[]Value{s2}})
 
+	s7 := types.NewStructValue()
+	s7.Append(types.VmValueFromBool(false))
+	s7.Append(types.VmValueFromStructVal(s3))
+
+	s6 := types.NewStructValue()
+	s6.Append(types.VmValueFromBool(false))
+
+	checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK), byte(DUPFROMALTSTACK), byte(PUSH1), byte(XSWAP), byte(APPEND), byte(FROMALTSTACK)},
+		[2][]Value{[]Value{s3, s6}}, [2][]Value{[]Value{s7}})
 }
 
 func TestStringOpcode(t *testing.T) {
@@ -443,6 +471,11 @@ func TestAssertEqual(t *testing.T) {
 	val2 := newVmValue(t, buf)
 
 	assertEqual(t, val1, val2)
+}
+
+func TestThrow(t *testing.T) {
+	checkStackOpCode(t, THROW, []Value{}, []Value{})
+	checkStackOpCode(t, THROWIFNOT, []Value{true}, []Value{})
 }
 
 func checkAltStackOpCodeOld(t *testing.T, code []byte, origin [2][]Value, expected [2][]Value) {
