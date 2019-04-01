@@ -7,20 +7,20 @@ import (
 
 func TestNewArray(t *testing.T) {
 	a := NewArrayValue()
-	for i:=0;i< 1024;i++ {
-		v:=VmValueFromInt64(int64(i))
+	for i := 0; i < 1024; i++ {
+		v := VmValueFromInt64(int64(i))
 		err := a.Append(v)
 		assert.Equal(t, err, nil)
 	}
-	v:=VmValueFromInt64(int64(1024))
+	v := VmValueFromInt64(int64(1024))
 	err := a.Append(v)
 	assert.False(t, err == nil)
 }
 
 func TestArrayValue_RemoveAt(t *testing.T) {
 	a := NewArrayValue()
-	for i:=0;i< 10;i++ {
-		v:=VmValueFromInt64(int64(i))
+	for i := 0; i < 10; i++ {
+		v := VmValueFromInt64(int64(i))
 		err := a.Append(v)
 		assert.Equal(t, err, nil)
 	}
