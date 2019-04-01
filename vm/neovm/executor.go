@@ -887,7 +887,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 		array := types.NewArrayValue()
 		for i := int64(0); i < count; i++ {
-			err = array.Append(types.VmValueFromInt64(0))
+			err = array.Append(types.VmValueFromBool(false))
 			if err != nil {
 				return FAULT, err
 			}

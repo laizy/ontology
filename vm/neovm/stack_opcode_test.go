@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/ontio/ontology-crypto/keypair"
+	s "github.com/ontio/ontology-crypto/signature"
 	"golang.org/x/crypto/ripemd160"
 	"math/big"
 	"testing"
@@ -60,6 +62,8 @@ func newVmValue(t *testing.T, data Value) types.VmValue {
 			mp.Set(newVmValue(t, key), newVmValue(t, value))
 		}
 		return types.VmValueFromMapValue(mp)
+	case *types.StructValue:
+		return types.VmValueFromStructVal(data.(*types.StructValue))
 	case interfaces.Interop:
 		return types.VmValueFromInteropValue(types.NewInteropValue(v))
 	default:
@@ -264,6 +268,7 @@ func TestArithmetic(t *testing.T) {
 	checkStackOpCode(t, NZ, []Value{10}, []Value{true})
 }
 
+
 func TestArrayOpCode(t *testing.T) {
 	checkStackOpCode(t, ARRAYSIZE, []Value{"12345"}, []Value{5})
 	checkStackOpCode(t, ARRAYSIZE, []Value{[]Value{1, 2, 3}}, []Value{3})
@@ -275,6 +280,12 @@ func TestArrayOpCode(t *testing.T) {
 
 	checkStackOpCode(t, PICKITEM, []Value{[]Value{"ccc", "bbb", "aaa"}, 0}, []Value{"ccc"})
 	checkStackOpCode(t, PICKITEM, []Value{[]Value{"ccc", "bbb", "aaa"}, 1}, []Value{"bbb"})
+
+	checkStackOpCode(t, NEWARRAY, []Value{int64(1)}, []Value{[]Value{false}})
+
+	checkMultiStackOpCode(t, []OpCode{TOALTSTACK, DUPFROMALTSTACK,PUSH1, REMOVE,FROMALTSTACK}, []Value{[]Value{"ccc","bbb","aaa"}}, []Value{[]Value{"ccc", "aaa"}})
+
+	checkMultiStackOpCode(t, []OpCode{TOALTSTACK,PUSH1,DUPFROMALTSTACK,PUSH2,XSWAP,SETITEM,FROMALTSTACK}, []Value{"ddd",[]Value{"ccc","bbb","aaa"}}, []Value{[]Value{"ccc","ddd","aaa"}})
 
 	// reverse will pop the value from stack
 	checkStackOpCode(t, REVERSE, []Value{[]Value{"ccc", "bbb", "aaa"}}, []Value{})
@@ -306,6 +317,33 @@ func TestMapValue(t *testing.T) {
 	checkMultiStackOpCode(t, []OpCode{HASKEY}, []Value{mp, "key"}, []Value{true})
 	checkMultiStackOpCode(t, []OpCode{KEYS}, []Value{mp}, []Value{[]Value{"key", "key2"}})
 	checkMultiStackOpCode(t, []OpCode{VALUES}, []Value{mp}, []Value{[]Value{"value", "value2"}})
+	checkMultiStackOpCode(t, []OpCode{PICKITEM}, []Value{mp, "key"}, []Value{"value"})
+	checkMultiStackOpCode(t, []OpCode{TOALTSTACK,DUPFROMALTSTACK,SETITEM,FROMALTSTACK},
+	[]Value{mp, "key", "value3"},[]Value{"value3"})
+	m := make(map[interface{}]interface{}, 0)
+	checkStackOpCode(t, NEWMAP, []Value{},[]Value{m})
+
+}
+func TestStructValue(t *testing.T) {
+	s := types.NewStructValue()
+	k, err := types.VmValueFromBytes([]byte("key"))
+	assert.Equal(t, err, nil)
+	v, err := types.VmValueFromBytes([]byte("value"))
+	assert.Equal(t, err, nil)
+	s.Append(k)
+	s.Append(v)
+
+	//checkMultiStackOpCode(t, []OpCode{PICKITEM}, []Value{s, int64(1)}, []Value{"value"})
+	checkAltStackOpCodeNew(t, []byte{byte(PICKITEM)}, [2][]Value{[]Value{s, int64(1)},{}}, [2][]Value{[]Value{[]byte("value")},{}})
+	checkAltStackOpCodeNew(t, []byte{byte(TOALTSTACK),byte(DUPFROMALTSTACK),byte(SETITEM),byte(FROMALTSTACK)},
+	[2][]Value{[]Value{s, int64(1),[]byte("value2")},{}},
+	[2][]Value{[]Value{[]byte("value2")},{}})
+
+	s2 := types.NewStructValue()
+	s2.Append(types.VmValueFromBool(false))
+	checkAltStackOpCodeNew(t, []byte{byte(NEWSTRUCT)},
+		[2][]Value{[]Value{int64(1)}},[2][]Value{[]Value{s2}})
+
 }
 
 func TestStringOpcode(t *testing.T) {
@@ -386,6 +424,18 @@ func TestHashOpCode(t *testing.T) {
 	sh.Write(data)
 	hash = sh.Sum(nil)
 	checkStackOpCode(t, SHA256, []Value{data}, []Value{hash[:]})
+}
+
+func TestVerify(t *testing.T) {
+	pkAlgorithm := keypair.PK_ECDSA
+	params := keypair.P256
+	pri, pub, _ := keypair.GenerateKeyPair(pkAlgorithm, params)
+	sig, err := s.Sign(s.SHA256withECDSA, pri, []byte("test"), nil)
+	assert.Equal(t, err, nil)
+	sigBytes,err := s.Serialize(sig)
+	assert.Equal(t, err, nil)
+	checkAltStackOpCodeNew(t, []byte{byte(VERIFY)},
+	[2][]Value{[]Value{keypair.SerializePublicKey(pub), sigBytes, []byte("test")}, {}}, [2][]Value{[]Value{true}, {}})
 }
 
 func TestAssertEqual(t *testing.T) {
