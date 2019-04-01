@@ -99,10 +99,6 @@ var (
 	VM_EXEC_FAULT         = errors.NewErr("[NeoVmService] vm execute state fault!")
 )
 
-var (
-	BYTE_ZERO_20 = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-)
-
 type (
 	Execute   func(service *NeoVmService, engine *vm.Executor) error
 	Validator func(engine *vm.ExecutionEngine) error
@@ -180,7 +176,7 @@ func (this *NeoVmService) Invoke() (*vmty.VmValue, error) {
 			if err != nil {
 				return nil, fmt.Errorf("[Appcall] read contract address error:%v", err)
 			}
-			if bytes.Compare(address, BYTE_ZERO_20) == 0 {
+			if bytes.Compare(address, scommon.ADDRESS_EMPTY[:]) == 0 {
 				if this.Engine.EvalStack.Count() < 1 {
 					return nil, fmt.Errorf("[Appcall] Too few input parameters:%d", this.Engine.EvalStack.Count())
 				}
