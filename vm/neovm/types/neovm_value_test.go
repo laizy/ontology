@@ -254,3 +254,15 @@ func TestVmValue_AsBool(t *testing.T) {
 	res, _ = val.AsBool()
 	assert.True(t, res)
 }
+
+func TestVmValueFromInteropValue(t *testing.T) {
+	u, _ := common.Uint256FromHexString("a00000000000000000000a000000000000000000000000000000000000000000")
+	val_u := NewInteropValue(&u)
+	vmVal_u := VmValueFromInteropValue(val_u)
+
+	u2, _ := common.Uint256FromHexString("a00000000000000000000a000000000000000000000000000000000000000001")
+
+	val_u2 := NewInteropValue(&u2)
+	vmVal_u2 := VmValueFromInteropValue(val_u2)
+	assert.False(t, vmVal_u.Equals(vmVal_u2))
+}

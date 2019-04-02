@@ -67,7 +67,7 @@ func TestRuntimeSerialize(t *testing.T) {
 	mRes, err := SerializeStackItem(m)
 	fmt.Println(common.ToHexString(mRes))
 
-	b,_ := new(big.Int).SetString("9923372036854775807",10)
+	b, _ := new(big.Int).SetString("9923372036854775807", 10)
 	in := types.NewInteger(b)
 	arr = types.NewArray(nil)
 	arr.Add(in)
@@ -78,7 +78,7 @@ func TestRuntimeSerialize(t *testing.T) {
 	in_t := types.NewInteger(b)
 	m_old := types.NewMap()
 	m_old.Add(types.NewByteArray([]byte("key")), in_t)
-	bss,err := SerializeStackItem(m_old)
+	bss, err := SerializeStackItem(m_old)
 	assert.Nil(t, err)
 	assert.Equal(t, "820100036b65790209ffffc58e4ae6b68900", common.ToHexString(bss))
 }
