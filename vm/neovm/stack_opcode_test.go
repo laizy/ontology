@@ -8,6 +8,7 @@ import (
 	"github.com/ontio/ontology-crypto/keypair"
 	s "github.com/ontio/ontology-crypto/signature"
 	"golang.org/x/crypto/ripemd160"
+	"math"
 	"math/big"
 	"testing"
 
@@ -246,7 +247,9 @@ func TestArithmetic(t *testing.T) {
 	checkStackOpCode(t, DIV, []Value{103, 2}, []Value{51})
 
 	checkStackOpCode(t, MOD, []Value{1, 2}, []Value{1})
-
+	checkStackOpCode(t, MOD, []Value{math.MaxInt64, 2}, []Value{1})
+	checkStackOpCode(t, MOD, []Value{-math.MaxInt64, 2}, []Value{-1})
+	
 	checkStackOpCode(t, MAX, []Value{3, 2}, []Value{3})
 	checkStackOpCode(t, MAX, []Value{-3, 2}, []Value{2})
 

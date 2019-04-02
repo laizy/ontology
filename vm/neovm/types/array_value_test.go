@@ -14,7 +14,7 @@ func TestNewArray(t *testing.T) {
 	}
 	v := VmValueFromInt64(int64(1024))
 	err := a.Append(v)
-	assert.False(t, err == nil)
+	assert.NotNil(t, err)
 }
 
 func TestArrayValue_RemoveAt(t *testing.T) {
@@ -25,9 +25,9 @@ func TestArrayValue_RemoveAt(t *testing.T) {
 		assert.Equal(t, err, nil)
 	}
 	err := a.RemoveAt(-1)
-	assert.False(t, err == nil)
+	assert.NotNil(t, err)
 	err = a.RemoveAt(10)
-	assert.False(t, err == nil)
+	assert.NotNil(t, err)
 
 	assert.Equal(t, a.Len(), int64(10))
 	a.RemoveAt(0)
