@@ -51,6 +51,8 @@ func (this *ExecutionEngine) PopContext() {
 	}
 	if len(this.Contexts) != 0 {
 		this.Context = this.CurrentContext()
+	} else {
+		this.Context = nil
 	}
 }
 
@@ -59,15 +61,35 @@ func (this *ExecutionEngine) PushContext(context *ExecutionContext) {
 	this.Context = this.CurrentContext()
 }
 
+const MAX_TEST_STEP = 1000000
+
 func (this *ExecutionEngine) Execute() error {
+	step := 0
 	this.State = this.State & (^BREAK)
 	for {
+		if step > MAX_TEST_STEP {
+			return errors.ERR_OUT_OF_GAS
+		}
+		step += 1
 		if this.State == FAULT || this.State == HALT || this.State == BREAK {
+			break
+		}
+		if this.Context == nil {
 			break
 		}
 		err := this.ExecuteCode()
 		if err != nil {
 			break
+		}
+
+		if this.OpCode >= PUSHBYTES1 && this.OpCode <= PUSHBYTES75 {
+			bs, err := this.Context.OpReader.ReadBytes(int(this.OpCode))
+			if err != nil {
+				this.State = FAULT
+				return  err
+			}
+			PushData(this, bs)
+			continue
 		}
 
 		err = this.ValidateOp()

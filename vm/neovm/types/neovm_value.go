@@ -129,7 +129,13 @@ func VmValueFromIntValue(val IntValue) VmValue {
 
 func (self *VmValue) AsBytes() ([]byte, error) {
 	switch self.valType {
-	case integerType, boolType:
+	case boolType:
+		if self.integer == 0 {
+			return []byte{0}, nil
+		} else {
+			return []byte{1}, nil
+		}
+	case integerType:
 		return common.BigIntToNeoBytes(big.NewInt(self.integer)), nil
 	case bigintType:
 		return common.BigIntToNeoBytes(self.bigInt), nil
@@ -501,7 +507,7 @@ func (self *VmValue) AsInt64() (int64, error) {
 	}
 	if val.isbig {
 		if val.bigint.IsInt64() == false {
-			return 0, err
+			return 0, errors.ERR_INTEGER_UNDERFLOW
 		}
 		return val.bigint.Int64(), nil
 	}
@@ -671,20 +677,21 @@ func (self *VmValue) stringify() string {
 }
 
 //only for debug/testing
-func (self *VmValue) Dump() (string, error) {
+func (self *VmValue) Dump() string {
 	b, err := self.CircularRefAndDepthDetection()
 	if err != nil {
-		return "", fmt.Errorf("error: %v", err)
+		return fmt.Sprintf("error: %v", err)
 	}
 	if b {
-		return "", fmt.Errorf("error: can not serialize circular reference data")
+		return "error: can not serialize circular reference data"
 	}
-	return self.dump(), nil
+	return self.dump()
 }
+
 func (self *VmValue) dump() string {
 	switch self.valType {
 	case boolType:
-		bs, _ := self.AsBytes()
+		bs, _ := self.AsBool()
 		return fmt.Sprintf("bool(%v)", bs)
 	case integerType:
 		return fmt.Sprintf("int(%d)", self.integer)

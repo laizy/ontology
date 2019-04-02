@@ -68,15 +68,33 @@ func (self *Executor) PushContext(context *ExecutionContext) error {
 }
 
 func (self *Executor) Execute() error {
+	step := 0
 	self.State = self.State & (^BREAK)
 	for self.Context != nil {
+		if step > MAX_TEST_STEP {
+			return errors.ERR_OUT_OF_GAS
+		}
+		step += 1
+		fmt.Printf("eval stack: %s", self.EvalStack.Dump())
+		fmt.Printf("alt stack: %s", self.AltStack.Dump())
 		if self.State == FAULT || self.State == HALT || self.State == BREAK {
 			break
 		}
+		if self.Context == nil {
+			break
+		}
+
 		opcode, eof := self.Context.ReadOpCode()
 		if eof {
 			break
 		}
+		name := OpExecList[opcode].Name
+		if opcode >= PUSHBYTES1 && opcode <= PUSHBYTES75 {
+			name = "pushbytes"
+		}
+
+		fmt.Printf("opcode: %s\n", name)
+
 		var err error
 		self.State, err = self.ExecuteOp(opcode, self.Context)
 		if err != nil {
@@ -133,6 +151,9 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 		}
 
 		data, err := context.OpReader.ReadBytes(numBytes)
+		if err != nil {
+			return FAULT, err
+		}
 		val, err := types.VmValueFromBytes(data)
 		if err != nil {
 			return FAULT, err
@@ -1065,7 +1086,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMSta
 			return FAULT, nil
 		}
 	default:
-		panic("unimplemented!")
+		return FAULT, errors.ERR_NOT_SUPPORT_OPCODE
 	}
 
 	return NONE, nil
