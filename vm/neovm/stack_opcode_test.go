@@ -238,6 +238,7 @@ func TestStackOpCode(t *testing.T) {
 }
 
 func TestArithmetic(t *testing.T) {
+
 	checkStackOpCode(t, ADD, []Value{1, 2}, []Value{3})
 	checkStackOpCode(t, SUB, []Value{1, 2}, []Value{-1})
 
@@ -249,7 +250,7 @@ func TestArithmetic(t *testing.T) {
 	checkStackOpCode(t, MOD, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, MOD, []Value{math.MaxInt64, 2}, []Value{1})
 	checkStackOpCode(t, MOD, []Value{-math.MaxInt64, 2}, []Value{-1})
-	
+
 	checkStackOpCode(t, MAX, []Value{3, 2}, []Value{3})
 	checkStackOpCode(t, MAX, []Value{-3, 2}, []Value{2})
 
