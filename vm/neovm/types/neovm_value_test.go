@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ontio/ontology/common"
 	"github.com/stretchr/testify/assert"
+	"math"
 	"math/big"
 	"testing"
 )
@@ -123,4 +124,26 @@ func TestVmValue_Equals(t *testing.T) {
 	structValue2 := VmValueFromStructVal(s2)
 	res := structValue.Equals(structValue2)
 	assert.Equal(t, res, true)
+}
+
+func TestVmValue_BuildParamToNative(t *testing.T) {
+	inte,err := VmValueFromBigInt(new(big.Int).SetUint64(math.MaxUint64))
+	assert.Nil(t, err)
+	boo := VmValueFromBool(false)
+	bs,err := VmValueFromBytes([]byte("hello"))
+	assert.Nil(t, err)
+
+	stru := NewStructValue()
+	stru.Append(inte)
+	stru.Append(boo)
+	stru.Append(bs)
+	arr := NewArrayValue()
+	arr.Append(VmValueFromStructVal(stru))
+
+	res := VmValueFromArrayVal(arr)
+
+	sink := common.NewZeroCopySink(nil)
+	err = res.BuildParamToNative(sink)
+	assert.Nil(t, err)
+	assert.Equal(t, "010109ffffffffffffffff00000568656c6c6f",common.ToHexString(sink.Bytes()))
 }

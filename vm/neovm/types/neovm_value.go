@@ -145,7 +145,7 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 			return err
 		}
 		sink.WriteBool(b)
-	case integerType:
+	case integerType, bigintType:
 		bs, err := self.AsBytes()
 		if err != nil {
 			return err
@@ -161,6 +161,7 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 		}
 	case structType:
 		for _, v := range self.structval.Data {
+			fmt.Println("v:", v)
 			err := v.BuildParamToNative(sink)
 			if err != nil {
 				return err
@@ -170,7 +171,7 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 		//TODO
 		return errors.ERR_BAD_TYPE
 	default:
-		panic("unreacheable!")
+		return fmt.Errorf("convert neovm params to native invalid type support: %x", self.valType)
 	}
 	return nil
 }
