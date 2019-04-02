@@ -220,10 +220,14 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, NEGATE, []Value{1}, []Value{-1})
 	checkStackOpCode(t, ABS, []Value{-9999}, []Value{9999})
 	checkStackOpCode(t, ABS, []Value{9999}, []Value{9999})
+	a,_:=new(big.Int).SetString("-83786976294838206464", 10)
+	checkStackOpCode(t, ABS, []Value{a}, []Value{new(big.Int).Abs(a)})
 	checkStackOpCode(t, NOT, []Value{true}, []Value{false})
 
-	checkStackOpCode(t, SHL, []Value{1, 2}, []Value{4})
+	b,_:=new(big.Int).SetString("73786976294838206464", 10)
+	checkStackOpCode(t, SHL, []Value{1, new(big.Int).SetUint64(uint64(20))}, []Value{1<<20})
 	checkStackOpCode(t, SHR, []Value{4, 1}, []Value{2})
+	checkStackOpCode(t, SHR, []Value{b, 10}, []Value{2<<55})
 	checkStackOpCode(t, BOOLAND, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, BOOLOR, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, NUMEQUAL, []Value{1, 2}, []Value{false})
@@ -234,7 +238,6 @@ func TestStackOpCode(t *testing.T) {
 	checkStackOpCode(t, GTE, []Value{1, 2}, []Value{false})
 	checkStackOpCode(t, MIN, []Value{1, 2}, []Value{1})
 	checkStackOpCode(t, MAX, []Value{1, 2}, []Value{2})
-
 }
 
 func TestArithmetic(t *testing.T) {
