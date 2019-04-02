@@ -25,5 +25,5 @@ func TestBuildParamToNative(t *testing.T) {
 	buff := new(bytes.Buffer)
 	err := BuildParamToNative(buff, arr)
 	assert.Nil(t, err)
-	assert.Equal(t, "010109ffffffffffffffff00000568656c6c6f",common.ToHexString(buff.Bytes()))
+	assert.Equal(t, "010109ffffffffffffffff00000568656c6c6f", common.ToHexString(buff.Bytes()))
 }
