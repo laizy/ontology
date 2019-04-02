@@ -163,14 +163,13 @@ func TestRsh(t *testing.T) {
 	b := new(big.Int).SetUint64(math.MaxUint64)
 	val2, err := types.IntValFromBigInt(b)
 	assert.Nil(t, err)
-	res,err := val.Rsh(val2)
+	res, err := val.Rsh(val2)
 	assert.Nil(t, err)
-
 
 	left := new(big.Int).SetInt64(math.MaxInt64)
 	right := new(big.Int).SetUint64(math.MaxUint64)
 	res2 := BigIntZip(left, right, SHR)
-    res22, err := types.IntValFromBigInt(res2)
-    assert.Nil(t, err)
+	res22, err := types.IntValFromBigInt(res2)
+	assert.Nil(t, err)
 	assert.Equal(t, res, res22)
 }
