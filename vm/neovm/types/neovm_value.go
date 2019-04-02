@@ -161,7 +161,6 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 		}
 	case structType:
 		for _, v := range self.structval.Data {
-			fmt.Println("v:", v)
 			err := v.BuildParamToNative(sink)
 			if err != nil {
 				return err
@@ -170,8 +169,10 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 	case mapType:
 		//TODO
 		return errors.ERR_BAD_TYPE
+	case interopType:
+		return errors.ERR_BAD_TYPE
 	default:
-		return fmt.Errorf("convert neovm params to native invalid type support: %x", self.valType)
+		panic("unreachable!")
 	}
 	return nil
 }
