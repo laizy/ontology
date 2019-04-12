@@ -26,7 +26,6 @@ import (
 	"github.com/ontio/ontology/common"
 )
 
-
 type RawHeader struct {
 	Version          uint32
 	PrevBlockHash    common.Uint256
@@ -41,7 +40,6 @@ type RawHeader struct {
 	//Program *program.Program
 	Bookkeepers [][]byte
 	SigData     [][]byte
-	//BookkeepersAndSigData []byte
 
 	hash *common.Uint256
 }
@@ -94,10 +92,6 @@ func (bd *RawHeader) Deserialization(source *common.ZeroCopySource) error {
 	if irregular {
 		return common.ErrIrregularData
 	}
-	//bd.BookkeepersAndSigData, eof = source.NextBytes(source.Len())
-	//if eof {
-	//	return io.ErrUnexpectedEOF
-	//}
 	for i := 0; i < int(n); i++ {
 		buf, _, irregular, eof := source.NextVarBytes()
 		if eof {
@@ -106,11 +100,6 @@ func (bd *RawHeader) Deserialization(source *common.ZeroCopySource) error {
 		if irregular {
 			return common.ErrIrregularData
 		}
-
-		//pubkey, err := keypair.DeserializePublicKey(buf)
-		//if err != nil {
-		//	return err
-		//}
 		bd.Bookkeepers = append(bd.Bookkeepers, buf)
 	}
 
@@ -135,7 +124,6 @@ func (bd *RawHeader) Deserialization(source *common.ZeroCopySource) error {
 
 	return nil
 }
-
 
 func (bd *RawHeader) deserializationUnsigned(source *common.ZeroCopySource) error {
 	var irregular, eof bool
