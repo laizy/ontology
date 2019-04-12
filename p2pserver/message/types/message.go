@@ -143,6 +143,7 @@ func ReadMessage(reader io.Reader) (Message, uint32, error) {
 	return msg, hdr.Length, nil
 }
 
+
 func MakeEmptyMessage(cmdType string) (Message, error) {
 	switch cmdType {
 	case common.PING_TYPE:
