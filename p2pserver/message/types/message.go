@@ -20,10 +20,13 @@ package types
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.uber.org/atomic"
 	"io"
+	"os"
 
 	comm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
@@ -77,6 +80,8 @@ func newMessageHeader(cmd string, length uint32, checksum [common.CHECKSUM_LEN]b
 	return msgh
 }
 
+var count = atomic.NewUint64(0)
+
 func WriteMessage(sink *comm.ZeroCopySink, msg Message) error {
 	pstart := sink.Size()
 	sink.NextBytes(common.MSG_HDR_LEN) // can not save the buf, since it may reallocate in sink
@@ -84,12 +89,20 @@ func WriteMessage(sink *comm.ZeroCopySink, msg Message) error {
 	if err != nil {
 		return err
 	}
+	msgId := count.Inc()
+	sink.WriteUint64(msgId)
+
 	pend := sink.Size()
 	total := pend - pstart
 	payLen := total - common.MSG_HDR_LEN
 
 	sink.BackUp(total)
 	buf := sink.NextBytes(total)
+
+	sha := sha256.New()
+	sha.Write(buf)
+	fmt.Fprintf(os.Stderr, "write message: id:%d, sha256:%x", msgId, sha.Sum(nil))
+
 	checksum := common.Checksum(buf[common.MSG_HDR_LEN:])
 	hdr := newMessageHeader(msg.CmdType(), uint32(payLen), checksum)
 
@@ -121,6 +134,12 @@ func ReadMessage(reader io.Reader) (Message, uint32, error) {
 	if err != nil {
 		return nil, 0, err
 	}
+	source := comm.NewZeroCopySource(buf)
+
+	msgId, _ := source.NextUint64()
+	sha := sha256.New()
+	sha.Write(buf)
+	fmt.Fprintf(os.Stderr, "read message: id:%d, sha256:%x", msgId, sha.Sum(nil))
 
 	checksum := common.Checksum(buf)
 	if checksum != hdr.Checksum {
@@ -134,7 +153,6 @@ func ReadMessage(reader io.Reader) (Message, uint32, error) {
 	}
 
 	// the buf is referenced by msg to avoid reallocation, so can not reused
-	source := comm.NewZeroCopySource(buf)
 	err = msg.Deserialization(source)
 	if err != nil {
 		return nil, 0, err
