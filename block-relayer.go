@@ -19,6 +19,13 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+
 	"github.com/ontio/ontology-eventbus/actor"
 	"github.com/ontio/ontology/blockrelayer"
 	"github.com/ontio/ontology/cmd"
@@ -31,10 +38,6 @@ import (
 	"github.com/ontio/ontology/p2pserver"
 	p2pactor "github.com/ontio/ontology/p2pserver/actor/server"
 	"github.com/urfave/cli"
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
 )
 
 func setupBlockRelayer() *cli.App {
@@ -172,6 +175,10 @@ func initP2PNode(ctx *cli.Context) (*p2pserver.P2PServer, *actor.PID, error) {
 }
 
 func main() {
+	go func() {
+		http.ListenAndServe("localhost:8080", nil)
+	}()
+
 	if err := setupBlockRelayer().Run(os.Args); err != nil {
 		cmd.PrintErrorMsg(err.Error())
 		os.Exit(1)

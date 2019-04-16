@@ -29,6 +29,7 @@ const KEY_CURR = "current"
 var DefStorage *Storage
 
 type Storage struct {
+	cache            *DataCache
 	backend          *StorageBackend
 	task             chan Task
 	currHash         common.Uint256
@@ -67,7 +68,7 @@ func Open(pt string) (*Storage, error) {
 	headers := make(map[common.Uint256]*types.RawHeader)
 	headerIndex := make(map[uint32]common.Uint256)
 	lock := new(sync.Mutex)
-	store := &Storage{backend, task, backend.CurrHash(), backend.CurrHeight(),
+	store := &Storage{NewDataCache(), backend, task, backend.CurrHash(), backend.CurrHeight(),
 		lock, headers, headerIndex, backend.CurrHeight()}
 	go store.blockSaveLoop(task)
 	return store, nil
@@ -150,14 +151,18 @@ func (self *Storage) AddHeader(headers []*types.RawHeader) error {
 func (self *Storage) GetHeaderByHash(hash common.Uint256) (*types.RawHeader, error) {
 	self.lock.Lock()
 	header, ok := self.headers[hash]
+	if ok == false {
+		header = self.cache.GetHeader(hash)
+	}
 	self.lock.Unlock()
-	if ok {
+	if header != nil {
 		return header, nil
 	} else {
 		header, err := self.backend.getHeader(hash[:])
 		if err != nil {
 			return nil, err
 		}
+		self.cache.AddHeader(header)
 		return header, nil
 	}
 }
@@ -202,7 +207,17 @@ func (self *Storage) CurrentHeight() uint32 {
 }
 
 func (self *Storage) GetBlockByHash(hash common.Uint256) (*RawBlock, error) {
-	return self.backend.GetBlockByHash(hash)
+	if block := self.cache.GetBlock(hash); block != nil {
+		return block, nil
+	}
+
+	block, err := self.backend.GetBlockByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+	self.cache.AddBlock(block)
+
+	return block, nil
 }
 
 type CurrInfo struct {
