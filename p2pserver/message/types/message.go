@@ -166,7 +166,7 @@ func MakeEmptyMessage(cmdType string) (Message, error) {
 	case common.GET_DATA_TYPE:
 		return &DataReq{}, nil
 	case common.BLOCK_TYPE:
-		return &Block{}, nil
+		return &RawBlock{}, nil
 	case common.TX_TYPE:
 		return &Trn{}, nil
 	case common.CONSENSUS_TYPE:

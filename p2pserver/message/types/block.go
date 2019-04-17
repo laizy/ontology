@@ -26,9 +26,28 @@ import (
 	comm "github.com/ontio/ontology/p2pserver/common"
 )
 
+type RawBlock struct {
+	Blk        []byte
+}
+
 type Block struct {
 	Blk        *ct.Block
 	MerkleRoot common.Uint256
+}
+
+func (this *RawBlock) Serialization(sink *common.ZeroCopySink) error {
+	sink.WriteBytes(this.Blk)
+	return nil
+}
+
+func (this *RawBlock) CmdType() string {
+	return comm.BLOCK_TYPE
+}
+
+//Deserialize message payload
+func (this *RawBlock) Deserialization(source *common.ZeroCopySource) error {
+	this.Blk, _ = source.NextBytes(source.Size())
+	return nil
 }
 
 //Serialize message payload
