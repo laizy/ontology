@@ -40,6 +40,12 @@ type Storage struct {
 	currHeaderHeight uint32
 }
 
+func (self *Storage) DumpStatus() string {
+	return fmt.Sprintf("current height: %d, current header height: %d, backend next height: %d",
+		self.currHeight, self.currHeaderHeight, self.backend.currInfo.nextHeight)
+
+}
+
 type Task interface {
 	ImplementTask()
 }
@@ -75,7 +81,6 @@ func Open(pt string) (*Storage, error) {
 }
 
 func (self *Storage) SaveBlock(block *types.Block) error {
-
 	sink := common.NewZeroCopySink(nil)
 	headerLen, unsignedLen, err := block.SerializeExt(sink)
 	if err != nil {
@@ -112,6 +117,8 @@ func (self *Storage) blockSaveLoop(task <-chan Task) {
 				task.finished <- self.backend.currInfo.nextHeight - 1
 			}
 		case <-time.After(MAX_TIME_OUT):
+			fmt.Printf("%s\n", self.DumpStatus())
+
 			self.backend.flush()
 			nextHeight := self.backend.currInfo.nextHeight
 
@@ -121,7 +128,7 @@ func (self *Storage) blockSaveLoop(task <-chan Task) {
 					delete(self.headers, k)
 				}
 			}
-			for height, _ := range self.headerIndex {
+			for height := range self.headerIndex {
 				if height+100 < nextHeight {
 					delete(self.headerIndex, height)
 				}
@@ -562,7 +569,8 @@ func (self *StorageBackend) CurrHeight() uint32 {
 }
 func (self *StorageBackend) saveBlock(block *RawBlock) error {
 	if self.currInfo.nextHeight != block.Height {
-		return fmt.Errorf("need continue block")
+		return fmt.Errorf("need continue block, expected: %d, got; %d",
+			self.currInfo.nextHeight, block.Height)
 	}
 	self.currInfo.checksum.Write(block.Payload)
 
