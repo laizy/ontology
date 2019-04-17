@@ -376,11 +376,6 @@ func open(pt string) (*StorageBackend, error) {
 	if err != nil {
 		return nil, err
 	}
-	name := path.Join(pt, "blocks.bin")
-	blockDB, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		return nil, err
-	}
 
 	info := NewCurrInfo()
 	raw, err := metaDB.Get([]byte(KEY_CURR), nil)
@@ -393,6 +388,11 @@ func open(pt string) (*StorageBackend, error) {
 		return nil, err
 	}
 
+	name := path.Join(pt, "blocks.bin")
+	blockDB, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		return nil, err
+	}
 	stat, err := blockDB.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("get block db stat err:%v", err)
@@ -401,7 +401,16 @@ func open(pt string) (*StorageBackend, error) {
 	if stat.Size() < int64(info.blockOffset) {
 		return nil, errors.New("the length of blocks.bin is less than the record of metadb")
 	} else if stat.Size() > int64(info.blockOffset) {
-		err := blockDB.Truncate(int64(info.blockOffset))
+		fmt.Printf("file size:%d, block offset: %d\n", stat.Size(), info.blockOffset)
+		err := blockDB.Close()
+		checkerr(err)
+		blockDB, err = os.OpenFile(name, os.O_CREATE|os.O_RDWR, 0666)
+		checkerr(err)
+		err = blockDB.Truncate(int64(info.blockOffset))
+		blockDB.Sync()
+		blockDB.Close()
+		checkerr(err)
+		blockDB, err = os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 		checkerr(err)
 	}
 
