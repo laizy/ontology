@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ontio/ontology/common"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -137,7 +138,7 @@ func initBlockRelayer(ctx *cli.Context) (*blockrelayer.Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	storage.SaveBlock(genesisBlock)
+	storage.SaveBlock(genesisBlock, common.UINT256_EMPTY)
 	blockrelayer.DefStorage = storage
 	log.Infof("BlockRelayer init success")
 	return storage, nil
