@@ -80,7 +80,7 @@ func Open(pt string) (*Storage, error) {
 	return store, nil
 }
 
-func (self *Storage) SaveBlock(block *types.Block) error {
+func (self *Storage) SaveBlock(block *types.Block, stateRoot common.Uint256) error {
 	sink := common.NewZeroCopySink(nil)
 	headerLen, unsignedLen, err := block.SerializeExt(sink)
 	if err != nil {
@@ -89,7 +89,7 @@ func (self *Storage) SaveBlock(block *types.Block) error {
 	}
 	raw := sink.Bytes()
 	self.task <- &SaveTask{
-		block: &RawBlock{Hash: block.Hash(), HeaderSize: headerLen, unSignedHeaderSize: unsignedLen, Height: block.Header.Height, Payload: raw},
+		block: &RawBlock{Hash: block.Hash(), HeaderSize: headerLen, unSignedHeaderSize: unsignedLen, Height: block.Header.Height, Payload: raw, StateRoot: stateRoot},
 	}
 
 	return nil
@@ -263,6 +263,7 @@ type BlockMeta struct {
 	unSignedHeaderSize uint32
 	size               uint32
 	checksum           common.Uint256
+	stateRoot          common.Uint256
 }
 
 type RawBlockMeta struct {
@@ -270,7 +271,7 @@ type RawBlockMeta struct {
 }
 
 func NewRawBlockMeta(raw []byte) RawBlockMeta {
-	if len(raw) != 32+8+4+4+4+32+4 {
+	if len(raw) != 32+8+4+4+4+32+4+4 {
 		panic("wrong meta block len")
 	}
 	return RawBlockMeta{rawMeta: raw}
@@ -289,6 +290,7 @@ type RawBlock struct {
 	HeaderSize         uint32
 	unSignedHeaderSize uint32
 	Payload            []byte
+	StateRoot          common.Uint256
 }
 
 func (self *RawBlock) Size() int {
@@ -296,7 +298,7 @@ func (self *RawBlock) Size() int {
 }
 
 func (self *BlockMeta) Bytes() []byte {
-	buf := make([]byte, 0, 32+8+4+4+4+32+4)
+	buf := make([]byte, 0, 32+8+4+4+4+32+4+4)
 	sink := common.NewZeroCopySink(buf)
 	sink.WriteHash(self.hash)
 	sink.WriteUint64(self.offset)
@@ -305,6 +307,7 @@ func (self *BlockMeta) Bytes() []byte {
 	sink.WriteUint32(self.unSignedHeaderSize)
 	sink.WriteUint32(self.size)
 	sink.WriteHash(self.checksum)
+	sink.WriteHash(self.stateRoot)
 
 	return sink.Bytes()
 }
@@ -319,6 +322,7 @@ func BlockMetaFromBytes(raw []byte) (meta BlockMeta, err error) {
 	meta.unSignedHeaderSize, eof = source.NextUint32()
 	meta.size, eof = source.NextUint32()
 	meta.checksum, eof = source.NextHash()
+	meta.stateRoot, eof = source.NextHash()
 	if eof {
 		err = io.ErrUnexpectedEOF
 	}
@@ -609,6 +613,7 @@ func (self *StorageBackend) saveBlock(block *RawBlock) error {
 		unSignedHeaderSize: block.unSignedHeaderSize,
 		size:               uint32(block.Size()),
 		offset:             self.currInfo.blockOffset,
+		stateRoot:          block.StateRoot,
 	}
 	self.currInfo.checksum.Sum(meta.checksum[:0])
 	_, err := self.blockDB.Write(block.Payload)
