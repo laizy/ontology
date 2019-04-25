@@ -45,6 +45,9 @@ func (self *Storage) DumpStatus() string {
 		self.currHeight, self.currHeaderHeight, self.backend.currInfo.nextHeight)
 
 }
+func (self *Storage) GetMetaDB() *MetaDB {
+	return self.backend.metaDB
+}
 
 type Task interface {
 	ImplementTask()
@@ -78,6 +81,50 @@ func Open(pt string) (*Storage, error) {
 		lock, headers, headerIndex, backend.CurrHeight()}
 	go store.blockSaveLoop(task)
 	return store, nil
+}
+
+func RevertToHeight(metaDB *MetaDB, height uint32) error {
+	info := NewCurrInfo()
+	raw, err := metaDB.Get([]byte(KEY_CURR))
+	if err == nil {
+		info, err = CurrInfoFromBytes(raw)
+		if err != nil {
+			return err
+		}
+	} else if err != errors.ErrNotFound {
+		return err
+	}
+	if info.nextHeight < height {
+		return fmt.Errorf("current block height is %d less than %d", info.nextHeight-1, height)
+	}
+	batch := new(leveldb.Batch)
+	for h:= info.nextHeight-1;h >= height; h-- {
+		var metaKey [4]byte
+		binary.BigEndian.PutUint32(metaKey[:], h)
+		raw, err := metaDB.Get(metaKey[:])
+		if err != nil {
+			return err
+		}
+		rawBlockMeta := NewRawBlockMeta(raw)
+		hash := rawBlockMeta.Hash()
+		batch.Delete(hash[:])
+		batch.Delete(metaKey[:])
+		if h == height {
+			blockMeta, err := BlockMetaFromBytes(raw)
+			if err != nil {
+				return err
+			}
+			info.nextHeight = height + 1
+			info.blockOffset = blockMeta.offset
+			info.currHash = blockMeta.hash
+			info.checksum.Write(blockMeta.Bytes())
+			info.checksum.Sum(blockMeta.checksum[:0])
+		}
+	}
+	batch.Put([]byte(KEY_CURR), info.Bytes())
+	wo := opt.WriteOptions{Sync: true}
+	err = metaDB.Write(batch, &wo)
+	return err
 }
 
 func (self *Storage) SaveBlock(block *types.Block, stateRoot common.Uint256) error {

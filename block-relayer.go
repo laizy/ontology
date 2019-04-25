@@ -62,6 +62,9 @@ func setupBlockRelayer() *cli.App {
 		utils.MaxConnOutBoundFlag,
 		utils.MaxConnInBoundForSingleIPFlag,
 	}
+	app.Commands = []cli.Command{
+		cmd.RevertCommand,
+	}
 	//app.Commands = []cli.Command{
 	//	cmdsvr.ImportWalletCommand,
 	//}
@@ -86,7 +89,6 @@ func startBlockRelayer(ctx *cli.Context) {
 		log.Errorf("%s", err)
 		return
 	}
-
 	p2pSvr, _, err := initP2PNode(ctx)
 	if err != nil {
 		log.Errorf("initP2PNode error:%s", err)

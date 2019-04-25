@@ -68,6 +68,11 @@ var (
 		Usage: "Block data storage `<path>`",
 		Value: config.DEFAULT_DATA_DIR,
 	}
+	RevertToHeightFlag = cli.IntFlag{
+		Name:  "height",
+		Usage: "revert current info to height",
+		Value: config.DEFAULT_REVERT_HEIGHT,
+	}
 
 	//Consensus setting
 	EnableConsensusFlag = cli.BoolFlag{
