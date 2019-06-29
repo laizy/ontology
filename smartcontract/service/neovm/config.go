@@ -49,8 +49,8 @@ var (
 
 	PER_UNIT_CODE_LEN    int = 1024
 	METHOD_LENGTH_LIMIT  int = 1024
-	DUPLICATE_STACK_SIZE int = 1024 * 2
-	VM_STEP_LIMIT        int = 400000
+	DUPLICATE_STACK_SIZE int = 1024 * 2 * 100
+	VM_STEP_LIMIT        int = 400000*100
 
 	// API Name
 	ATTRIBUTE_GETUSAGE_NAME = "Ontology.Attribute.GetUsage"
