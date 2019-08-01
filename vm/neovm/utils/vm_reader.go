@@ -41,9 +41,9 @@ func (r *VmReader) ReadByte() (byte, error) {
 	return byte, err
 }
 
-func (r *VmReader) ReadBytes(count int) ([]byte, error) {
+func (r *VmReader) ReadBytes(count uint32) ([]byte, error) {
 	// first check to avoid memory attack
-	if r.reader.Len() < count {
+	if uint32(r.reader.Len()) < count {
 		return nil, io.EOF
 	}
 	b := make([]byte, count)
