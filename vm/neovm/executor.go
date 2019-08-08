@@ -93,7 +93,7 @@ func (self *Executor) Execute() error {
 
 func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMState, error) {
 	if opcode >= PUSHBYTES1 && opcode <= PUSHBYTES75 {
-		buf, err := context.OpReader.ReadBytes(int(opcode))
+		buf, err := context.OpReader.ReadBytes(uint32(opcode))
 		if err != nil {
 			return FAULT, err
 		}
