@@ -116,7 +116,7 @@ func (r *VmReader) ReadVarBytes(max uint32) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.ReadBytes(int(n))
+	return r.ReadBytes(uint32(n))
 }
 
 func (r *VmReader) ReadVarInt(max uint64) (uint64, error) {
