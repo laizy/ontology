@@ -700,40 +700,56 @@ func accumulateHash(hasher hash.Hash, iter scom.StoreIterator) error {
 	return iter.Error()
 }
 
-func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block, result store.ExecuteResult) error {
-	blockHash := block.Hash()
-	blockHeight := block.Header.Height
+type BlockAndExecResult struct {
+	block *types.Block
+	result store.ExecuteResult
+}
 
-	for _, notify := range result.Notify {
-		SaveNotify(this.eventStore, notify.TxHash, notify)
-	}
+func (this *LedgerStoreImp) saveBatchBlocksToStateStore(blockAndRes []BlockAndExecResult) error {
+	var txRoots []common.Uint256
 
-	err := this.stateStore.AddStateMerkleTreeRoot(blockHeight, result.Hash)
-	if err != nil {
-		return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
-	}
+	for _, value := range blockAndRes {
+		block := value.block
+		result := value.result
+		blockHash := block.Hash()
+		blockHeight := block.Header.Height
+		txRoots = append(txRoots, block.Header.TransactionsRoot)
 
-	err = this.stateStore.AddBlockMerkleTreeRoot(block.Header.TransactionsRoot)
-	if err != nil {
-		return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
-	}
-
-	err = this.stateStore.SaveCurrentBlock(blockHeight, blockHash)
-	if err != nil {
-		return fmt.Errorf("SaveCurrentBlock error %s", err)
-	}
-
-	log.Debugf("the state transition hash of block %d is:%s", blockHeight, result.Hash.ToHexString())
-
-	result.WriteSet.ForEach(func(key, val []byte) {
-		if len(val) == 0 {
-			this.stateStore.BatchDeleteRawKey(key)
-		} else {
-			this.stateStore.BatchPutRawKeyVal(key, val)
+		for _, notify := range result.Notify {
+			SaveNotify(this.eventStore, notify.TxHash, notify)
 		}
-	})
+
+		err := this.stateStore.AddStateMerkleTreeRoot(blockHeight, result.Hash)
+		if err != nil {
+			return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
+		}
+
+		err = this.stateStore.SaveCurrentBlock(blockHeight, blockHash)
+		if err != nil {
+			return fmt.Errorf("SaveCurrentBlock error %s", err)
+		}
+
+		log.Debugf("the state transition hash of block %d is:%s", blockHeight, result.Hash.ToHexString())
+
+		result.WriteSet.ForEach(func(key, val []byte) {
+			if len(val) == 0 {
+				this.stateStore.BatchDeleteRawKey(key)
+			} else {
+				this.stateStore.BatchPutRawKeyVal(key, val)
+			}
+		})
+	}
+
+	err := this.stateStore.AddBlockMerkleTreeRoots(txRoots)
+	if err != nil {
+		return fmt.Errorf("AddBlockMerkleTreeRoot error %s", err)
+	}
 
 	return nil
+}
+
+func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block, result store.ExecuteResult) error {
+	return this.saveBatchBlocksToStateStore([]BlockAndExecResult{{block:block, result:result}})
 }
 
 func (this *LedgerStoreImp) saveBlockToEventStore(block *types.Block) error {

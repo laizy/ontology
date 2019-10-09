@@ -138,7 +138,7 @@ func (self *StateStore) GetStateMerkleTree() (uint32, []common.Uint256, error) {
 
 //GetBlockMerkleTree return merkle tree size an tree node
 func (self *StateStore) GetBlockMerkleTree() (uint32, []common.Uint256, error) {
-	key := self.genBlockMerkleTreeKey()
+	key := genBlockMerkleTreeKey()
 	return self.getMerkleTree(key)
 }
 func (self *StateStore) getMerkleTree(key []byte) (uint32, []common.Uint256, error) {
@@ -211,10 +211,10 @@ func (self *StateStore) AddStateMerkleTreeRoot(blockHeight uint32, writeSetHash 
 }
 
 //AddBlockMerkleTreeRoot add a new tree root
-func (self *StateStore) AddBlockMerkleTreeRoot(txRoot common.Uint256) error {
-	key := self.genBlockMerkleTreeKey()
+func (self *StateStore) AddBlockMerkleTreeRoots(txRoots []common.Uint256) error {
+	key := genBlockMerkleTreeKey()
 
-	self.merkleTree.AppendHash(txRoot)
+	self.merkleTree.AppendHashes(txRoots)
 	treeSize := self.merkleTree.TreeSize()
 	hashes := self.merkleTree.Hashes()
 	value := common.NewZeroCopySink(make([]byte, 0, 4+len(hashes)*common.UINT256_SIZE))
@@ -224,6 +224,11 @@ func (self *StateStore) AddBlockMerkleTreeRoot(txRoot common.Uint256) error {
 	}
 	self.store.BatchPut(key, value.Bytes())
 	return nil
+}
+
+//AddBlockMerkleTreeRoot add a new tree root
+func (self *StateStore) AddBlockMerkleTreeRoot(txRoot common.Uint256) error {
+	return self.AddBlockMerkleTreeRoots([]common.Uint256{txRoot})
 }
 
 //GetMerkleProof return merkle proof of block
@@ -380,7 +385,7 @@ func (self *StateStore) GetBlockRootWithNewTxRoots(txRoots []common.Uint256) com
 	return self.merkleTree.GetRootWithNewLeaves(txRoots)
 }
 
-func (self *StateStore) genBlockMerkleTreeKey() []byte {
+func genBlockMerkleTreeKey() []byte {
 	return []byte{byte(scom.SYS_BLOCK_MERKLE_TREE)}
 }
 

@@ -155,7 +155,20 @@ func (self *CompactMerkleTree) Append(leafv []byte) []common.Uint256 {
 }
 
 // AppendHash appends a leaf hash to the merkle tree and returns the audit path
+func (self *CompactMerkleTree) AppendHashes(leafs []common.Uint256) {
+	for i, leaf := range leafs {
+		flush := (i+1) == len(leafs)
+		self.appendHash(leaf, flush)
+	}
+}
+
+// AppendHash appends a leaf hash to the merkle tree and returns the audit path
 func (self *CompactMerkleTree) AppendHash(leaf common.Uint256) []common.Uint256 {
+	return self.appendHash(leaf, true)
+}
+
+// AppendHash appends a leaf hash to the merkle tree and returns the audit path
+func (self *CompactMerkleTree) appendHash(leaf common.Uint256, flush bool) []common.Uint256 {
 	size := len(self.hashes)
 	auditPath := make([]common.Uint256, size, size)
 	storehashes := make([]common.Uint256, 0)
@@ -174,7 +187,9 @@ func (self *CompactMerkleTree) AppendHash(leaf common.Uint256) []common.Uint256 
 	}
 	if self.hashStore != nil {
 		self.hashStore.Append(storehashes)
-		self.hashStore.Flush()
+		if flush {
+			self.hashStore.Flush()
+		}
 	}
 	self.treeSize += 1
 	self.hashes = self.hashes[0:size]
