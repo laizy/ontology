@@ -82,8 +82,8 @@ func checkOntoWasm(m *wasm.Module) error {
 type VerifyMethod int
 
 const NoneVerifyMethod = VerifyMethod(0)
-const InterpVerifyMethod = VerifyMethod(0)
-const JitVerifyMethod = VerifyMethod(0)
+const InterpVerifyMethod = VerifyMethod(1)
+const JitVerifyMethod = VerifyMethod(2)
 
 func ReadWasmModule(code []byte, verify VerifyMethod) (*exec.CompiledModule, error) {
 	m, err := wasm.ReadModule(bytes.NewReader(code), func(name string) (*wasm.Module, error) {
