@@ -147,8 +147,6 @@ func startOntology(ctx *cli.Context) {
 
 	setMaxOpenFiles()
 
-	initGlobalParam(ctx)
-
 	cfg, err := initConfig(ctx)
 	if err != nil {
 		log.Errorf("initConfig error: %s", err)
@@ -208,17 +206,6 @@ func initLog(ctx *cli.Context) {
 	} else {
 		alog.InitLog(log.PATH)
 		log.InitLog(logLevel, log.PATH, log.Stdout)
-	}
-}
-
-func initGlobalParam(ctx *cli.Context) {
-	enableWasmJitVerify := ctx.GlobalBool(utils.GetFlagName(utils.WasmVerifyMethodFlag))
-	if enableWasmJitVerify {
-		log.Infof("Enable wasm jit verifier")
-		config.WasmVerifyMethod = config.JitVerifyMethod
-	} else {
-		log.Infof("Enable wasm interp verifier")
-		config.WasmVerifyMethod = config.InterpVerifyMethod
 	}
 }
 
