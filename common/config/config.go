@@ -38,12 +38,10 @@ var Version = "" //Set value when build project
 type VerifyMethod int
 
 const (
-	NoneVerifyMethod VerifyMethod = iota
-	InterpVerifyMethod
+	InterpVerifyMethod VerifyMethod = iota
 	JitVerifyMethod
+	NoneVerifyMethod
 )
-
-var WasmVerifyMethod VerifyMethod
 
 const (
 	DEFAULT_CONFIG_FILE_NAME = "./config.json"
