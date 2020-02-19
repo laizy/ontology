@@ -35,6 +35,16 @@ import (
 
 var Version = "" //Set value when build project
 
+type VerifyMethod int
+
+const (
+	NoneVerifyMethod   = VerifyMethod(0)
+	InterpVerifyMethod = VerifyMethod(1)
+	JitVerifyMethod    = VerifyMethod(2)
+)
+
+var WasmVerifyMethod = InterpVerifyMethod
+
 const (
 	DEFAULT_CONFIG_FILE_NAME = "./config.json"
 	DEFAULT_WALLET_FILE_NAME = "./wallet.dat"
