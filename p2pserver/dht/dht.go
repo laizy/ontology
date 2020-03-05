@@ -19,7 +19,6 @@
 package dht
 
 import (
-	"context"
 	"time"
 
 	"github.com/ontio/ontology/common/log"
