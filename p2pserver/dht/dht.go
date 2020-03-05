@@ -39,8 +39,6 @@ type DHT struct {
 	localKeyId *kb.KadKeyId
 	birth      time.Time // When this peer started up
 
-	ctx context.Context
-
 	bucketSize int
 	routeTable *kb.RouteTable // Array of routing tables for differently distanced nodes
 
