@@ -64,7 +64,7 @@ func HandshakeClient(netServer *NetServer, conn net.Conn) error {
 	}
 
 	// 3. update kadId
-	if receivedVersion.P.SoftVersion > "v1.9.0" || true {
+	if receivedVersion.P.SoftVersion > "v1.9.0" {
 		log.Info("*******come in dht*******")
 		msg := msgpack.NewUpdateKadKeyId(netServer)
 		err = sendMsg(conn, msg)
