@@ -19,18 +19,20 @@ package types
 
 import (
 	"testing"
+
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 func TestFindNodeRequest(t *testing.T) {
 	var req FindNodeReq
-	req.TargetID = 0x123
+	req.TargetID = kbucket.KadId{}
 
 	MessageTest(t, &req)
 }
 
 func TestFindNodeResponse(t *testing.T) {
 	var resp FindNodeResp
-	resp.TargetID = 0x123
+	resp.TargetID = kbucket.KadId{}
 	resp.Address = "127.0.0.1:1222"
 	resp.CloserPeers = []PeerAddr{
 		PeerAddr{
