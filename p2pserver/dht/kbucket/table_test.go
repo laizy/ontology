@@ -29,7 +29,7 @@ import (
 
 func init() {
 	// lower the difficulty
-	Difficulty = 8
+	Difficulty = 1
 	rand.Seed(time.Now().UnixNano())
 }
 
