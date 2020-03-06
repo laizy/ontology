@@ -45,7 +45,7 @@ func (self KadId) Serialization(sink *common.ZeroCopySink) {
 	sink.WriteAddress(self.val)
 }
 
-func (self KadId) Deserialization(source *common.ZeroCopySource) error {
+func (self *KadId) Deserialization(source *common.ZeroCopySource) error {
 	val, eof := source.NextAddress()
 	if eof {
 		return io.ErrUnexpectedEOF
@@ -104,7 +104,6 @@ func PseudoKadIdFromUint64(data uint64) KadId {
 
 func (this *KadKeyId) Serialization(sink *common.ZeroCopySink) {
 	sink.WriteVarBytes(keypair.SerializePublicKey(this.PublicKey))
-	this.Id.Serialization(sink)
 }
 
 func (this *KadKeyId) Deserialization(source *common.ZeroCopySource) error {
@@ -123,12 +122,7 @@ func (this *KadKeyId) Deserialization(source *common.ZeroCopySource) error {
 		return errors.New("invalid kad public key")
 	}
 	this.PublicKey = pub
-	id := KadId{}
-	err = id.Deserialization(source)
-	if err != nil {
-		return err
-	}
-	this.Id = id
+	this.Id = kadIdFromPubkey(pub)
 	return nil
 }
 
