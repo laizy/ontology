@@ -399,7 +399,7 @@ func (this *NetServer) handleClientConnection(conn net.Conn) error {
 
 	remoteIp, err := common.ParseIPAddr(conn.RemoteAddr().String())
 	if err != nil {
-		return fmt.Errorf("[p2p]parse ip error ", err.Error())
+		return fmt.Errorf("[p2p]parse ip error %v", err.Error())
 	}
 	connNum := this.GetIpCountInInConnRecord(remoteIp)
 	if connNum >= config.DefConfig.P2PNode.MaxConnInBoundForSingleIP {
