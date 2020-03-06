@@ -211,6 +211,7 @@ func HandshakeServer(netServer *NetServer, conn net.Conn) error {
 	addr := conn.RemoteAddr().String()
 	remotePeer.Link.SetAddr(addr)
 	remotePeer.Link.SetConn(conn)
+	remotePeer.Link.SetID(remotePeer.GetID())
 	remotePeer.AttachChan(netServer.NetChan)
 
 	netServer.AddNbrNode(remotePeer)
