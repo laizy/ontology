@@ -183,6 +183,8 @@ func MakeEmptyMessage(cmdType string) (Message, error) {
 		return &FindNodeReq{}, nil
 	case common.FINDNODE_RESP_TYPE:
 		return &FindNodeResp{}, nil
+	case common.UPDATE_KADID_TYPE:
+		return &UpdateKadId{}, nil
 	default:
 		return nil, errors.New("unsupported cmd type:" + cmdType)
 	}

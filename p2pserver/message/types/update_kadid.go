@@ -35,6 +35,7 @@ func (this *UpdateKadId) Serialization(sink *common2.ZeroCopySink) {
 }
 
 func (this *UpdateKadId) Deserialization(source *common2.ZeroCopySource) error {
+	this.KadKeyId = &kbucket.KadKeyId{}
 	return this.KadKeyId.Deserialization(source)
 }
 

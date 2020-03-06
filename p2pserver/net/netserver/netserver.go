@@ -320,6 +320,7 @@ func (this *NetServer) Connect(addr string) error {
 
 	err = HandshakeClient(this, conn)
 	if err != nil {
+		log.Errorf("[p2p] HandshakeClient error: %s", err)
 		this.RemoveFromOutConnRecord(addr)
 		return err
 	}
@@ -422,6 +423,7 @@ func (this *NetServer) startNetAccept(listener net.Listener) {
 		}
 
 		if err := this.handleClientConnection(conn); err != nil {
+			log.Errorf("[p2p] handleClientConnection error: %s", err)
 			_ = conn.Close()
 		}
 	}
