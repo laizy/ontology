@@ -27,6 +27,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	// lower the difficulty
+	Difficulty = 8
+	rand.Seed(time.Now().UnixNano())
+}
+
 func genpeerID() *KadKeyId {
 	id := RandKadKeyId()
 	return id
@@ -99,20 +105,23 @@ func TestRefreshAndGetTrackedCpls(t *testing.T) {
 	}
 }
 
+func TestGenRandKadID(t *testing.T) {
+	local := genpeerID()
+	ranid := local.Id.GenRandKadId(1)
+	cpl := CommonPrefixLen(local.Id, ranid)
+	t.Log(cpl)
+}
+
 func TestGenRandPeerID(t *testing.T) {
 	t.Parallel()
 
 	local := genpeerID()
 	rt := NewRoutingTable(1, local.Id)
 
-	// generate above maxCplForRefresh fails
-	p := rt.GenRandKadId(maxCplForRefresh + 1)
-	require.Empty(t, p)
-
 	// test generate rand peer ID
 	for cpl := uint(0); cpl <= maxCplForRefresh; cpl++ {
 		for i := 0; i < 10000; i++ {
-			peerID := rt.GenRandKadId(1)
+			peerID := rt.GenRandKadId(cpl)
 
 			require.True(t, uint(CommonPrefixLen(peerID, rt.local)) == cpl, "failed for cpl=%d", cpl)
 		}
@@ -203,7 +212,7 @@ func TestTableFind(t *testing.T) {
 		rt.Update(peers[i].Id)
 	}
 
-	t.Logf("Searching for peer: '%d'", peers[2])
+	t.Logf("Searching for peer: '%s'", peers[2].Id.ToHexString())
 	found := rt.NearestPeers(peers[2].Id, 3)
 	if !(found[0] == peers[2].Id) {
 		t.Fatalf("Failed to lookup known node...")
@@ -257,7 +266,7 @@ func TestTableFindMultiple(t *testing.T) {
 	}
 
 	// put in one bucket
-	t.Logf("Searching for peer: '%d'", peers[2])
+	t.Logf("Searching for peer: '%s'", peers[2].Id.ToHexString())
 	found := rt.NearestPeers(peers[2].Id, 15)
 	if len(found) != 15 {
 		t.Fatalf("Got back different number of peers than we expected.")
@@ -310,7 +319,7 @@ func TestTableFindMultipleBuckets(t *testing.T) {
 	targetID := peers[2]
 
 	closest := SortClosestPeers(rt.ListPeers(), targetID.Id)
-	require.Equal(t, closest[0], peers[2], "first one should be the 0 distance with local")
+	require.Equal(t, closest[0].val, peers[2].Id.val, "first one should be the 0 distance with local")
 
 	targetCpl := CommonPrefixLen(localID.Id, targetID.Id)
 
