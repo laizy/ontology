@@ -21,6 +21,7 @@ package netserver
 import (
 	"errors"
 	"fmt"
+	"github.com/ontio/ontology/p2pserver/connect_controller"
 	"net"
 	"strings"
 	"sync"
@@ -266,7 +267,13 @@ func (this *NetServer) IsPeerEstablished(p *peer.Peer) bool {
 
 //Connect used to connect net address under sync or cons mode
 func (this *NetServer) Connect(addr string) error {
-	err := checkReservedPeers(addr)
+	//todo add dialer as struct field
+	dialer, err := connect_controller.NewDialer(config.DefConfig.P2PNode)
+	if err != nil {
+		return err
+	}
+
+	err = checkReservedPeers(addr)
 	if err != nil {
 		return err
 	}
@@ -300,22 +307,11 @@ func (this *NetServer) Connect(addr string) error {
 	}
 	this.connectLock.Unlock()
 
-	isTls := config.DefConfig.P2PNode.IsTLS
-	var conn net.Conn
-	if isTls {
-		conn, err = TLSDial(addr)
-		if err != nil {
-			this.RemoveFromConnectingList(addr)
-			log.Debugf("[p2p]connect %s failed:%s", addr, err.Error())
-			return err
-		}
-	} else {
-		conn, err = nonTLSDial(addr)
-		if err != nil {
-			this.RemoveFromConnectingList(addr)
-			log.Debugf("[p2p]connect %s failed:%s", addr, err.Error())
-			return err
-		}
+	conn, err := dialer.Dial(addr)
+	if err != nil {
+		this.RemoveFromConnectingList(addr)
+		log.Debugf("[p2p]connect %s failed:%s", addr, err.Error())
+		return err
 	}
 
 	remoteAddr := conn.RemoteAddr().String()
@@ -365,7 +361,7 @@ func (this *NetServer) startListening() error {
 // startNetListening starts a sync listener on the port for the inbound peer
 func (this *NetServer) startNetListening(port uint16) error {
 	var err error
-	this.listener, err = createListener(port)
+	this.listener, err = connect_controller.NewListener(port, config.DefConfig.P2PNode)
 	if err != nil {
 		log.Error("[p2p]failed to create sync listener")
 		return errors.New("[p2p]failed to create sync listener")
