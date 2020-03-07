@@ -318,7 +318,12 @@ func (this *NetServer) Connect(addr string) error {
 		}
 	}
 
-	err = HandshakeClient(this, conn)
+	remoteAddr := conn.RemoteAddr().String()
+	log.Debugf("[p2p]peer %s connect with %s with %s",
+		conn.LocalAddr().String(), remoteAddr,
+		conn.RemoteAddr().Network())
+
+	err = handshakeClient(this, conn)
 	if err != nil {
 		log.Errorf("[p2p] HandshakeClient error: %s", err)
 		this.RemoveFromOutConnRecord(addr)
@@ -409,7 +414,7 @@ func (this *NetServer) handleClientConnection(conn net.Conn) error {
 		return err
 	}
 
-	return HandshakeServer(this, conn)
+	return handshakeServer(this, conn)
 }
 
 //startNetAccept accepts the sync connection from the inbound peer

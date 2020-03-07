@@ -20,6 +20,7 @@ package netserver
 
 import (
 	"fmt"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"testing"
 	"time"
 
@@ -37,11 +38,11 @@ func init() {
 func creatPeers(cnt uint16) []*peer.Peer {
 	np := []*peer.Peer{}
 	var syncport uint16
-	var id uint64
 	var height uint64
 	for i := uint16(0); i < cnt; i++ {
 		syncport = 20224 + i
-		id = 0x7533345 + uint64(i)
+		id := kbucket.PseudoKadIdFromUint64(0x7533345 + uint64(i))
+
 		height = 434923 + uint64(i)
 		p := peer.NewPeer()
 		p.UpdateInfo(time.Now(), 2, 3, syncport, id, 0, height, "1.5.2")

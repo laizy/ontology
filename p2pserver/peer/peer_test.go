@@ -19,6 +19,7 @@
 package peer
 
 import (
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"testing"
 	"time"
 )
@@ -85,7 +86,8 @@ func TestGetPeerComInfo(t *testing.T) {
 
 func TestUpdatePeer(t *testing.T) {
 	p := initTestPeer()
-	p.UpdateInfo(time.Now(), 3, 3, 30334, 0x7533345, 0, 7322222, "1.5.2")
+	id := kbucket.PseudoKadIdFromUint64(12334)
+	p.UpdateInfo(time.Now(), 3, 3, 30334, id, 0, 7322222, "1.5.2")
 	p.SetState(3)
 	p.SetHttpInfoState(true)
 	p.Link.SetAddr("127.0.0.1:20338")
