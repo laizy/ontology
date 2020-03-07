@@ -20,6 +20,7 @@ package netserver
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,13 +33,12 @@ import (
 	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	"github.com/ontio/ontology/p2pserver/message/types"
 	"github.com/ontio/ontology/p2pserver/peer"
-	"strconv"
 )
 
 func HandshakeClient(netServer *NetServer, conn net.Conn) error {
-	addr := conn.RemoteAddr().String()
+	remoteAddr := conn.RemoteAddr().String()
 	log.Debugf("[p2p]peer %s connect with %s with %s",
-		conn.LocalAddr().String(), conn.RemoteAddr().String(),
+		conn.LocalAddr().String(), remoteAddr,
 		conn.RemoteAddr().Network())
 
 	// 1. sendMsg version
@@ -53,17 +53,13 @@ func HandshakeClient(netServer *NetServer, conn net.Conn) error {
 	if err != nil {
 		return err
 	}
-	if msg.CmdType() != common.VERSION_TYPE {
+	receivedVersion, ok := msg.(*types.Version)
+	if !ok {
 		return fmt.Errorf("expected version message, but got message type: %s", msg.CmdType())
 	}
 
-	receivedVersion := msg.(*types.Version)
-	remoteAddr := conn.RemoteAddr().String()
-	if err = isHandWithSelf(netServer, remoteAddr, receivedVersion); err != nil {
-		return err
-	}
-
 	// 3. update kadId
+	kid := kbucket.PseudoKadIdFromUint64(receivedVersion.P.Nonce)
 	if receivedVersion.P.SoftVersion > "v1.9.0" {
 		log.Info("*******come in dht*******")
 		msg := msgpack.NewUpdateKadKeyId(netServer)
@@ -76,22 +72,25 @@ func HandshakeClient(netServer *NetServer, conn net.Conn) error {
 		if err != nil {
 			return err
 		}
-		if msg.CmdType() != common.UPDATE_KADID_TYPE {
-			return fmt.Errorf("")
+		kadKeyId, ok := msg.(*types.UpdateKadId)
+		if !ok {
+			return fmt.Errorf("handshake failed, expect kad id message, got %s", msg.CmdType())
 		}
-		kadKeyId := msg.(*types.UpdateKadId)
-		if !netServer.UpdateDHT(kadKeyId.KadKeyId.Id) {
-			log.Errorf("[HandshakeClient] UpdateDHT failed, kadId: %s", kadKeyId.KadKeyId.Id.ToHexString())
-			return fmt.Errorf("[HandshakeClient] UpdateDHT failed, kadId: %s", kadKeyId.KadKeyId.Id.ToHexString())
-		}
+
+		kid = kadKeyId.KadKeyId.Id
 	}
 
 	// 5. sendMsg ack
 	ack := msgpack.NewVerAck()
 	err = sendMsg(conn, ack)
 	if err != nil {
-		netServer.RemoveFromOutConnRecord(addr)
+		netServer.RemoveFromOutConnRecord(remoteAddr)
 		log.Warn(err)
+		return err
+	}
+
+	remotePeer := createPeer(receivedVersion, conn, kid)
+	if err = isHandWithSelf(netServer, remotePeer); err != nil {
 		return err
 	}
 
@@ -101,19 +100,17 @@ func HandshakeClient(netServer *NetServer, conn net.Conn) error {
 		return err
 	}
 
-	remotePeer, err := createPeer(netServer, receivedVersion, conn)
-	if err != nil {
+	if !netServer.UpdateDHT(kid) {
+		err := fmt.Errorf("[HandshakeClient] UpdateDHT failed, kadId: %s", kid.ToHexString())
+		log.Error(err)
 		return err
 	}
 
-	netServer.AddOutConnRecord(addr)
-	netServer.AddPeerAddress(addr, remotePeer)
-	remotePeer.Link.SetAddr(addr)
-	remotePeer.Link.SetConn(conn)
-	remotePeer.Link.SetID(remotePeer.GetID())
 	remotePeer.AttachChan(netServer.NetChan)
+	netServer.AddOutConnRecord(remoteAddr)
+	netServer.AddPeerAddress(remoteAddr, remotePeer)
 	netServer.AddNbrNode(remotePeer)
-	log.Infof("remotePeer.GetId():%d,addr: %s, link id: %d", remotePeer.GetID(), addr, remotePeer.Link.GetID())
+	log.Infof("remotePeer.GetId():%d,addr: %s, link id: %d", remotePeer.GetID(), remoteAddr, remotePeer.Link.GetID())
 	go remotePeer.Link.Rx()
 	remotePeer.SetState(common.ESTABLISH)
 
@@ -127,14 +124,15 @@ func HandshakeClient(netServer *NetServer, conn net.Conn) error {
 	return nil
 }
 
-func isHandWithSelf(netServer *NetServer, remoteAddr string, receivedVersion *types.Version) error {
+func isHandWithSelf(netServer *NetServer, remotePeer *peer.Peer) error {
+	remoteAddr := remotePeer.GetAddr()
 	addrIp, err := common.ParseIPAddr(remoteAddr)
 	if err != nil {
 		log.Warn(err)
 		return err
 	}
-	nodeAddr := addrIp + ":" + strconv.Itoa(int(receivedVersion.P.SyncPort))
-	if receivedVersion.P.Nonce == netServer.GetID() {
+	nodeAddr := addrIp + ":" + strconv.Itoa(int(remotePeer.GetPort()))
+	if remotePeer.GetKId() == netServer.GetKId() {
 		log.Warn("[createPeer]the node handshake with itself:", remoteAddr)
 		netServer.SetOwnAddress(nodeAddr)
 		return fmt.Errorf("[createPeer]the node handshake with itself: %s", remoteAddr)
@@ -153,9 +151,6 @@ func HandshakeServer(netServer *NetServer, conn net.Conn) error {
 		return fmt.Errorf("[HandshakeServer] expected version message")
 	}
 	version := msg.(*types.Version)
-	if err = isHandWithSelf(netServer, conn.RemoteAddr().String(), version); err != nil {
-		return err
-	}
 
 	// 2. sendMsg version
 	ver := msgpack.NewVersion(netServer, ledger.DefLedger.GetCurrentBlockHeight())
@@ -173,10 +168,10 @@ func HandshakeServer(netServer *NetServer, conn net.Conn) error {
 			log.Errorf("[HandshakeServer] ReadMessage failed, error: %s", err)
 			return fmt.Errorf("[HandshakeServer] ReadMessage failed, error: %s", err)
 		}
-		if msg.CmdType() != common.UPDATE_KADID_TYPE {
+		kadkeyId, ok := msg.(*types.UpdateKadId)
+		if !ok {
 			return fmt.Errorf("[HandshakeServer] expected update kadkeyid message")
 		}
-		kadkeyId := msg.(*types.UpdateKadId)
 		kid = kadkeyId.KadKeyId.Id
 		// 4. sendMsg update kadkey id
 		msg = msgpack.NewUpdateKadKeyId(netServer)
@@ -196,6 +191,11 @@ func HandshakeServer(netServer *NetServer, conn net.Conn) error {
 		return fmt.Errorf("[HandshakeServer] expected version ack message")
 	}
 
+	remotePeer := createPeer(version, conn, kid)
+	if err = isHandWithSelf(netServer, remotePeer); err != nil {
+		return err
+	}
+
 	// Obsolete node
 	err = removeOldPeer(netServer, version.P.Nonce, conn.RemoteAddr().String())
 	if err != nil {
@@ -203,17 +203,9 @@ func HandshakeServer(netServer *NetServer, conn net.Conn) error {
 	}
 
 	netServer.dht.Update(kid)
-	remotePeer, err := createPeer(netServer, version, conn)
-	if err != nil {
-		return err
-	}
-	remotePeer.SetKId(kid)
-	addr := conn.RemoteAddr().String()
-	remotePeer.Link.SetAddr(addr)
-	remotePeer.Link.SetConn(conn)
-	remotePeer.Link.SetID(remotePeer.GetID())
-	remotePeer.AttachChan(netServer.NetChan)
 
+	remotePeer.AttachChan(netServer.NetChan)
+	addr := conn.RemoteAddr().String()
 	netServer.AddNbrNode(remotePeer)
 	netServer.AddInConnRecord(addr)
 	netServer.AddPeerAddress(addr, remotePeer)
@@ -267,7 +259,7 @@ func checkReservedPeers(remoteAddr string) error {
 	return nil
 }
 
-func createPeer(p2p *NetServer, version *types.Version, conn net.Conn) (*peer.Peer, error) {
+func createPeer(version *types.Version, conn net.Conn, kid kbucket.KadId) *peer.Peer {
 	log.Infof("remoteAddr: %s, localAddr: %s", conn.RemoteAddr().String(), conn.LocalAddr().String())
 
 	remotePeer := peer.NewPeer()
@@ -279,10 +271,14 @@ func createPeer(p2p *NetServer, version *types.Version, conn net.Conn) (*peer.Pe
 	remotePeer.SetHttpInfoPort(version.P.HttpInfoPort)
 
 	remotePeer.UpdateInfo(time.Now(), version.P.Version,
-		version.P.Services, version.P.SyncPort, version.P.Nonce,
+		version.P.Services, version.P.SyncPort, kid,
 		version.P.Relay, version.P.StartHeight, version.P.SoftVersion)
 
-	return remotePeer, nil
+	remotePeer.Link.SetAddr(conn.RemoteAddr().String())
+	remotePeer.Link.SetConn(conn)
+	remotePeer.Link.SetID(kid.ToUint64())
+
+	return remotePeer
 }
 
 func removeOldPeer(p2p *NetServer, pid uint64, remoteAddr string) error {
