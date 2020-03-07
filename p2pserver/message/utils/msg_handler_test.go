@@ -20,15 +20,14 @@ package utils
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"github.com/ontio/ontology/p2pserver/protocols"
 	"net"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
@@ -38,6 +37,7 @@ import (
 	ct "github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/events"
 	msgCommon "github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	"github.com/ontio/ontology/p2pserver/message/types"
 	"github.com/ontio/ontology/p2pserver/net/netserver"
@@ -96,88 +96,8 @@ func TestMain(m *testing.M) {
 
 	m.Run()
 
-	ledger.DefLedger.Close()
-	os.RemoveAll(config.DEFAULT_DATA_DIR)
-}
-
-// TestVersionHandle tests Function VersionHandle handling a version message
-func TestVersionHandle(t *testing.T) {
-	// Simulate a remote peer to connect to the local
-	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
-
-	network.AddPeerAddress("127.0.0.1:50010", remotePeer)
-
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
-
-	// Construct a version packet
-	buf := msgpack.NewVersion(network, 12345)
-	version := buf.(*types.Version)
-	version.P.Nonce = testID
-
-	msg := &types.MsgPayload{
-		Id:      testID,
-		Addr:    "127.0.0.1:50010",
-		Payload: buf,
-	}
-
-	// Invoke VersionHandle to handle the msg
-	VersionHandle(msg, network, nil)
-
-	// Get the remote peer from the neighbor peers by peer id
-	tempPeer := network.GetPeer(testID)
-	assert.NotNil(t, tempPeer)
-
-	assert.Equal(t, tempPeer.GetID(), testID)
-	assert.Equal(t, tempPeer.GetVersion(), network.GetVersion())
-	assert.Equal(t, tempPeer.GetServices(), network.GetServices())
-	assert.Equal(t, tempPeer.GetPort(), network.GetPort())
-	assert.Equal(t, tempPeer.GetHttpInfoPort(), network.GetHttpInfoPort())
-	assert.Equal(t, tempPeer.GetHeight(), uint64(12345))
-	assert.Equal(t, tempPeer.GetState(), uint32(msgCommon.HAND_SHAKE))
-
-	network.DelNbrNode(testID)
-}
-
-// TestVerAckHandle tests Function VerAckHandle handling a version ack
-func TestVerAckHandle(t *testing.T) {
-	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
-
-	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
-
-	remotePeer.SetHttpInfoPort(20335)
-	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336, testID, 0, 12345, "1.5.2")
-	network.AddNbrNode(remotePeer)
-	remotePeer.SetState(msgCommon.HAND_SHAKE)
-
-	// Construct a version ack packet
-	buf := msgpack.NewVerAck()
-
-	msg := &types.MsgPayload{
-		Id:      testID,
-		Addr:    "127.0.0.1:50010",
-		Payload: buf,
-	}
-
-	// Invoke VerAckHandle to handle the msg
-	VerAckHandle(msg, network, nil)
-
-	// Get the remote peer from the neighbor peers by peer id
-	tempPeer := network.GetPeer(testID)
-	assert.NotNil(t, tempPeer)
-	assert.Equal(t, tempPeer.GetState(), uint32(msgCommon.ESTABLISH))
-
-	network.DelNbrNode(testID)
+	_ = ledger.DefLedger.Close()
+	_ = os.RemoveAll(config.DEFAULT_DATA_DIR)
 }
 
 // TestAddrReqHandle tests Function AddrReqHandle handling an address req
@@ -186,14 +106,9 @@ func TestAddrReqHandle(t *testing.T) {
 	network = NewMockP2p()
 
 	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(0x7533345)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
@@ -207,13 +122,14 @@ func TestAddrReqHandle(t *testing.T) {
 	buf := msgpack.NewAddrReq()
 
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "test",
 		Payload: buf,
 	}
 
 	// Invoke AddrReqHandle to handle the msg
-	AddrReqHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	AddrReqHandle(ctx)
 
 	// all neighbor peers should be in rsp msg
 	for _, msg := range network.SentMsgs {
@@ -232,30 +148,29 @@ func TestAddrReqHandle(t *testing.T) {
 		}
 	}
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
-//
 // create two neighbors, one masked, one un-masked
 // send addr-req from un-mask peer, get itself in addr-rsp
-//
 func TestAddrReqHandle_maskok(t *testing.T) {
 	network = NewMockP2p()
 
 	// Simulate a remote peer to be added to the neighbor peers
-	testID := uint64(123456)
+	testID := kbucket.PseudoKadIdFromUint64(123456)
+	info := peer.NewPeerInfo(testID, 1, 12345678, true, 0, 20336, 12345, "1.5.2", "1.2.3.4:5001")
 	remotePeer := peer.NewPeer()
-	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
-		testID, 0, 12345, "1.5.2")
+	remotePeer.SetInfo(info)
 	remotePeer.Link.SetAddr("1.2.3.4:5001")
 	remotePeer.Link.SetPort(5001)
 	network.AddNbrNode(remotePeer)
 	remotePeer.SetState(msgCommon.ESTABLISH)
 
-	testID2 := uint64(1234567)
+	testID2 := kbucket.PseudoKadIdFromUint64(1234567)
+	info2 := peer.NewPeerInfo(testID2, 1, 12345678, true, 0,
+		20336, 12345, "1.5.2", "1.2.3.5:5002")
 	remotePeer2 := peer.NewPeer()
-	remotePeer2.UpdateInfo(time.Now(), 1, 12345678, 20336,
-		testID2, 0, 12345, "1.5.2")
+	remotePeer2.SetInfo(info2)
 	remotePeer2.Link.SetAddr("1.2.3.5:5002")
 	remotePeer2.Link.SetPort(5002)
 	network.AddNbrNode(remotePeer2)
@@ -265,16 +180,16 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 	buf := msgpack.NewAddrReq()
 
 	msg := &types.MsgPayload{
-		Id:      testID2,
+		Id:      testID2.ToUint64(),
 		Addr:    "test",
 		Payload: buf,
 	}
 
 	config.DefConfig.P2PNode.ReservedPeersOnly = true
 	config.DefConfig.P2PNode.ReservedCfg.MaskPeers = []string{"1.2.3.4"}
-
 	// Invoke AddrReqHandle to handle the msg
-	AddrReqHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	AddrReqHandle(ctx)
 
 	// verify 1.2.3.4 is masked
 	for _, msg := range network.SentMsgs {
@@ -293,25 +208,25 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 		}
 	}
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
-//
+func newContext(t *testing.T, msg *types.MsgPayload, n p2p.P2P) *protocols.Context {
+	sender := n.GetPeer(msg.Id)
+	assert.NotNil(t, sender)
+
+	return protocols.NewContext(sender, n, nil, msg.PayloadSize)
+}
+
 // create one masked neighbor
 // send addr-req, get itself in addr-rsp
-//
 func TestAddrReqHandle_unmaskok(t *testing.T) {
 	network = NewMockP2p()
 
 	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(123456)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
@@ -325,7 +240,7 @@ func TestAddrReqHandle_unmaskok(t *testing.T) {
 	buf := msgpack.NewAddrReq()
 
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "test",
 		Payload: buf,
 	}
@@ -334,7 +249,8 @@ func TestAddrReqHandle_unmaskok(t *testing.T) {
 	config.DefConfig.P2PNode.ReservedCfg.MaskPeers = []string{"1.2.3.4"}
 
 	// Invoke AddrReqHandle to handle the msg
-	AddrReqHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	AddrReqHandle(ctx)
 
 	for _, msg := range network.SentMsgs {
 		addrMsg, ok := msg.(*types.Addr)
@@ -352,21 +268,15 @@ func TestAddrReqHandle_unmaskok(t *testing.T) {
 		}
 	}
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestHeadersReqHandle tests Function HeadersReqHandle handling a header req
 func TestHeadersReqHandle(t *testing.T) {
 	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(123456)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
-
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
@@ -378,27 +288,23 @@ func TestHeadersReqHandle(t *testing.T) {
 	buf := msgpack.NewHeadersReq(headerHash)
 
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
 
 	// Invoke HeadersReqhandle to handle the msg
-	HeadersReqHandle(msg, network, nil)
-	network.DelNbrNode(testID)
+	ctx := newContext(t, msg, network)
+	HeadersReqHandle(ctx, buf.(*types.HeadersReq))
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestPingHandle tests Function PingHandle handling a ping message
 func TestPingHandle(t *testing.T) {
 	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(123456)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
@@ -407,33 +313,28 @@ func TestPingHandle(t *testing.T) {
 
 	// Construct a ping packet
 	height := ledger.DefLedger.GetCurrentBlockHeight()
-	assert.Nil(t, err)
 
 	buf := msgpack.NewPingMsg(uint64(height))
 
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
 
 	// Invoke PingHandle to handle the msg
-	PingHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	PingHandle(ctx, buf)
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestPingHandle tests Function PingHandle handling a pong message
 func TestPongHandle(t *testing.T) {
 	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(123456)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
@@ -442,33 +343,28 @@ func TestPongHandle(t *testing.T) {
 
 	// Construct a pong packet
 	height := ledger.DefLedger.GetCurrentBlockHeight()
-	assert.Nil(t, err)
 
 	buf := msgpack.NewPongMsg(uint64(height))
 
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
 
 	// Invoke PingHandle to handle the msg
-	PongHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	PongHandle(ctx, buf)
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestBlkHeaderHandle tests Function BlkHeaderHandle handling a sync header msg
 func TestBlkHeaderHandle(t *testing.T) {
 	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(123456)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336, testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
 
@@ -482,30 +378,29 @@ func TestBlkHeaderHandle(t *testing.T) {
 	assert.Nil(t, err)
 
 	buf := msgpack.NewHeaders(headers)
-
+	sink := common.NewZeroCopySink(nil)
+	types.WriteMessage(sink, buf)
+	realHeaderMsg, _, err := types.ReadMessage(bytes.NewBuffer(sink.Bytes()))
+	assert.Nil(t, err)
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
-		Payload: buf,
+		Payload: realHeaderMsg,
 	}
 
 	// Invoke BlkHeaderHandle to handle the msg
-	BlkHeaderHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	BlkHeaderHandle(ctx, realHeaderMsg.(*types.BlkHeader))
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestBlockHandle tests Function BlockHandle handling a block message
 func TestBlockHandle(t *testing.T) {
 	// Simulate a remote peer to be added to the neighbor peers
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(123456)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
@@ -524,66 +419,16 @@ func TestBlockHandle(t *testing.T) {
 	buf := msgpack.NewBlock(block, nil, mr)
 
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
 
 	// Invoke BlockHandle to handle the msg
-	BlockHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	BlockHandle(ctx, buf.(*types.Block))
 
-	network.DelNbrNode(testID)
-}
-
-// TestConsensusHandle tests Function ConsensusHandle handling a consensus message
-func TestConsensusHandle(t *testing.T) {
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
-
-	hash := ledger.DefLedger.GetBlockHash(0)
-	assert.NotEqual(t, hash, common.UINT256_EMPTY)
-
-	cpl := &types.ConsensusPayload{
-		Version:         1,
-		PrevHash:        hash,
-		Height:          0,
-		BookkeeperIndex: 0,
-		Timestamp:       uint32(time.Now().UTC().UnixNano()),
-		Data:            []byte{},
-		Owner:           testPub,
-		Signature:       []byte{},
-	}
-
-	buf := msgpack.NewConsensus(cpl)
-
-	msg := &types.MsgPayload{
-		Id:      testID,
-		Addr:    "127.0.0.1:50010",
-		Payload: buf,
-	}
-
-	ConsensusHandle(msg, network, nil)
-}
-
-// TestNotFoundHandle tests Function NotFoundHandle handling a not found message
-func TestNotFoundHandle(t *testing.T) {
-	tempStr := "3369930accc1ddd067245e8edadcd9bea207ba5e1753ac18a51df77a343bfe92"
-	hex, _ := hex.DecodeString(tempStr)
-	var hash common.Uint256
-	hash.Deserialize(bytes.NewReader(hex))
-
-	buf := msgpack.NewNotFound(hash)
-
-	msg := &types.MsgPayload{
-		Id:      0,
-		Addr:    "127.0.0.1:50010",
-		Payload: buf,
-	}
-
-	NotFoundHandle(msg, network, nil)
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestTransactionHandle tests Function TransactionHandle handling a transaction message
@@ -606,7 +451,8 @@ func TestTransactionHandle(t *testing.T) {
 		Payload: buf,
 	}
 
-	TransactionHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	TransactionHandle(ctx, buf.(*types.Trn))
 }
 
 // TestAddrHandle tests Function AddrHandle handling a neighbor address response message
@@ -619,19 +465,15 @@ func TestAddrHandle(t *testing.T) {
 		Payload: buf,
 	}
 
-	AddrHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	AddrHandle(ctx, buf.(*types.Addr))
 }
 
 // TestDataReqHandle tests Function DataReqHandle handling a data req(block/Transaction)
 func TestDataReqHandle(t *testing.T) {
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(0x7533345)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
@@ -643,12 +485,13 @@ func TestDataReqHandle(t *testing.T) {
 	buf := msgpack.NewBlkDataReq(hash)
 
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
 
-	DataReqHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	DataReqHandle(ctx, buf.(*types.DataReq))
 
 	tempStr := "3369930accc1ddd067245e8edadcd9bea207ba5e1753ac18a51df77a343bfe92"
 	hex, _ := hex.DecodeString(tempStr)
@@ -656,26 +499,22 @@ func TestDataReqHandle(t *testing.T) {
 	txHash.Deserialize(bytes.NewReader(hex))
 	buf = msgpack.NewTxnDataReq(txHash)
 	msg = &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
 
-	DataReqHandle(msg, network, nil)
+	ctx = newContext(t, msg, network)
+	DataReqHandle(ctx, buf.(*types.DataReq))
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestInvHandle tests Function InvHandle handling an inventory message
 func TestInvHandle(t *testing.T) {
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(0x7533345)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
@@ -690,40 +529,36 @@ func TestInvHandle(t *testing.T) {
 	invPayload := msgpack.NewInvPayload(common.BLOCK, []common.Uint256{hash})
 	buffer := msgpack.NewInv(invPayload)
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
 		Payload: buffer,
 	}
 
-	InvHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	InvHandle(ctx, buffer.(*types.Inv))
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }
 
 // TestDisconnectHandle tests Function DisconnectHandle handling a disconnect event
 func TestDisconnectHandle(t *testing.T) {
-	var testID uint64
-	_, testPub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	key := keypair.SerializePublicKey(testPub)
-	err := binary.Read(bytes.NewBuffer(key[:8]), binary.LittleEndian, &(testID))
-	assert.Nil(t, err)
+	testID := kbucket.PseudoKadIdFromUint64(0x7533345)
 
 	remotePeer := peer.NewPeer()
-	assert.NotNil(t, remotePeer)
 	remotePeer.UpdateInfo(time.Now(), 1, 12345678, 20336,
 		testID, 0, 12345, "1.5.2")
 	remotePeer.Link.SetAddr("127.0.0.1:50010")
 
 	network.AddNbrNode(remotePeer)
 
-	msgDisc, err := types.MakeEmptyMessage(msgCommon.DISCONNECT_TYPE)
 	msg := &types.MsgPayload{
-		Id:      testID,
+		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
-		Payload: msgDisc,
+		Payload: &types.Disconnected{},
 	}
 
-	DisconnectHandle(msg, network, nil)
+	ctx := newContext(t, msg, network)
+	DisconnectHandle(ctx)
 
-	network.DelNbrNode(testID)
+	network.DelNbrNode(testID.ToUint64())
 }

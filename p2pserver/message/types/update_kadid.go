@@ -16,35 +16,29 @@
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package p2pserver
+package types
 
 import (
-	"fmt"
-	"testing"
-
-	"github.com/ontio/ontology/common/log"
+	common2 "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
-func init() {
-	log.InitLog(log.InfoLog, log.Stdout)
-	fmt.Println("Start test the netserver...")
-
+type UpdateKadId struct {
+	//TODO remove this legecy field when upgrade network layer protocal
+	KadKeyId *kbucket.KadKeyId
 }
-func TestNewP2PServer(t *testing.T) {
-	fmt.Println("Start test new p2pserver...")
 
-	p2p := NewServer()
+//Serialize message payload
+func (this *UpdateKadId) Serialization(sink *common2.ZeroCopySink) {
+	this.KadKeyId.Serialization(sink)
+}
 
-	if p2p.GetVersion() != common.PROTOCOL_VERSION {
-		t.Error("TestNewP2PServer p2p version error", p2p.GetVersion())
-	}
+func (this *UpdateKadId) Deserialization(source *common2.ZeroCopySource) error {
+	this.KadKeyId = &kbucket.KadKeyId{}
+	return this.KadKeyId.Deserialization(source)
+}
 
-	if p2p.GetVersion() != common.PROTOCOL_VERSION {
-		t.Error("TestNewP2PServer p2p version error")
-	}
-	sync := p2p.GetPort()
-	if sync != 20338 {
-		t.Error("TestNewP2PServer sync port error")
-	}
+func (this *UpdateKadId) CmdType() string {
+	return common.UPDATE_KADID_TYPE
 }

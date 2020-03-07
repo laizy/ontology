@@ -40,7 +40,6 @@ import (
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	msgtypes "github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/message/utils"
 	"github.com/ontio/ontology/p2pserver/net/netserver"
 	p2pnet "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
@@ -49,15 +48,12 @@ import (
 //P2PServer control all network activities
 type P2PServer struct {
 	network   p2pnet.P2P
-	msgRouter *utils.MessageRouter
 	pid       *evtActor.PID
 	blockSync *BlockSyncMgr
 	ledger    *ledger.Ledger
 	ReconnectAddrs
-	recentPeers    map[uint32][]string
-	quitSyncRecent chan bool
-	quitOnline     chan bool
-	quitHeartBeat  chan bool
+	recentPeers map[uint32][]string
+	quit        chan bool
 }
 
 //ReconnectAddrs contain addr need to reconnect
@@ -75,12 +71,9 @@ func NewServer() *P2PServer {
 		ledger:  ledger.DefLedger,
 	}
 
-	p.msgRouter = utils.NewMsgRouter(p.network)
 	p.blockSync = NewBlockSyncMgr(p)
-	p.recentPeers = make(map[uint32][]string)
-	p.quitSyncRecent = make(chan bool)
-	p.quitOnline = make(chan bool)
-	p.quitHeartBeat = make(chan bool)
+	p.loadRecentPeers()
+	p.quit = make(chan bool)
 	return p
 }
 
@@ -96,16 +89,7 @@ func (this *P2PServer) GetMaxPeerBlockHeight() uint64 {
 
 //Start create all services
 func (this *P2PServer) Start() error {
-	if this.network != nil {
-		this.network.Start()
-	} else {
-		return errors.New("[p2p]network invalid")
-	}
-	if this.msgRouter != nil {
-		this.msgRouter.Start()
-	} else {
-		return errors.New("[p2p]msg router invalid")
-	}
+	this.network.Start()
 	this.tryRecentPeers()
 	go this.connectSeedService()
 	go this.syncUpRecentPeers()
@@ -118,31 +102,13 @@ func (this *P2PServer) Start() error {
 //Stop halt all service by send signal to channels
 func (this *P2PServer) Stop() {
 	this.network.Halt()
-	this.quitSyncRecent <- true
-	this.quitOnline <- true
-	this.quitHeartBeat <- true
-	this.msgRouter.Stop()
+	this.quit <- true
 	this.blockSync.Close()
 }
 
 // GetNetWork returns the low level netserver
 func (this *P2PServer) GetNetWork() p2pnet.P2P {
 	return this.network
-}
-
-//GetPort return two network port
-func (this *P2PServer) GetPort() uint16 {
-	return this.network.GetPort()
-}
-
-//GetVersion return self version
-func (this *P2PServer) GetVersion() uint32 {
-	return this.network.GetVersion()
-}
-
-//GetNeighborAddrs return all nbr`s address
-func (this *P2PServer) GetNeighborAddrs() []common.PeerAddr {
-	return this.network.GetNeighborAddrs()
 }
 
 //Xmit called by other module to broadcast msg
@@ -184,11 +150,6 @@ func (this *P2PServer) Send(p *peer.Peer, msg msgtypes.Message,
 	return errors.New("[p2p]send to a not ESTABLISH peer")
 }
 
-// GetID returns local node id
-func (this *P2PServer) GetID() uint64 {
-	return this.network.GetID()
-}
-
 // OnAddNode adds the peer id to the block sync mgr
 func (this *P2PServer) OnAddNode(id uint64) {
 	this.blockSync.OnAddNode(id)
@@ -210,20 +171,10 @@ func (this *P2PServer) OnBlockReceive(fromID uint64, blockSize uint32,
 	this.blockSync.OnBlockReceive(fromID, blockSize, block, ccMsg, merkleRoot)
 }
 
-// Todo: remove it if no use
-func (this *P2PServer) GetConnectionState() uint32 {
-	return common.INIT
-}
-
-//GetTime return lastet contact time
-func (this *P2PServer) GetTime() int64 {
-	return this.network.GetTime()
-}
-
 // SetPID sets p2p actor
 func (this *P2PServer) SetPID(pid *evtActor.PID) {
 	this.pid = pid
-	this.msgRouter.SetPID(pid)
+	this.network.SetPID(pid)
 }
 
 // GetPID returns p2p actor
@@ -296,8 +247,9 @@ func (this *P2PServer) connectSeeds() {
 
 	if len(seedConnList) > 0 {
 		rand.Seed(time.Now().UnixNano())
-		index := rand.Intn(len(seedConnList))
-		this.reqNbrList(seedConnList[index])
+		// close NewAddrReq
+		// index := rand.Intn(len(seedConnList))
+		// this.reqNbrList(seedConnList[index])
 		if isSeed && len(seedDisconn) > 0 {
 			index := rand.Intn(len(seedDisconn))
 			go this.network.Connect(seedDisconn[index])
@@ -362,9 +314,9 @@ func (this *P2PServer) retryInactivePeer() {
 	np.List = neighborPeers
 	np.Unlock()
 
-	connCount := uint(this.network.GetOutConnRecordLen())
+	connCount := this.network.GetOutConnRecordLen()
 	if connCount >= config.DefConfig.P2PNode.MaxConnOutBound {
-		log.Warnf("[p2p]Connect: out connections(%d) reach the max limit(%d)", connCount,
+		log.Warnf("[p2p]Connect: out connections(%d) reach max limit(%d)", connCount,
 			config.DefConfig.P2PNode.MaxConnOutBound)
 		return
 	}
@@ -382,7 +334,6 @@ func (this *P2PServer) retryInactivePeer() {
 				list[addr] = v
 			}
 			if v >= common.MAX_RETRY_COUNT {
-				this.network.RemoveFromConnectingList(addr)
 				remotePeer := this.network.GetPeerFromAddr(addr)
 				if remotePeer != nil {
 					if remotePeer.Link.GetAddr() == addr {
@@ -419,7 +370,7 @@ func (this *P2PServer) connectSeedService() {
 			} else {
 				t.Reset(time.Second * common.CONN_MONITOR)
 			}
-		case <-this.quitOnline:
+		case <-this.quit:
 			t.Stop()
 			return
 		}
@@ -435,7 +386,7 @@ func (this *P2PServer) keepOnlineService() {
 			this.retryInactivePeer()
 			t.Stop()
 			t.Reset(time.Second * common.CONN_MONITOR)
-		case <-this.quitOnline:
+		case <-this.quit:
 			t.Stop()
 			return
 		}
@@ -459,7 +410,7 @@ func (this *P2PServer) heartBeatService() {
 		case <-t.C:
 			this.ping()
 			this.timeout()
-		case <-this.quitHeartBeat:
+		case <-this.quit:
 			t.Stop()
 			return
 		}
@@ -525,9 +476,8 @@ func (this *P2PServer) removeFromRetryList(addr string) {
 	}
 }
 
-//tryRecentPeers try connect recent contact peer when service start
-func (this *P2PServer) tryRecentPeers() {
-	netID := config.DefConfig.P2PNode.NetworkMagic
+func (this *P2PServer) loadRecentPeers() {
+	this.recentPeers = make(map[uint32][]string)
 	if comm.FileExisted(common.RECENT_FILE_NAME) {
 		buf, err := ioutil.ReadFile(common.RECENT_FILE_NAME)
 		if err != nil {
@@ -540,13 +490,17 @@ func (this *P2PServer) tryRecentPeers() {
 			log.Warn("[p2p]parse recent peer file fail: ", err)
 			return
 		}
-		if len(this.recentPeers[netID]) > 0 {
-			log.Info("[p2p]try to connect recent peer")
-		}
-		for _, v := range this.recentPeers[netID] {
-			go this.network.Connect(v)
-		}
+	}
+}
 
+//tryRecentPeers try connect recent contact peer when service start
+func (this *P2PServer) tryRecentPeers() {
+	netID := config.DefConfig.P2PNode.NetworkMagic
+	if len(this.recentPeers[netID]) > 0 {
+		log.Info("[p2p] try to connect recent peer")
+	}
+	for _, v := range this.recentPeers[netID] {
+		go this.network.Connect(v)
 	}
 }
 
@@ -557,22 +511,21 @@ func (this *P2PServer) syncUpRecentPeers() {
 	for {
 		select {
 		case <-t.C:
-			this.syncPeerAddr()
-		case <-this.quitSyncRecent:
+			this.persistRecentPeers()
+		case <-this.quit:
 			t.Stop()
 			return
 		}
 	}
-
 }
 
-//syncPeerAddr compare snapshot of recent peer with current link,then persist the list
-func (this *P2PServer) syncPeerAddr() {
+//persistRecentPeers compare snapshot of recent peer with current link,then persist the list
+func (this *P2PServer) persistRecentPeers() {
 	changed := false
 	netID := config.DefConfig.P2PNode.NetworkMagic
 	for i := 0; i < len(this.recentPeers[netID]); i++ {
 		p := this.network.GetPeerFromAddr(this.recentPeers[netID][i])
-		if p == nil || (p != nil && p.GetState() != common.ESTABLISH) {
+		if p == nil || p.GetState() != common.ESTABLISH {
 			this.recentPeers[netID] = append(this.recentPeers[netID][:i], this.recentPeers[netID][i+1:]...)
 			changed = true
 			i--
@@ -586,8 +539,7 @@ func (this *P2PServer) syncPeerAddr() {
 		for _, p := range np.List {
 			addr, _ := p.GetAddr16()
 			ip = addr[:]
-			nodeAddr := ip.To16().String() + ":" +
-				strconv.Itoa(int(p.GetPort()))
+			nodeAddr := ip.To16().String() + ":" + strconv.Itoa(int(p.GetPort()))
 			found := false
 			for i := 0; i < len(this.recentPeers[netID]); i++ {
 				if nodeAddr == this.recentPeers[netID][i] {

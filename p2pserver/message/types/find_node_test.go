@@ -10,19 +10,37 @@
  * The ontology is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package server
+package types
 
 import (
-	ptypes "github.com/ontio/ontology/p2pserver/message/types"
+	"testing"
+
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
-type TransmitConsensusMsgReq struct {
-	Target uint64
-	Msg    ptypes.Message
+func TestFindNodeRequest(t *testing.T) {
+	var req FindNodeReq
+	req.TargetID = kbucket.KadId{}
+
+	MessageTest(t, &req)
+}
+
+func TestFindNodeResponse(t *testing.T) {
+	var resp FindNodeResp
+	resp.TargetID = kbucket.KadId{}
+	resp.Address = "127.0.0.1:1222"
+	resp.CloserPeers = []PeerAddr{
+		PeerAddr{
+			PeerID: 0x456,
+			Addr:   "127.0.0.1:4222",
+		},
+	}
+	resp.Success = true
+
+	MessageTest(t, &resp)
 }

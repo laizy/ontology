@@ -20,6 +20,7 @@ package peer
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"runtime"
 	"sync"
@@ -29,105 +30,42 @@ import (
 	comm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	conn "github.com/ontio/ontology/p2pserver/link"
 	"github.com/ontio/ontology/p2pserver/message/types"
 )
 
-// PeerCom provides the basic information of a peer
-type PeerCom struct {
-	id           uint64
-	version      uint32
-	services     uint64
-	relay        bool
-	httpInfoPort uint16
-	port         uint16
-	height       uint64
-	softVersion  string
+// PeerInfo provides the basic information of a peer
+type PeerInfo struct {
+	Id           kbucket.KadId
+	Version      uint32
+	Services     uint64
+	Relay        bool
+	HttpInfoPort uint16
+	Port         uint16
+	Height       uint64
+	SoftVersion  string
+	Addr         string
 }
 
-// SetID sets a peer's id
-func (this *PeerCom) SetID(id uint64) {
-	this.id = id
-}
-
-// GetID returns a peer's id
-func (this *PeerCom) GetID() uint64 {
-	return this.id
-}
-
-// SetVersion sets a peer's version
-func (this *PeerCom) SetVersion(version uint32) {
-	this.version = version
-}
-
-// GetVersion returns a peer's version
-func (this *PeerCom) GetVersion() uint32 {
-	return this.version
-}
-
-// SetServices sets a peer's services
-func (this *PeerCom) SetServices(services uint64) {
-	this.services = services
-}
-
-// GetServices returns a peer's services
-func (this *PeerCom) GetServices() uint64 {
-	return this.services
-}
-
-// SerRelay sets a peer's relay
-func (this *PeerCom) SetRelay(relay bool) {
-	this.relay = relay
-}
-
-// GetRelay returns a peer's relay
-func (this *PeerCom) GetRelay() bool {
-	return this.relay
-}
-
-// SetPort sets a peer's sync port
-func (this *PeerCom) SetPort(port uint16) {
-	this.port = port
-}
-
-// GetPort returns a peer's sync port
-func (this *PeerCom) GetPort() uint16 {
-	return this.port
-}
-
-// SetHttpInfoPort sets a peer's http info port
-func (this *PeerCom) SetHttpInfoPort(port uint16) {
-	this.httpInfoPort = port
-}
-
-// GetHttpInfoPort returns a peer's http info port
-func (this *PeerCom) GetHttpInfoPort() uint16 {
-	return this.httpInfoPort
-}
-
-// SetHeight sets a peer's height
-func (this *PeerCom) SetHeight(height uint64) {
-	this.height = height
-}
-
-// GetHeight returns a peer's height
-func (this *PeerCom) GetHeight() uint64 {
-	return this.height
-}
-
-//SetSoftVersion sets a peers's software version
-func (this *PeerCom) SetSoftVersion(softVer string) {
-	this.softVersion = softVer
-}
-
-//GetSoftVersion return a peer's software version
-func (this *PeerCom) GetSoftVersion() string {
-	return this.softVersion
+func NewPeerInfo(id kbucket.KadId, version uint32, services uint64, relay bool, httpInfoPort uint16,
+	port uint16, height uint64, softVersion string, addr string) *PeerInfo {
+	return &PeerInfo{
+		Id:           id,
+		Version:      version,
+		Services:     services,
+		Relay:        relay,
+		HttpInfoPort: httpInfoPort,
+		Port:         port,
+		Height:       height,
+		SoftVersion:  softVersion,
+		Addr:         addr,
+	}
 }
 
 //Peer represent the node in p2p
 type Peer struct {
-	base      PeerCom
+	info      *PeerInfo
 	cap       [32]byte
 	Link      *conn.Link
 	linkState uint32
@@ -140,8 +78,9 @@ type Peer struct {
 func NewPeer() *Peer {
 	p := &Peer{
 		linkState: common.INIT,
+		info:      &PeerInfo{},
+		Link:      conn.NewLink(),
 	}
-	p.Link = conn.NewLink()
 	runtime.SetFinalizer(p, rmPeer)
 	return p
 }
@@ -151,12 +90,20 @@ func rmPeer(p *Peer) {
 	log.Debugf("[p2p]Remove unused peer: %d", p.GetID())
 }
 
+func (self *Peer) SetInfo(info *PeerInfo) {
+	self.info = info
+}
+
+func (self *PeerInfo) String() string {
+	return fmt.Sprintf("id=%s, version=%s", self.Id.ToHexString(), self.SoftVersion)
+}
+
 //DumpInfo print all information of peer
 func (this *Peer) DumpInfo() {
 	log.Debug("[p2p]Node info:")
 	log.Debug("[p2p]\t linkState = ", this.linkState)
 	log.Debug("[p2p]\t id = ", this.GetID())
-	log.Debug("[p2p]\t addr = ", this.Link.GetAddr())
+	log.Debug("[p2p]\t addr = ", this.info.Addr)
 	log.Debug("[p2p]\t cap = ", this.cap)
 	log.Debug("[p2p]\t version = ", this.GetVersion())
 	log.Debug("[p2p]\t services = ", this.GetServices())
@@ -168,17 +115,17 @@ func (this *Peer) DumpInfo() {
 
 //GetVersion return peer`s version
 func (this *Peer) GetVersion() uint32 {
-	return this.base.GetVersion()
+	return this.info.Version
 }
 
 //GetHeight return peer`s block height
 func (this *Peer) GetHeight() uint64 {
-	return this.base.GetHeight()
+	return this.info.Height
 }
 
 //SetHeight set height to peer
 func (this *Peer) SetHeight(height uint64) {
-	this.base.SetHeight(height)
+	this.info.Height = height
 }
 
 //GetState return sync state
@@ -217,17 +164,25 @@ func (this *Peer) Close() {
 
 //GetID return peer`s id
 func (this *Peer) GetID() uint64 {
-	return this.base.GetID()
+	return this.info.Id.ToUint64()
+}
+
+func (this *Peer) GetKId() kbucket.KadId {
+	return this.info.Id
+}
+
+func (this *Peer) SetKId(id kbucket.KadId) {
+	this.info.Id = id
 }
 
 //GetRelay return peer`s relay state
 func (this *Peer) GetRelay() bool {
-	return this.base.GetRelay()
+	return this.info.Relay
 }
 
 //GetServices return peer`s service state
 func (this *Peer) GetServices() uint64 {
-	return this.base.GetServices()
+	return this.info.Services
 }
 
 //GetTimeStamp return peer`s latest contact time in ticks
@@ -242,7 +197,7 @@ func (this *Peer) GetContactTime() time.Time {
 
 //GetAddr return peer`s sync link address
 func (this *Peer) GetAddr() string {
-	return this.Link.GetAddr()
+	return this.info.Addr
 }
 
 //GetAddr16 return peer`s sync link address in []byte
@@ -263,7 +218,7 @@ func (this *Peer) GetAddr16() ([16]byte, error) {
 }
 
 func (this *Peer) GetSoftVersion() string {
-	return this.base.GetSoftVersion()
+	return this.info.SoftVersion
 }
 
 //AttachChan set msg chan to sync link
@@ -295,29 +250,34 @@ func (this *Peer) GetHttpInfoState() bool {
 
 //GetHttpInfoPort return peer`s httpinfo port
 func (this *Peer) GetHttpInfoPort() uint16 {
-	return this.base.GetHttpInfoPort()
+	return this.info.HttpInfoPort
 }
 
 //SetHttpInfoPort set peer`s httpinfo port
 func (this *Peer) SetHttpInfoPort(port uint16) {
-	this.base.SetHttpInfoPort(port)
+	this.info.HttpInfoPort = port
 }
 
 //UpdateInfo update peer`s information
 func (this *Peer) UpdateInfo(t time.Time, version uint32, services uint64,
-	syncPort uint16, nonce uint64, relay uint8, height uint64, softVer string) {
+	syncPort uint16, kid kbucket.KadId, relay uint8, height uint64, softVer string) {
+	this.info.Id = kid
+	this.info.Version = version
+	this.info.Services = services
+	this.info.Port = syncPort
+	this.info.SoftVersion = softVer
+	this.info.Relay = relay != 0
+	this.info.Height = height
 
 	this.Link.UpdateRXTime(t)
-	this.base.SetID(nonce)
-	this.base.SetVersion(version)
-	this.base.SetServices(services)
-	this.base.SetPort(syncPort)
-	this.base.SetSoftVersion(softVer)
 	this.Link.SetPort(syncPort)
-	if relay == 0 {
-		this.base.SetRelay(false)
-	} else {
-		this.base.SetRelay(true)
-	}
-	this.SetHeight(uint64(height))
 }
+
+//func NewPeer(t time.Time, version uint32, services uint64,
+//	syncPort uint16, nonce uint64, relay uint8, height uint64, softVer string) *Peer {
+//		id := kbucket.PseudoKadIdFromUint64(nonce)
+//		peerCom := NewPeerCom(id, version,services, relay,true,syncPort,height,softVer)
+//		return &Peer{
+//
+//		}
+//}
