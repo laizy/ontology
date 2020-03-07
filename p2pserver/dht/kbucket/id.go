@@ -65,13 +65,41 @@ type KadKeyId struct {
 }
 
 func (self KadId) GenRandKadId(prefix uint) KadId {
-	var kad KadId
-	if prefix > uint(len(self.val[:])) {
-		prefix = uint(len(self.val[:]))
+	var ret KadId
+	rand.Read(ret.val[:])
+	if prefix == 0 {
+		ret.val[0] &= 0x7f
+		// make first bit different
+		if (0x80 & self.val[0]) == 0 {
+			ret.val[0] |= 0x80
+		}
+		return ret
 	}
-	_, _ = rand.Read(kad.val[:])
-	copy(kad.val[:prefix], self.val[:prefix])
-	return kad
+
+	num := prefix / 8
+	left := prefix % 8
+	if num > uint(len(self.val[:])) {
+		num = uint(len(self.val[:]))
+	}
+
+	if num > 0 {
+		copy(ret.val[:num], self.val[:num])
+	}
+	// make all prefix bits same
+	mask := (uint8(0xff) >> (8 - left)) << (8 - left)
+	ret.val[num] &= (^mask)
+	ret.val[num] |= (self.val[num] & mask)
+
+	// and prefix + 1 different
+	// clear prefix + 1
+	ret.val[num] &= ^(1 << (8 - left - 1))
+	// if prefix + 1 bit is 1 then we already satisfied
+	// if prefix + 1 bit is 0, then we should set this bit
+	if (self.val[num]>>(8-left-1))&1 == 0 {
+		ret.val[num] |= (1 << (8 - left - 1))
+	}
+
+	return ret
 }
 
 func (self KadId) ToUint64() uint64 {
@@ -155,12 +183,10 @@ func validatePublicKey(pubKey keypair.PublicKey) bool {
 			return false
 		}
 	}
-	diff := Difficulty - limit*8
+	diff := Difficulty % 8
 	if diff != 0 {
 		x := hash[limit] >> uint8(8-diff)
-		if x != 0 {
-			return false
-		}
+		return x == 0
 	}
 	return true
 }

@@ -64,6 +64,7 @@ func (b *Bucket) Remove(id KadId) bool {
 	for e := b.list.Front(); e != nil; e = e.Next() {
 		curr := e.Value.(KadId)
 		if curr == id {
+			b.list.Remove(e)
 			return true
 		}
 	}

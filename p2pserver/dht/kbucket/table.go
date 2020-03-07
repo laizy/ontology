@@ -92,6 +92,10 @@ func (rt *RouteTable) GetTrackedCplsForRefresh() []CplRefresh {
 
 // GenRandPeerID generates a random peerID for a given Cpl
 func (rt *RouteTable) GenRandKadId(targetCpl uint) KadId {
+	if targetCpl > maxCplForRefresh {
+		targetCpl = maxCplForRefresh
+	}
+
 	return rt.local.GenRandKadId(targetCpl)
 }
 
