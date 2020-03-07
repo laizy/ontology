@@ -335,9 +335,6 @@ func AddrHandle(data *msgTypes.MsgPayload, p2p p2p.P2P, pid *evtActor.PID, args 
 		if v.Port == 0 {
 			continue
 		}
-		if p2p.IsAddrFromConnecting(address) {
-			continue
-		}
 		log.Debug("[p2p]connect ip address:", address)
 		go p2p.Connect(address)
 	}
@@ -510,14 +507,11 @@ func InvHandle(data *msgTypes.MsgPayload, p2p p2p.P2P, pid *evtActor.PID, args .
 // DisconnectHandle handles the disconnect events
 func DisconnectHandle(data *msgTypes.MsgPayload, p2p p2p.P2P, pid *evtActor.PID, args ...interface{}) {
 	log.Debug("[p2p]receive disconnect message", data.Addr, data.Id)
-	p2p.RemoveFromInConnRecord(data.Addr)
-	p2p.RemoveFromOutConnRecord(data.Addr)
 	remotePeer := p2p.GetPeer(data.Id)
 	if remotePeer == nil {
 		log.Debug("[p2p]disconnect peer is nil")
 		return
 	}
-	p2p.RemoveFromConnectingList(data.Addr)
 
 	if remotePeer.Link.GetAddr() == data.Addr {
 		p2p.RemovePeerAddress(data.Addr)

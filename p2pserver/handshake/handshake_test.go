@@ -18,12 +18,15 @@
 package handshake
 
 import (
-	"github.com/ontio/ontology/p2pserver/dht/kbucket"
-	"github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/ethereum/go-ethereum/eth"
 	"net"
 	"sync"
 	"testing"
+
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
+	"github.com/ontio/ontology/p2pserver/message/types"
+	"github.com/ontio/ontology/p2pserver/peer"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -31,19 +34,19 @@ func init() {
 }
 
 type Node struct {
-	Id      *kbucket.KadKeyId
-	Version *types.Version
-	Conn    net.Conn
+	Id   *kbucket.KadKeyId
+	Info *peer.PeerInfo
+	Conn net.Conn
 }
 
 func NewNode(conn net.Conn) Node {
 	node := Node{
-		Id:      kbucket.RandKadKeyId(),
-		Version: &types.Version{},
-		Conn:    conn,
+		Id:   kbucket.RandKadKeyId(),
+		Info: &peer.PeerInfo{},
+		Conn: conn,
 	}
-	node.Version.P.Nonce = node.Id.Id.ToUint64()
-	node.Version.P.SoftVersion = "v1.9.0-beta"
+	node.Info.Id = node.Id.Id
+	node.Info.SoftVersion = "v1.9.0-beta"
 
 	return node
 }
@@ -62,15 +65,15 @@ func TestHandshakeNormal(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	go func() {
-		peer, err := HandshakeClient(client.Version, client.Id, client.Conn)
+		peer, err := HandshakeClient(client.Info, client.Id, client.Conn)
 		assert.Nil(t, err)
-		assert.Equal(t, peer.GetKId(), server.Id.Id)
+		assert.Equal(t, peer.Id, server.Id.Id)
 		wg.Done()
 	}()
 	go func() {
-		peer, err := HandshakeServer(server.Version, server.Id, server.Conn)
+		peer, err := HandshakeServer(server.Info, server.Id, server.Conn)
 		assert.Nil(t, err)
-		assert.Equal(t, peer.GetKId(), client.Id.Id)
+		assert.Equal(t, peer.Id, client.Id.Id)
 		wg.Done()
 	}()
 
@@ -80,7 +83,7 @@ func TestHandshakeNormal(t *testing.T) {
 func TestHandshakeTimeout(t *testing.T) {
 	client, _ := NewPair()
 
-	_, err := HandshakeClient(client.Version, client.Id, client.Conn)
+	_, err := HandshakeClient(client.Info, client.Id, client.Conn)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "deadline exceeded")
 }
@@ -92,7 +95,7 @@ func TestHandshakeWrongMsg(t *testing.T) {
 		assert.Nil(t, err)
 	}()
 
-	_, err := HandshakeServer(server.Version, server.Id, server.Conn)
+	_, err := HandshakeServer(server.Info, server.Id, server.Conn)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "expected version message")
 }

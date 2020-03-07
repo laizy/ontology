@@ -37,17 +37,17 @@ type Dialer interface {
 
 func NewDialer(config *config.P2PNodeConfig) (Dialer, error) {
 	if config.IsTLS {
-		return NewTlsDialer(config)
+		return newTlsDialer(config)
 	}
 
-	return &NoTlsDialer{}, nil
+	return &noTlsDialer{}, nil
 }
 
-type TlsDialer struct {
+type tlsDialer struct {
 	config *tls.Config
 }
 
-func NewTlsDialer(config *config.P2PNodeConfig) (*TlsDialer, error) {
+func newTlsDialer(config *config.P2PNodeConfig) (*tlsDialer, error) {
 	clientCertPool := x509.NewCertPool()
 	cacert, err := ioutil.ReadFile(config.CAPath)
 	if err != nil {
@@ -63,23 +63,23 @@ func NewTlsDialer(config *config.P2PNodeConfig) (*TlsDialer, error) {
 		return nil, errors.New("[p2p]failed to parse root certificate")
 	}
 
-	conf:= &tls.Config{
+	conf := &tls.Config{
 		RootCAs:      clientCertPool,
 		Certificates: []tls.Certificate{cert},
 	}
 
-	return &TlsDialer{ config:conf},nil
+	return &tlsDialer{config: conf}, nil
 }
 
-func (self *TlsDialer)Dial(nodeAddr string) (net.Conn, error) {
+func (self *tlsDialer) Dial(nodeAddr string) (net.Conn, error) {
 	var dialer net.Dialer
 	dialer.Timeout = time.Second * common.DIAL_TIMEOUT
 	return tls.DialWithDialer(&dialer, "tcp", nodeAddr, self.config)
 }
 
-type NoTlsDialer struct {}
+type noTlsDialer struct{}
 
-func (self *NoTlsDialer)Dial(nodeAddr string) (net.Conn, error) {
+func (self *noTlsDialer) Dial(nodeAddr string) (net.Conn, error) {
 	return net.DialTimeout("tcp", nodeAddr, time.Second*common.DIAL_TIMEOUT)
 }
 

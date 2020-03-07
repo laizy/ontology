@@ -560,11 +560,10 @@ func TestDisconnectHandle(t *testing.T) {
 
 	network.AddNbrNode(remotePeer)
 
-	msgDisc, _ := types.MakeEmptyMessage(msgCommon.DISCONNECT_TYPE)
 	msg := &types.MsgPayload{
 		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
-		Payload: msgDisc,
+		Payload: &types.Disconnected{},
 	}
 
 	DisconnectHandle(msg, network, nil)

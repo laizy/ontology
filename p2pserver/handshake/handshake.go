@@ -31,7 +31,8 @@ import (
 
 const HANDSHAKE_DURATION = 10 * time.Second // handshake time can not exceed this duration, or will treat as attack.
 
-func HandshakeClient(version types.Message, selfId *kbucket.KadKeyId, conn net.Conn) (*peer.Peer, error) {
+func HandshakeClient(info *peer.PeerInfo, selfId *kbucket.KadKeyId, conn net.Conn) (*peer.PeerInfo, error) {
+	version := newVersion(info)
 	if err := conn.SetDeadline(time.Now().Add(HANDSHAKE_DURATION)); err != nil {
 		return nil, err
 	}
@@ -81,11 +82,11 @@ func HandshakeClient(version types.Message, selfId *kbucket.KadKeyId, conn net.C
 		return nil, err
 	}
 
-	remotePeer := createPeer(receivedVersion, conn, kid)
-	return remotePeer, nil
+	return createPeerInfo(receivedVersion, kid), nil
 }
 
-func HandshakeServer(ver types.Message, selfId *kbucket.KadKeyId, conn net.Conn) (*peer.Peer, error) {
+func HandshakeServer(info *peer.PeerInfo, selfId *kbucket.KadKeyId, conn net.Conn) (*peer.PeerInfo, error) {
+	ver := newVersion(info)
 	if err := conn.SetDeadline(time.Now().Add(HANDSHAKE_DURATION)); err != nil {
 		return nil, err
 	}
@@ -137,8 +138,7 @@ func HandshakeServer(ver types.Message, selfId *kbucket.KadKeyId, conn net.Conn)
 		return nil, fmt.Errorf("[HandshakeServer] expected version ack message")
 	}
 
-	remotePeer := createPeer(version, conn, kid)
-	return remotePeer, nil
+	return createPeerInfo(version, kid), nil
 }
 
 func sendMsg(conn net.Conn, msg types.Message) error {
@@ -152,22 +152,35 @@ func sendMsg(conn net.Conn, msg types.Message) error {
 	return nil
 }
 
-func createPeer(version *types.Version, conn net.Conn, kid kbucket.KadId) *peer.Peer {
-	remotePeer := peer.NewPeer()
-	if version.P.Cap[common.HTTP_INFO_FLAG] == 0x01 {
-		remotePeer.SetHttpInfoState(true)
-	} else {
-		remotePeer.SetHttpInfoState(false)
+func createPeerInfo(version *types.Version, kid kbucket.KadId) *peer.PeerInfo {
+	return peer.NewPeerInfo(kid, version.P.Version, version.P.Services, version.P.Relay != 0, version.P.HttpInfoPort,
+		version.P.SyncPort, version.P.StartHeight, version.P.SoftVersion)
+}
+
+func newVersion(peerInfo *peer.PeerInfo) *types.Version {
+	var version types.Version
+	version.P = types.VersionPayload{
+		Version:      peerInfo.Version,
+		Services:     peerInfo.Services,
+		SyncPort:     peerInfo.Port,
+		Nonce:        peerInfo.Id.ToUint64(),
+		IsConsensus:  false,
+		HttpInfoPort: peerInfo.HttpInfoPort,
+		StartHeight:  peerInfo.Height,
+		TimeStamp:    time.Now().UnixNano(),
+		SoftVersion:  peerInfo.SoftVersion,
 	}
-	remotePeer.SetHttpInfoPort(version.P.HttpInfoPort)
 
-	remotePeer.UpdateInfo(time.Now(), version.P.Version,
-		version.P.Services, version.P.SyncPort, kid,
-		version.P.Relay, version.P.StartHeight, version.P.SoftVersion)
+	if peerInfo.Relay {
+		version.P.Relay = 1
+	} else {
+		version.P.Relay = 0
+	}
+	if peerInfo.HttpInfoPort > 0 {
+		version.P.Cap[common.HTTP_INFO_FLAG] = 0x01
+	} else {
+		version.P.Cap[common.HTTP_INFO_FLAG] = 0x00
+	}
 
-	remotePeer.Link.SetAddr(conn.RemoteAddr().String())
-	remotePeer.Link.SetConn(conn)
-	remotePeer.Link.SetID(kid.ToUint64())
-
-	return remotePeer
+	return &version
 }
