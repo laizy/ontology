@@ -18,7 +18,6 @@
 package handshake
 
 import (
-	"github.com/ethereum/go-ethereum/eth"
 	"net"
 	"sync"
 	"testing"

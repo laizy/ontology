@@ -36,6 +36,8 @@ type Conn struct {
 
 // Close overwrite net.Conn
 func (self *Conn) Close() error {
+	log.Debugf("closing connection: peer %s, address: %s", self.kid.ToHexString(), self.addr)
+
 	self.controller.mutex.Lock()
 	defer self.controller.mutex.Unlock()
 

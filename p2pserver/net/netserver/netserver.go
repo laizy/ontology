@@ -92,11 +92,11 @@ func (this *NetServer) init(conf *config.OntologyConfig) error {
 		nodePort, 0, config.Version)
 	this.base = info
 
-	var err error
-	this.connCtrl, err = connect_controller.NewConnectController(this.base, dtable.GetKadKeyId(), conf.P2PNode)
+	option, err := connect_controller.ConnCtrlOptionFromConfig(conf.P2PNode)
 	if err != nil {
 		return err
 	}
+	this.connCtrl = connect_controller.NewConnectController(this.base, dtable.GetKadKeyId(), option)
 
 	log.Infof("[p2p]init peer ID to %s", this.base.Id.ToHexString())
 	this.doRefresh()

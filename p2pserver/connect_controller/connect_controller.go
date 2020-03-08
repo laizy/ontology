@@ -25,7 +25,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/dht/kbucket"
@@ -44,12 +43,8 @@ type connectedPeer struct {
 }
 
 type ConnectController struct {
-	ReservedPeers       []string // enabled if not empty
-	MaxConnOutBound     uint
-	MaxConnInBound      uint
-	MaxConnInBoundPerIP uint
+	ConnCtrlOption
 
-	dialer   Dialer
 	selfId   *kbucket.KadKeyId
 	peerInfo *peer.PeerInfo
 
@@ -63,29 +58,17 @@ type ConnectController struct {
 }
 
 func NewConnectController(peerInfo *peer.PeerInfo, keyid *kbucket.KadKeyId,
-	config *config.P2PNodeConfig) (*ConnectController, error) {
-	dialer, err := NewDialer(config)
-	if err != nil {
-		return nil, err
-	}
+	option ConnCtrlOption) *ConnectController {
 	control := &ConnectController{
-		MaxConnOutBound:     config.MaxConnOutBound,
-		MaxConnInBound:      config.MaxConnInBound,
-		MaxConnInBoundPerIP: config.MaxConnInBoundForSingleIP,
-
-		dialer:      dialer,
-		selfId:      keyid,
-		peerInfo:    peerInfo,
-		inoutbounds: [2]*strset.Set{strset.New(), strset.New()},
-		connecting:  strset.New(),
-		peers:       make(map[kbucket.KadId]*connectedPeer),
+		ConnCtrlOption: option,
+		selfId:         keyid,
+		peerInfo:       peerInfo,
+		inoutbounds:    [2]*strset.Set{strset.New(), strset.New()},
+		connecting:     strset.New(),
+		peers:          make(map[kbucket.KadId]*connectedPeer),
 	}
 
-	if config.ReservedPeersOnly && config.ReservedCfg != nil {
-		control.ReservedPeers = config.ReservedCfg.ReservedPeers
-	}
-
-	return control, nil
+	return control
 }
 
 func (self *ConnectController) OwnAddress() string {
