@@ -84,8 +84,6 @@ func TestNetServerNbrPeer(t *testing.T) {
 	server.Start()
 	defer server.Halt()
 
-	nm := &peer.NbrPeers{}
-	nm.Init()
 	np := creatPeers(5)
 	for _, v := range np {
 		server.AddNbrNode(v)

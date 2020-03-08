@@ -45,8 +45,7 @@ func createPeers(cnt uint16) []*Peer {
 }
 
 func initTestNbrPeers() *NbrPeers {
-	nm := &NbrPeers{}
-	nm.Init()
+	nm := NewNbrPeers()
 	np := createPeers(5)
 	for _, v := range np {
 		nm.List[v.GetID()] = v
