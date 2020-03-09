@@ -169,7 +169,7 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 	testID2 := kbucket.PseudoKadIdFromUint64(1234567)
 	info2 := peer.NewPeerInfo(testID2, 1, 12345678, true, 0, 20336, 12345, "1.5.2")
 	remotePeer2 := peer.NewPeer()
-	remotePeer.SetInfo(info2)
+	remotePeer2.SetInfo(info2)
 	remotePeer2.Link.SetAddr("1.2.3.5:5002")
 	remotePeer2.Link.SetPort(5002)
 	network.AddNbrNode(remotePeer2)
@@ -186,7 +186,6 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 
 	config.DefConfig.P2PNode.ReservedPeersOnly = true
 	config.DefConfig.P2PNode.ReservedCfg.MaskPeers = []string{"1.2.3.4"}
-
 	// Invoke AddrReqHandle to handle the msg
 	ctx := newContext(t, msg, network)
 	AddrReqHandle(ctx)
