@@ -21,7 +21,6 @@ import (
 	"net"
 	"testing"
 
-	"fmt"
 	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/p2pserver/handshake"
 	"github.com/ontio/ontology/p2pserver/peer"
@@ -153,12 +152,13 @@ func TestConnectController_OutboundsCount(t *testing.T) {
 		_, _, err := client.Connect(trans.listenAddr)
 		if i < maxOutboud {
 			assert.Nil(t, err)
+			assert.Equal(t, client.boundsCount(OUTBOUND_INDEX), uint(i+1))
 		} else {
 			assert.NotNil(t, err)
 		}
-		fmt.Println(client.boundsCount(OUTBOUND_INDEX))
 	}
 
+	assert.Equal(t, client.boundsCount(OUTBOUND_INDEX), uint(5))
 	for _, conn := range clientConns {
 		_ = conn.Close()
 	}
