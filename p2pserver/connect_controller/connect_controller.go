@@ -251,7 +251,7 @@ func (self *ConnectController) beforeHandshakeCheck(addr string, index int) erro
 		}
 		connNum := self.getInboundCountWithIp(remoteIp)
 		if connNum >= self.MaxConnInBoundPerIP {
-			return fmt.Errorf("connections(%d) with ip(%s) has reach the max limit(%d), "+
+			return fmt.Errorf("connections(%d) with ip(%s) has reach max limit(%d), "+
 				"conn closed", connNum, remoteIp, self.MaxConnInBoundPerIP)
 		}
 	}
