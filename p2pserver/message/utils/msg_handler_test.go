@@ -378,21 +378,18 @@ func TestBlkHeaderHandle(t *testing.T) {
 
 	buf := msgpack.NewHeaders(headers)
 	sink := common.NewZeroCopySink(nil)
-	buf.Serialization(sink)
+	types.WriteMessage(sink, buf)
+	realHeaderMsg, _, err := types.ReadMessage(bytes.NewBuffer(sink.Bytes()))
 	assert.Nil(t, err)
-	realHeader, err := types.MakeEmptyMessage(msgCommon.HEADERS_TYPE)
-	assert.Nil(t, err)
-	source := common.NewZeroCopySource(sink.Bytes())
-	realHeader.Deserialization(source)
 	msg := &types.MsgPayload{
 		Id:      testID.ToUint64(),
 		Addr:    "127.0.0.1:50010",
-		Payload: realHeader,
+		Payload: realHeaderMsg,
 	}
 
 	// Invoke BlkHeaderHandle to handle the msg
 	ctx := newContext(t, msg, network)
-	BlkHeaderHandle(ctx, realHeader.(*types.BlkHeader))
+	BlkHeaderHandle(ctx, realHeaderMsg.(*types.BlkHeader))
 
 	network.DelNbrNode(testID.ToUint64())
 }
