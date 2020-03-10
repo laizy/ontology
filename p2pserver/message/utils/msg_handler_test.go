@@ -158,7 +158,7 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 
 	// Simulate a remote peer to be added to the neighbor peers
 	testID := kbucket.PseudoKadIdFromUint64(123456)
-	info := peer.NewPeerInfo(testID, 1, 12345678, true, 0, 20336, 12345, "1.5.2")
+	info := peer.NewPeerInfo(testID, 1, 12345678, true, 0, 20336, 12345, "1.5.2", "1.2.3.4:5001")
 	remotePeer := peer.NewPeer()
 	remotePeer.SetInfo(info)
 	remotePeer.Link.SetAddr("1.2.3.4:5001")
@@ -167,7 +167,8 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 	remotePeer.SetState(msgCommon.ESTABLISH)
 
 	testID2 := kbucket.PseudoKadIdFromUint64(1234567)
-	info2 := peer.NewPeerInfo(testID2, 1, 12345678, true, 0, 20336, 12345, "1.5.2")
+	info2 := peer.NewPeerInfo(testID2, 1, 12345678, true, 0,
+		20336, 12345, "1.5.2", "1.2.3.5:5002")
 	remotePeer2 := peer.NewPeer()
 	remotePeer2.SetInfo(info2)
 	remotePeer2.Link.SetAddr("1.2.3.5:5002")

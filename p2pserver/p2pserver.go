@@ -40,7 +40,6 @@ import (
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	msgtypes "github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/message/utils"
 	"github.com/ontio/ontology/p2pserver/net/netserver"
 	p2pnet "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
@@ -49,7 +48,6 @@ import (
 //P2PServer control all network activities
 type P2PServer struct {
 	network   p2pnet.P2P
-	msgRouter *utils.MessageRouter
 	pid       *evtActor.PID
 	blockSync *BlockSyncMgr
 	ledger    *ledger.Ledger
@@ -73,7 +71,6 @@ func NewServer() *P2PServer {
 		ledger:  ledger.DefLedger,
 	}
 
-	p.msgRouter = utils.NewMsgRouter(p.network)
 	p.blockSync = NewBlockSyncMgr(p)
 	p.loadRecentPeers()
 	p.quit = make(chan bool)
@@ -93,7 +90,6 @@ func (this *P2PServer) GetMaxPeerBlockHeight() uint64 {
 //Start create all services
 func (this *P2PServer) Start() error {
 	this.network.Start()
-	this.msgRouter.Start()
 	this.tryRecentPeers()
 	go this.connectSeedService()
 	go this.syncUpRecentPeers()
@@ -107,7 +103,6 @@ func (this *P2PServer) Start() error {
 func (this *P2PServer) Stop() {
 	this.network.Halt()
 	this.quit <- true
-	this.msgRouter.Stop()
 	this.blockSync.Close()
 }
 
@@ -209,7 +204,6 @@ func (this *P2PServer) GetTime() int64 {
 // SetPID sets p2p actor
 func (this *P2PServer) SetPID(pid *evtActor.PID) {
 	this.pid = pid
-	this.msgRouter.SetPID(pid)
 	this.network.SetPID(pid)
 }
 

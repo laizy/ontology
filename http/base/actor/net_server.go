@@ -19,13 +19,13 @@
 package actor
 
 import (
-	"github.com/ontio/ontology/p2pserver"
 	"github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/net/protocol"
 )
 
-var netServer *p2pserver.P2PServer
+var netServer p2p.P2P
 
-func SetNetServer(p2p *p2pserver.P2PServer) {
+func SetNetServer(p2p p2p.P2P) {
 	netServer = p2p
 }
 
@@ -56,10 +56,7 @@ func GetNeighborAddrs() []common.PeerAddr {
 
 //GetConnectionState from netSever actor
 func GetConnectionState() uint32 {
-	if netServer == nil {
-		return 0
-	}
-	return netServer.GetConnectionState()
+	return common.INIT
 }
 
 //GetNodeTime from netSever actor
