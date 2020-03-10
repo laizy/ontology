@@ -89,7 +89,7 @@ func (this *NetServer) init(conf *config.OntologyConfig) error {
 	}
 
 	this.base = peer.NewPeerInfo(dtable.GetKadKeyId().Id, common.PROTOCOL_VERSION, uint64(service), true, httpInfo,
-		nodePort, 0, config.Version)
+		nodePort, 0, config.Version, "")
 
 	option, err := connect_controller.ConnCtrlOptionFromConfig(conf.P2PNode)
 	if err != nil {

@@ -54,10 +54,8 @@ type P2PServer struct {
 	blockSync *BlockSyncMgr
 	ledger    *ledger.Ledger
 	ReconnectAddrs
-	recentPeers    map[uint32][]string
-	quitSyncRecent chan bool
-	quitOnline     chan bool
-	quitHeartBeat  chan bool
+	recentPeers map[uint32][]string
+	quit        chan bool
 }
 
 //ReconnectAddrs contain addr need to reconnect
@@ -77,10 +75,8 @@ func NewServer() *P2PServer {
 
 	p.msgRouter = utils.NewMsgRouter(p.network)
 	p.blockSync = NewBlockSyncMgr(p)
-	p.recentPeers = make(map[uint32][]string)
-	p.quitSyncRecent = make(chan bool)
-	p.quitOnline = make(chan bool)
-	p.quitHeartBeat = make(chan bool)
+	p.loadRecentPeers()
+	p.quit = make(chan bool)
 	return p
 }
 
@@ -96,16 +92,8 @@ func (this *P2PServer) GetMaxPeerBlockHeight() uint64 {
 
 //Start create all services
 func (this *P2PServer) Start() error {
-	if this.network != nil {
-		this.network.Start()
-	} else {
-		return errors.New("[p2p]network invalid")
-	}
-	if this.msgRouter != nil {
-		this.msgRouter.Start()
-	} else {
-		return errors.New("[p2p]msg router invalid")
-	}
+	this.network.Start()
+	this.msgRouter.Start()
 	this.tryRecentPeers()
 	go this.connectSeedService()
 	go this.syncUpRecentPeers()
@@ -118,9 +106,7 @@ func (this *P2PServer) Start() error {
 //Stop halt all service by send signal to channels
 func (this *P2PServer) Stop() {
 	this.network.Halt()
-	this.quitSyncRecent <- true
-	this.quitOnline <- true
-	this.quitHeartBeat <- true
+	this.quit <- true
 	this.msgRouter.Stop()
 	this.blockSync.Close()
 }
@@ -420,7 +406,7 @@ func (this *P2PServer) connectSeedService() {
 			} else {
 				t.Reset(time.Second * common.CONN_MONITOR)
 			}
-		case <-this.quitOnline:
+		case <-this.quit:
 			t.Stop()
 			return
 		}
@@ -436,7 +422,7 @@ func (this *P2PServer) keepOnlineService() {
 			this.retryInactivePeer()
 			t.Stop()
 			t.Reset(time.Second * common.CONN_MONITOR)
-		case <-this.quitOnline:
+		case <-this.quit:
 			t.Stop()
 			return
 		}
@@ -460,7 +446,7 @@ func (this *P2PServer) heartBeatService() {
 		case <-t.C:
 			this.ping()
 			this.timeout()
-		case <-this.quitHeartBeat:
+		case <-this.quit:
 			t.Stop()
 			return
 		}
@@ -526,9 +512,8 @@ func (this *P2PServer) removeFromRetryList(addr string) {
 	}
 }
 
-//tryRecentPeers try connect recent contact peer when service start
-func (this *P2PServer) tryRecentPeers() {
-	netID := config.DefConfig.P2PNode.NetworkMagic
+func (this *P2PServer) loadRecentPeers() {
+	this.recentPeers = make(map[uint32][]string)
 	if comm.FileExisted(common.RECENT_FILE_NAME) {
 		buf, err := ioutil.ReadFile(common.RECENT_FILE_NAME)
 		if err != nil {
@@ -541,13 +526,17 @@ func (this *P2PServer) tryRecentPeers() {
 			log.Warn("[p2p]parse recent peer file fail: ", err)
 			return
 		}
-		if len(this.recentPeers[netID]) > 0 {
-			log.Info("[p2p]try to connect recent peer")
-		}
-		for _, v := range this.recentPeers[netID] {
-			go this.network.Connect(v)
-		}
+	}
+}
 
+//tryRecentPeers try connect recent contact peer when service start
+func (this *P2PServer) tryRecentPeers() {
+	netID := config.DefConfig.P2PNode.NetworkMagic
+	if len(this.recentPeers[netID]) > 0 {
+		log.Info("[p2p] try to connect recent peer")
+	}
+	for _, v := range this.recentPeers[netID] {
+		go this.network.Connect(v)
 	}
 }
 
@@ -558,17 +547,16 @@ func (this *P2PServer) syncUpRecentPeers() {
 	for {
 		select {
 		case <-t.C:
-			this.syncPeerAddr()
-		case <-this.quitSyncRecent:
+			this.persistRecentPeers()
+		case <-this.quit:
 			t.Stop()
 			return
 		}
 	}
-
 }
 
-//syncPeerAddr compare snapshot of recent peer with current link,then persist the list
-func (this *P2PServer) syncPeerAddr() {
+//persistRecentPeers compare snapshot of recent peer with current link,then persist the list
+func (this *P2PServer) persistRecentPeers() {
 	changed := false
 	netID := config.DefConfig.P2PNode.NetworkMagic
 	for i := 0; i < len(this.recentPeers[netID]); i++ {
@@ -587,8 +575,7 @@ func (this *P2PServer) syncPeerAddr() {
 		for _, p := range np.List {
 			addr, _ := p.GetAddr16()
 			ip = addr[:]
-			nodeAddr := ip.To16().String() + ":" +
-				strconv.Itoa(int(p.GetPort()))
+			nodeAddr := ip.To16().String() + ":" + strconv.Itoa(int(p.GetPort()))
 			found := false
 			for i := 0; i < len(this.recentPeers[netID]); i++ {
 				if nodeAddr == this.recentPeers[netID][i] {
