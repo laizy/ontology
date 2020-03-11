@@ -296,16 +296,13 @@ func (this *NetServer) Halt() {
 
 //establishing the connection to remote peers and listening for inbound peers
 func (this *NetServer) startListening() error {
-	var err error
-
 	syncPort := this.base.Port
-
 	if syncPort == 0 {
 		log.Error("[p2p]sync port invalid")
 		return errors.New("[p2p]sync port invalid")
 	}
 
-	err = this.startNetListening(syncPort)
+	err := this.startNetListening(syncPort)
 	if err != nil {
 		log.Error("[p2p]start sync listening fail")
 		return err

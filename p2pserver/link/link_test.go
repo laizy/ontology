@@ -55,7 +55,6 @@ func init() {
 	//listen ip addr
 	cliAddr = "127.0.0.1:50338"
 	serAddr = "127.0.0.1:50339"
-
 }
 
 func TestNewLink(t *testing.T) {

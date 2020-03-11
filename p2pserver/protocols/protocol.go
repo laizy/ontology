@@ -77,12 +77,12 @@ type Protocol interface {
 }
 
 type SystemMessage interface {
-	implSystemMessage()
+	systemMessage()
 }
 
 type implSystemMessage struct{}
 
-func (self implSystemMessage) implSystemMessage() {}
+func (self implSystemMessage) systemMessage() {}
 
 type PeerConnected struct {
 	Info *peer.PeerInfo
