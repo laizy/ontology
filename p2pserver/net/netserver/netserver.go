@@ -35,7 +35,6 @@ import (
 	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	"github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/message/utils"
 	"github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
 )
@@ -48,7 +47,7 @@ func NewNetServer() p2p.P2P {
 		Np:      peer.NewNbrPeers(),
 	}
 
-	n.msgRouter = utils.NewMsgRouter(n)
+	n.msgRouter = NewMsgRouter(n)
 	n.PeerAddrMap.PeerAddress = make(map[string]*peer.Peer)
 
 	n.init(config.DefConfig)
@@ -59,7 +58,7 @@ func NewNetServer() p2p.P2P {
 type NetServer struct {
 	base      *peer.PeerInfo
 	listener  net.Listener
-	msgRouter *utils.MessageRouter
+	msgRouter *MessageRouter
 	pid       *actor.PID
 	NetChan   chan *types.MsgPayload
 	PeerAddrMap
