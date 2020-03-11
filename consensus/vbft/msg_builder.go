@@ -226,7 +226,6 @@ func (self *Server) constructCrossChainMsg(blkNum uint32) (*types.CrossChainMsg,
 	if err != nil {
 		return nil, err
 	}
-	log.Errorf("submitBlock height:%d statesroot:%+v", blkNum, root)
 	if root == common.UINT256_EMPTY {
 		return nil, nil
 	}

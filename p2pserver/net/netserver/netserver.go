@@ -346,7 +346,6 @@ func (this *NetServer) startNetListening(port uint16) error {
 func (this *NetServer) handleClientConnection(conn net.Conn) error {
 	peerInfo, conn, err := this.connCtrl.AcceptConnect(conn)
 	if err != nil {
-		log.Error("[p2p] allow reserved peer connection only ")
 		return err
 	}
 	remotePeer := createPeer(peerInfo, conn)
@@ -384,7 +383,7 @@ func (this *NetServer) startNetAccept(listener net.Listener) {
 		}
 
 		if err := this.handleClientConnection(conn); err != nil {
-			log.Errorf("[p2p] handleClientConnection error: %s", err)
+			log.Warnf("[p2p] client connect error: %s", err)
 			_ = conn.Close()
 		}
 	}
