@@ -40,9 +40,9 @@ type MessageRouter struct {
 }
 
 // NewMsgRouter returns a message router object
-func NewMsgRouter(p2p p2p.P2P) *MessageRouter {
+func NewMsgRouter(p2p *NetServer) *MessageRouter {
 	router := &MessageRouter{}
-	router.RecvChan = p2p.GetMsgChan()
+	router.RecvChan = p2p.NetChan
 	router.stopRecvCh = make(chan bool)
 	router.p2p = p2p
 	router.msgHander = &MsgHandler{}

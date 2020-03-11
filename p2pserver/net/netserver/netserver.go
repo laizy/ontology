@@ -144,12 +144,6 @@ func (this *NetServer) GetHeight() uint64 {
 	return this.base.Height
 }
 
-//GetTime return the last contact time of self peer
-func (this *NetServer) GetTime() int64 {
-	t := time.Now()
-	return t.UnixNano()
-}
-
 //GetServices return the service state of self peer
 func (this *NetServer) GetServices() uint64 {
 	return this.base.Services
@@ -213,11 +207,6 @@ func (this *NetServer) NodeEstablished(id uint64) bool {
 //Xmit called by actor, broadcast msg
 func (this *NetServer) Xmit(msg types.Message) {
 	this.Np.Broadcast(msg)
-}
-
-//GetMsgChan return sync or consensus channel when msgrouter need msg input
-func (this *NetServer) GetMsgChan() chan *types.MsgPayload {
-	return this.NetChan
 }
 
 //Tx sendMsg data buf to peer
