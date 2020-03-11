@@ -88,7 +88,7 @@ func GetRelayState() bool {
 	if netServer == nil {
 		return false
 	}
-	return netServer.GetNetWork().GetRelay()
+	return netServer.GetRelay()
 }
 
 //GetVersion from netSever actor
@@ -104,5 +104,5 @@ func GetNodeType() uint64 {
 	if netServer == nil {
 		return 0
 	}
-	return netServer.GetNetWork().GetServices()
+	return netServer.GetServices()
 }

@@ -111,21 +111,6 @@ func (this *P2PServer) GetNetWork() p2pnet.P2P {
 	return this.network
 }
 
-//GetPort return two network port
-func (this *P2PServer) GetPort() uint16 {
-	return this.network.GetPort()
-}
-
-//GetVersion return self version
-func (this *P2PServer) GetVersion() uint32 {
-	return this.network.GetVersion()
-}
-
-//GetNeighborAddrs return all nbr`s address
-func (this *P2PServer) GetNeighborAddrs() []common.PeerAddr {
-	return this.network.GetNeighborAddrs()
-}
-
 //Xmit called by other module to broadcast msg
 func (this *P2PServer) Xmit(message interface{}) error {
 	log.Debug()
@@ -165,11 +150,6 @@ func (this *P2PServer) Send(p *peer.Peer, msg msgtypes.Message,
 	return errors.New("[p2p]send to a not ESTABLISH peer")
 }
 
-// GetID returns local node id
-func (this *P2PServer) GetID() uint64 {
-	return this.network.GetID()
-}
-
 // OnAddNode adds the peer id to the block sync mgr
 func (this *P2PServer) OnAddNode(id uint64) {
 	this.blockSync.OnAddNode(id)
@@ -189,16 +169,6 @@ func (this *P2PServer) OnHeaderReceive(fromID uint64, headers []*types.Header) {
 func (this *P2PServer) OnBlockReceive(fromID uint64, blockSize uint32,
 	block *types.Block, ccMsg *types.CrossChainMsg, merkleRoot comm.Uint256) {
 	this.blockSync.OnBlockReceive(fromID, blockSize, block, ccMsg, merkleRoot)
-}
-
-// Todo: remove it if no use
-func (this *P2PServer) GetConnectionState() uint32 {
-	return common.INIT
-}
-
-//GetTime return lastet contact time
-func (this *P2PServer) GetTime() int64 {
-	return this.network.GetTime()
 }
 
 // SetPID sets p2p actor
