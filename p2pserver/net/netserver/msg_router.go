@@ -16,7 +16,7 @@
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package utils
+package netserver
 
 import (
 	"github.com/ontio/ontology-eventbus/actor"
