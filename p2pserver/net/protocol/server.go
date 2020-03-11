@@ -36,7 +36,6 @@ type P2P interface {
 	GetKId() kbucket.KadId
 	GetVersion() uint32
 	GetPort() uint16
-	GetHttpInfoPort() uint16
 	GetRelay() bool
 	GetHeight() uint64
 	GetTime() int64

@@ -160,11 +160,6 @@ func (this *NetServer) GetPort() uint16 {
 	return this.base.Port
 }
 
-//GetHttpInfoPort return the port support info via http
-func (this *NetServer) GetHttpInfoPort() uint16 {
-	return this.base.HttpInfoPort
-}
-
 //GetRelay return whether net module can relay msg
 func (this *NetServer) GetRelay() bool {
 	return this.base.Relay
@@ -540,7 +535,6 @@ func createPeer(info *peer.PeerInfo, conn net.Conn) *peer.Peer {
 	remotePeer.SetInfo(info)
 	remotePeer.SetState(common.ESTABLISH)
 	remotePeer.Link.UpdateRXTime(time.Now())
-	remotePeer.Link.SetPort(info.Port)
 	remotePeer.Link.SetAddr(conn.RemoteAddr().String())
 	remotePeer.Link.SetConn(conn)
 	remotePeer.Link.SetID(info.Id.ToUint64())
