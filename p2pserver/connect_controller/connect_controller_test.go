@@ -25,6 +25,7 @@ import (
 	"github.com/ontio/ontology/p2pserver/handshake"
 	"github.com/ontio/ontology/p2pserver/peer"
 	"github.com/stretchr/testify/assert"
+	"sync"
 )
 
 func init() {
@@ -137,6 +138,8 @@ func TestConnectController_AcceptConnect_MaxInBound(t *testing.T) {
 	assert.Equal(t, server.inoutbounds[INBOUND_INDEX].Size(), 0)
 }
 
+var lock sync.Mutex
+
 func TestConnectController_OutboundsCount(t *testing.T) {
 	maxOutboud := 5
 	server := NewNode(NewConnCtrlOption().MaxInBound(uint(maxOutboud * 2)))
@@ -206,6 +209,8 @@ func checkServer(t *testing.T, client, server *Node, clientConns []net.Conn, i i
 
 	assert.Equal(t, server.inoutbounds[INBOUND_INDEX].Size(), i+1)
 	assert.Equal(t, server.connecting.Size(), 0)
+	lock.Lock()
 	clientConns = append(clientConns, conn)
+	lock.Unlock()
 	return clientConns
 }
