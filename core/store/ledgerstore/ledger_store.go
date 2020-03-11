@@ -22,9 +22,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"github.com/ontio/ontology/merkle"
-	"github.com/ontio/ontology/smartcontract/service/native/utils"
-	types2 "github.com/ontio/ontology/vm/neovm/types"
 	"hash"
 	"math"
 	"os"
@@ -32,6 +29,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ontio/ontology/merkle"
+	"github.com/ontio/ontology/smartcontract/service/native/utils"
+	types2 "github.com/ontio/ontology/vm/neovm/types"
 
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
