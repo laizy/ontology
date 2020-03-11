@@ -28,7 +28,8 @@ require (
 	github.com/urfave/cli v1.22.1
 	github.com/valyala/bytebufferpool v1.0.0
 	golang.org/x/crypto v0.0.0-20191029031824-8986dd9e96cf
-	golang.org/x/net v0.0.0-20191028085509-fe3aa8a45271
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
+	golang.org/x/tools v0.0.0-20200311035431-43e3193a9bc5 // indirect
 )
 
 replace (

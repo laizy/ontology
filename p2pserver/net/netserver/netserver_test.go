@@ -20,12 +20,12 @@ package netserver
 
 import (
 	"fmt"
-	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"testing"
 	"time"
 
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/p2pserver/peer"
 )
 

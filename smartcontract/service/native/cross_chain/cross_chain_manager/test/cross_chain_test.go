@@ -21,6 +21,8 @@ package test
 import (
 	"encoding/hex"
 	"encoding/json"
+	"testing"
+
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/account"
 	"github.com/ontio/ontology/common"
@@ -42,7 +44,6 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"github.com/ontio/ontology/smartcontract/storage"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (
