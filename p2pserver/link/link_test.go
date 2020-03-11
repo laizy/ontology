@@ -50,9 +50,6 @@ func init() {
 	cliLink.SetID(0x733936)
 	serverLink.SetID(0x8274950)
 
-	cliLink.SetPort(50338)
-	serverLink.SetPort(50339)
-
 	cliChan = make(chan *mt.MsgPayload, 100)
 	serverChan = make(chan *mt.MsgPayload, 100)
 	//listen ip addr
@@ -62,9 +59,7 @@ func init() {
 }
 
 func TestNewLink(t *testing.T) {
-
 	id := 0x74936295
-	port := 40339
 
 	if cliLink.GetID() != 0x733936 {
 		t.Fatal("link GetID failed")
@@ -73,15 +68,6 @@ func TestNewLink(t *testing.T) {
 	cliLink.SetID(uint64(id))
 	if cliLink.GetID() != uint64(id) {
 		t.Fatal("link SetID failed")
-	}
-
-	if cliLink.GetPort() != 50338 {
-		t.Fatal("link GetPort failed")
-	}
-
-	cliLink.SetPort(uint16(port))
-	if cliLink.GetPort() != uint16(port) {
-		t.Fatal("link SetPort failed")
 	}
 
 	cliLink.SetChan(cliChan)
