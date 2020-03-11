@@ -21,6 +21,7 @@ package netserver
 import (
 	"errors"
 	"fmt"
+	"github.com/ontio/ontology/p2pserver/protocols"
 	"net"
 	"strings"
 	"sync"
@@ -45,6 +46,7 @@ func NewNetServer() p2p.P2P {
 		NetChan: make(chan *types.MsgPayload, common.CHAN_CAPABILITY),
 		base:    &peer.PeerInfo{},
 		Np:      peer.NewNbrPeers(),
+		protocol: &MsgHandler{},
 	}
 
 	n.msgRouter = NewMsgRouter(n)
@@ -58,6 +60,7 @@ func NewNetServer() p2p.P2P {
 type NetServer struct {
 	base      *peer.PeerInfo
 	listener  net.Listener
+	protocol protocols.Protocol
 	msgRouter *MessageRouter
 	pid       *actor.PID
 	NetChan   chan *types.MsgPayload
