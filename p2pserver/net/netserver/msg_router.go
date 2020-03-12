@@ -22,7 +22,7 @@ import (
 	"github.com/ontio/ontology-eventbus/actor"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/net/protocol"
+	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/protocols"
 )
 
@@ -45,7 +45,7 @@ func NewMsgRouter(p2p *NetServer) *MessageRouter {
 	router.RecvChan = p2p.NetChan
 	router.stopRecvCh = make(chan bool)
 	router.p2p = p2p
-	router.protocol = &MsgHandler{}
+	router.protocol = p2p.protocol
 	return router
 }
 
