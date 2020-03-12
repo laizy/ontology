@@ -27,6 +27,7 @@ import (
 	comm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 type Message interface {
@@ -37,7 +38,7 @@ type Message interface {
 
 //MsgPayload in link channel
 type MsgPayload struct {
-	Id          uint64  //peer ID
+	Id          kbucket.KadId  //peer ID
 	Addr        string  //link address
 	PayloadSize uint32  //payload size
 	Payload     Message //msg payload

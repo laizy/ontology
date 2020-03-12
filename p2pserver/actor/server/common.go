@@ -20,9 +20,10 @@ package server
 
 import (
 	ptypes "github.com/ontio/ontology/p2pserver/message/types"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 type TransmitConsensusMsgReq struct {
-	Target uint64
+	Target kbucket.KadId
 	Msg    ptypes.Message
 }

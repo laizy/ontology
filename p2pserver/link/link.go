@@ -25,15 +25,17 @@ import (
 	"net"
 	"time"
 
+	"bytes"
 	comm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/p2pserver/message/types"
 )
 
 //Link used to establish
 type Link struct {
-	id        uint64
+	id        kbucket.KadId
 	addr      string                 // The address of the node
 	conn      net.Conn               // Connect socket with the peer node
 	time      time.Time              // The latest time the node activity
@@ -49,12 +51,12 @@ func NewLink() *Link {
 }
 
 //SetID set peer id to link
-func (this *Link) SetID(id uint64) {
+func (this *Link) SetID(id kbucket.KadId) {
 	this.id = id
 }
 
 //GetID return if from peer
-func (this *Link) GetID() uint64 {
+func (this *Link) GetID() kbucket.KadId {
 	return this.id
 }
 
@@ -113,6 +115,7 @@ func (this *Link) Rx() {
 			break
 		}
 
+		log.Infof("ReadMessage from peer: %s, msg type:%s", this.addr, msg.CmdType())
 		t := time.Now()
 		this.UpdateRXTime(t)
 
@@ -167,7 +170,8 @@ func (this *Link) SendRaw(rawPacket []byte) error {
 	if conn == nil {
 		return errors.New("[p2p]tx link invalid")
 	}
-
+	msg, _, _ := types.ReadMessage(bytes.NewBuffer(rawPacket))
+	log.Infof("SendRaw to peer: %s, msg type:%s", this.addr, msg.CmdType())
 	nByteCnt := len(rawPacket)
 	log.Tracef("[p2p]TX buf length: %d\n", nByteCnt)
 

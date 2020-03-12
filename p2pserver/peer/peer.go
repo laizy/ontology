@@ -156,8 +156,8 @@ func (this *Peer) Close() {
 }
 
 //GetID return peer`s id
-func (this *Peer) GetID() uint64 {
-	return this.info.Id.ToUint64()
+func (this *Peer) GetID() kbucket.KadId {
+	return this.info.Id
 }
 
 func (this *Peer) GetKId() kbucket.KadId {

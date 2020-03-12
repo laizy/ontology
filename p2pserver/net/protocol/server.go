@@ -32,8 +32,7 @@ type P2P interface {
 	Start()
 	Halt()
 	Connect(addr string) error
-	GetID() uint64
-	GetKId() kbucket.KadId
+	GetID() kbucket.KadId
 	GetVersion() uint32
 	GetPort() uint16
 	GetRelay() bool
@@ -44,7 +43,7 @@ type P2P interface {
 	GetConnectionCnt() uint32
 	GetMaxPeerBlockHeight() uint64
 	GetNp() *peer.NbrPeers
-	GetPeer(id uint64) *peer.Peer
+	GetPeer(id kbucket.KadId) *peer.Peer
 	SetHeight(uint64)
 	IsPeerEstablished(p *peer.Peer) bool
 	Send(p *peer.Peer, msg types.Message) error
@@ -53,8 +52,8 @@ type P2P interface {
 	AddPeerAddress(addr string, p *peer.Peer)
 	RemovePeerAddress(addr string)
 	AddNbrNode(*peer.Peer)
-	DelNbrNode(id uint64) (*peer.Peer, bool)
-	NodeEstablished(id uint64) bool
+	DelNbrNode(id kbucket.KadId) (*peer.Peer, bool)
+	NodeEstablished(id kbucket.KadId) bool
 	Xmit(msg types.Message)
 	IsOwnAddress(addr string) bool
 
@@ -63,6 +62,6 @@ type P2P interface {
 	BetterPeers(id kbucket.KadId, count int) []kbucket.KadId
 	GetKadKeyId() *kbucket.KadKeyId
 
-	GetPeerStringAddr() map[uint64]string
+	GetPeerStringAddr() map[kbucket.KadId]string
 	SetPID(pid *actor.PID)
 }

@@ -38,6 +38,7 @@ import (
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/p2pserver/common"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	msgtypes "github.com/ontio/ontology/p2pserver/message/types"
 	"github.com/ontio/ontology/p2pserver/net/netserver"
@@ -141,22 +142,22 @@ func (this *P2PServer) Send(p *peer.Peer, msg msgtypes.Message,
 }
 
 // OnAddNode adds the peer id to the block sync mgr
-func (this *P2PServer) OnAddNode(id uint64) {
+func (this *P2PServer) OnAddNode(id kbucket.KadId) {
 	this.blockSync.OnAddNode(id)
 }
 
 // OnDelNode removes the peer id from the block sync mgr
-func (this *P2PServer) OnDelNode(id uint64) {
+func (this *P2PServer) OnDelNode(id kbucket.KadId) {
 	this.blockSync.OnDelNode(id)
 }
 
 // OnHeaderReceive adds the header list from network
-func (this *P2PServer) OnHeaderReceive(fromID uint64, headers []*types.Header) {
+func (this *P2PServer) OnHeaderReceive(fromID kbucket.KadId, headers []*types.Header) {
 	this.blockSync.OnHeaderReceive(fromID, headers)
 }
 
 // OnBlockReceive adds the block from network
-func (this *P2PServer) OnBlockReceive(fromID uint64, blockSize uint32,
+func (this *P2PServer) OnBlockReceive(fromID kbucket.KadId, blockSize uint32,
 	block *types.Block, ccMsg *types.CrossChainMsg, merkleRoot comm.Uint256) {
 	this.blockSync.OnBlockReceive(fromID, blockSize, block, ccMsg, merkleRoot)
 }
@@ -235,16 +236,20 @@ func (this *P2PServer) connectSeeds() {
 		}
 	}
 
+	log.Errorf("*************connectSeeds******************, len(seedConnList): %d", len(seedConnList))
 	if len(seedConnList) > 0 {
 		rand.Seed(time.Now().UnixNano())
 		// close NewAddrReq
 		// index := rand.Intn(len(seedConnList))
 		// this.reqNbrList(seedConnList[index])
+		log.Errorf("*************connectSeeds******************,len(seedConnList): %d, isSeed: %v", len(seedConnList), isSeed)
 		if isSeed && len(seedDisconn) > 0 {
 			index := rand.Intn(len(seedDisconn))
+			log.Errorf("*************connectSeeds******************,index: %d", index)
 			go this.network.Connect(seedDisconn[index])
 		}
 	} else { //not found
+		log.Errorf("*************connectSeeds******************,seedNodes: %+v", seedNodes)
 		for _, nodeAddr := range seedNodes {
 			go this.network.Connect(nodeAddr)
 		}
@@ -274,7 +279,7 @@ func (this *P2PServer) reachMinConnection() bool {
 }
 
 //getNode returns the peer with the id
-func (this *P2PServer) getNode(id uint64) *peer.Peer {
+func (this *P2PServer) getNode(id kbucket.KadId) *peer.Peer {
 	return this.network.GetPeer(id)
 }
 
@@ -283,7 +288,7 @@ func (this *P2PServer) retryInactivePeer() {
 	np := this.network.GetNp()
 	np.Lock()
 	var ip net.IP
-	neighborPeers := make(map[uint64]*peer.Peer)
+	neighborPeers := make(map[kbucket.KadId]*peer.Peer)
 	for _, p := range np.List {
 		addr, _ := p.GetAddr16()
 		ip = addr[:]

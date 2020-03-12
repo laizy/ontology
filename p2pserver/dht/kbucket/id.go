@@ -41,6 +41,10 @@ type KadId struct {
 	val common.Address
 }
 
+func (self KadId) IsEmpty() bool  {
+	return self.val == common.ADDRESS_EMPTY
+}
+
 func (self KadId) Serialization(sink *common.ZeroCopySink) {
 	sink.WriteAddress(self.val)
 }

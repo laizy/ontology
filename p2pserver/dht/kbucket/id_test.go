@@ -45,3 +45,10 @@ func TestKIdToUint64(t *testing.T) {
 		assert.Equal(t, data, data2)
 	}
 }
+
+func TestKadId_IsEmpty(t *testing.T) {
+	id := KadId{}
+	assert.True(t, id.IsEmpty())
+	kid := RandKadKeyId()
+	assert.False(t, kid.Id.IsEmpty())
+}

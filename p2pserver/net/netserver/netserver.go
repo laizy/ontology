@@ -117,11 +117,7 @@ func (this *NetServer) GetVersion() uint32 {
 }
 
 //GetId return peer`s id
-func (this *NetServer) GetID() uint64 {
-	return this.base.Id.ToUint64()
-}
-
-func (this *NetServer) GetKId() kbucket.KadId {
+func (this *NetServer) GetID() kbucket.KadId {
 	return this.base.Id
 }
 
@@ -160,7 +156,7 @@ func (this *NetServer) GetRelay() bool {
 }
 
 // GetPeer returns a peer with the peer id
-func (this *NetServer) GetPeer(id uint64) *peer.Peer {
+func (this *NetServer) GetPeer(id kbucket.KadId) *peer.Peer {
 	return this.Np.GetPeer(id)
 }
 
@@ -190,7 +186,7 @@ func (this *NetServer) AddNbrNode(remotePeer *peer.Peer) {
 }
 
 //DelNbrNode delete nbr peer by id
-func (this *NetServer) DelNbrNode(id uint64) (*peer.Peer, bool) {
+func (this *NetServer) DelNbrNode(id kbucket.KadId) (*peer.Peer, bool) {
 	return this.Np.DelNbrNode(id)
 }
 
@@ -200,7 +196,7 @@ func (this *NetServer) GetNeighbors() []*peer.Peer {
 }
 
 //NodeEstablished return whether a peer is establish with self according to id
-func (this *NetServer) NodeEstablished(id uint64) bool {
+func (this *NetServer) NodeEstablished(id kbucket.KadId) bool {
 	return this.Np.NodeEstablished(id)
 }
 
@@ -227,16 +223,16 @@ func (this *NetServer) IsPeerEstablished(p *peer.Peer) bool {
 }
 
 func (this *NetServer) removeOldPeer(kid kbucket.KadId, remoteAddr string) {
-	p := this.GetPeer(kid.ToUint64())
+	p := this.GetPeer(kid)
 	if p != nil {
-		n, delOK := this.DelNbrNode(kid.ToUint64())
+		n, delOK := this.DelNbrNode(kid)
 		if delOK {
 			log.Infof("[p2p] peer reconnect %s, addr: %s", kid.ToHexString(), remoteAddr)
 			// Close the connection and release the node source
 			n.Close()
 			if this.pid != nil {
 				input := &common.RemovePeerID{
-					ID: kid.ToUint64(),
+					ID: kid,
 				}
 				this.pid.Tell(input)
 			}
@@ -245,8 +241,16 @@ func (this *NetServer) removeOldPeer(kid kbucket.KadId, remoteAddr string) {
 
 }
 
-//Connect used to connect net address under sync or cons mode
 func (this *NetServer) Connect(addr string) error {
+	err := this.connect(addr)
+	if err != nil {
+		log.Errorf("[NetServer Connect] error: %s", err)
+	}
+	return nil
+}
+
+//Connect used to connect net address under sync or cons mode
+func (this *NetServer) connect(addr string) error {
 	if this.IsNbrPeerAddr(addr) {
 		return nil
 	}
@@ -274,7 +278,7 @@ func (this *NetServer) Connect(addr string) error {
 
 	if netServer.pid != nil {
 		input := &common.AppendPeerID{
-			ID: kid.ToUint64(),
+			ID: kid,
 		}
 		netServer.pid.Tell(input)
 	}
@@ -345,7 +349,7 @@ func (this *NetServer) handleClientConnection(conn net.Conn) error {
 	go remotePeer.Link.Rx()
 	if this.pid != nil {
 		input := &common.AppendPeerID{
-			ID: kid.ToUint64(),
+			ID: kid,
 		}
 		this.pid.Tell(input)
 	}
@@ -462,7 +466,7 @@ func (ns *NetServer) BetterPeers(id kbucket.KadId, count int) []kbucket.KadId {
 	return ns.dht.BetterPeers(id, count)
 }
 
-func (ns *NetServer) GetPeerStringAddr() map[uint64]string {
+func (ns *NetServer) GetPeerStringAddr() map[kbucket.KadId]string {
 	return ns.Np.GetPeerStringAddr()
 }
 
@@ -479,9 +483,9 @@ func (ns *NetServer) findSelf() {
 				log.Debugf("[dht] find closr peer %x", id)
 
 				if id.IsPseudoKadId() {
-					ns.Send(ns.GetPeer(id.ToUint64()), msgpack.NewAddrReq())
+					ns.Send(ns.GetPeer(id), msgpack.NewAddrReq())
 				} else {
-					ns.Send(ns.GetPeer(id.ToUint64()), msgpack.NewFindNodeReq(id))
+					ns.Send(ns.GetPeer(id), msgpack.NewFindNodeReq(id))
 				}
 			}
 		}
@@ -501,9 +505,9 @@ func (ns *NetServer) refreshCPL() {
 				for _, pid := range closer {
 					log.Debugf("[dht] find closr peer %d", pid)
 					if pid.IsPseudoKadId() {
-						ns.Send(ns.GetPeer(pid.ToUint64()), msgpack.NewAddrReq())
+						ns.Send(ns.GetPeer(pid), msgpack.NewAddrReq())
 					} else {
-						ns.Send(ns.GetPeer(pid.ToUint64()), msgpack.NewFindNodeReq(pid))
+						ns.Send(ns.GetPeer(pid), msgpack.NewFindNodeReq(randPeer))
 					}
 				}
 			}
@@ -523,7 +527,7 @@ func createPeer(info *peer.PeerInfo, conn net.Conn) *peer.Peer {
 	remotePeer.Link.UpdateRXTime(time.Now())
 	remotePeer.Link.SetAddr(conn.RemoteAddr().String())
 	remotePeer.Link.SetConn(conn)
-	remotePeer.Link.SetID(info.Id.ToUint64())
+	remotePeer.Link.SetID(info.Id)
 
 	return remotePeer
 }

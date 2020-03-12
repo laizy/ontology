@@ -139,6 +139,7 @@ func AddrReqHandle(ctx *protocols.Context) {
 }
 
 func FindNodeResponseHandle(ctx *protocols.Context, fresp *msgTypes.FindNodeResp) {
+	log.Infof("[FindNodeResponseHandle] fresp: %+v", fresp)
 	if fresp.Success {
 		log.Debugf("[p2p dht] %s", "find peer success, do nothing")
 		return
@@ -187,7 +188,7 @@ func FindNodeHandle(ctx *protocols.Context, freq *msgTypes.FindNodeReq) {
 
 	paddrs := p2p.GetPeerStringAddr()
 	for _, kid := range closer {
-		pid := kid.ToUint64()
+		pid := kid
 		if addr, ok := paddrs[pid]; ok {
 			curAddr := msgTypes.PeerAddr{
 				Addr:   addr,

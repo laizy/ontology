@@ -50,7 +50,7 @@ func (req *FindNodeReq) Deserialization(source *common.ZeroCopySource) error {
 }
 
 type PeerAddr struct {
-	PeerID uint64 // peer ID
+	PeerID kbucket.KadId // peer ID
 	Addr   string // simple "ip:port"
 }
 
@@ -68,7 +68,7 @@ func (resp FindNodeResp) Serialization(sink *common.ZeroCopySink) {
 	sink.WriteString(resp.Address)
 	sink.WriteUint32(uint32(len(resp.CloserPeers)))
 	for _, curPeer := range resp.CloserPeers {
-		sink.WriteUint64(curPeer.PeerID)
+		sink.WriteUint64(curPeer.PeerID.ToUint64())
 		sink.WriteString(curPeer.Addr)
 	}
 }
@@ -108,7 +108,7 @@ func (resp *FindNodeResp) Deserialization(source *common.ZeroCopySource) error {
 		if eof {
 			return errRead
 		}
-		curpa.PeerID = id
+		curpa.PeerID = kbucket.PseudoKadIdFromUint64(id)
 		addr, _, _, eof := source.NextString()
 		if eof {
 			return errRead

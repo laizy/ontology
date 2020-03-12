@@ -50,7 +50,7 @@ func (self *Context) ReceivedHeaders(sender kbucket.KadId, headers []*core.Heade
 	pid := self.pid
 	if pid != nil {
 		input := &common.AppendHeaders{
-			FromID:  sender.ToUint64(),
+			FromID:  sender,
 			Headers: headers,
 		}
 		pid.Tell(input)
@@ -61,7 +61,7 @@ func (self *Context) ReceivedBlock(sender kbucket.KadId, block *types.Block) {
 	pid := self.pid
 	if pid != nil {
 		input := &common.AppendBlock{
-			FromID:     sender.ToUint64(),
+			FromID:     sender,
 			BlockSize:  self.msgSize,
 			Block:      block.Blk,
 			CCMsg:      block.CCMsg,

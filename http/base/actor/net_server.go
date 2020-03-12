@@ -21,6 +21,7 @@ package actor
 import (
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/net/protocol"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 var netServer p2p.P2P
@@ -68,9 +69,9 @@ func GetNodePort() uint16 {
 }
 
 //GetID from netSever actor
-func GetID() uint64 {
+func GetID() kbucket.KadId {
 	if netServer == nil {
-		return 0
+		return kbucket.KadId{}
 	}
 	return netServer.GetID()
 }

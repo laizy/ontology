@@ -26,6 +26,7 @@ import (
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/signature"
 	"github.com/ontio/ontology/errors"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 type ConsensusPayload struct {
@@ -37,7 +38,7 @@ type ConsensusPayload struct {
 	Data            []byte
 	Owner           keypair.PublicKey
 	Signature       []byte
-	PeerId          uint64
+	PeerId          kbucket.KadId
 	hash            common.Uint256
 }
 
