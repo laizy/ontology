@@ -388,7 +388,7 @@ func (this *P2PServer) reqNbrList(p *peer.Peer) {
 	if id.IsPseudoKadId() {
 		msg = msgpack.NewAddrReq()
 	} else {
-		msg = msgpack.NewFindNodeReq(id)
+		msg = msgpack.NewFindNodeReq(this.GetNetWork().GetKId())
 	}
 
 	go this.Send(p, msg)

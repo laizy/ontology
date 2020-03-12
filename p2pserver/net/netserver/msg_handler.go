@@ -48,6 +48,7 @@ var txCache, _ = lru.NewARC(msgCommon.MAX_TX_CACHE_SIZE)
 type MsgHandler struct{}
 
 func (self *MsgHandler) HandleSystemMessage(ctx *protocols.Context, msg protocols.SystemMessage) {
+
 }
 
 func (self *MsgHandler) HandlePeerMessage(ctx *protocols.Context, msg msgTypes.Message) {
@@ -163,10 +164,6 @@ func FindNodeResponseHandle(ctx *protocols.Context, fresp *msgTypes.FindNodeResp
 func FindNodeHandle(ctx *protocols.Context, freq *msgTypes.FindNodeReq) {
 	// we recv message must from establised peer
 	remotePeer := ctx.Sender()
-	if remotePeer == nil {
-		log.Debug("[p2p dht]remotePeer invalid in FindNodeHandle")
-		return
-	}
 
 	var fresp msgTypes.FindNodeResp
 	// check the target is my self
