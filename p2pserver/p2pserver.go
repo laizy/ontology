@@ -105,11 +105,7 @@ func (this *P2PServer) GetNetWork() p2pnet.P2P {
 //Xmit called by other module to broadcast msg
 func (this *P2PServer) Xmit(message interface{}) error {
 	log.Debug()
-	var msg 
-  
-  
-  
-  .Message
+	var msg msgtypes.Message
 	switch message.(type) {
 	case *types.Transaction:
 		log.Debug("[p2p]TX transaction message")
@@ -388,12 +384,12 @@ func (this *P2PServer) keepOnlineService() {
 
 //reqNbrList ask the peer for its neighbor list
 func (this *P2PServer) reqNbrList(p *peer.Peer) {
-	id := p.GetKId()
+	id := p.GetID()
 	var msg msgtypes.Message
 	if id.IsPseudoKadId() {
 		msg = msgpack.NewAddrReq()
 	} else {
-		msg = msgpack.NewFindNodeReq(this.GetNetWork().GetKId())
+		msg = msgpack.NewFindNodeReq(this.GetNetWork().GetID())
 	}
 
 	go this.Send(p, msg)
