@@ -26,9 +26,9 @@ import (
 	"github.com/ontio/ontology/core/types"
 	ontErrors "github.com/ontio/ontology/errors"
 	netActor "github.com/ontio/ontology/p2pserver/actor/server"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	ptypes "github.com/ontio/ontology/p2pserver/message/types"
 	txpool "github.com/ontio/ontology/txnpool/common"
-	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 type TxPoolActor struct {

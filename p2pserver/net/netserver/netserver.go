@@ -261,7 +261,7 @@ func (this *NetServer) connect(addr string) error {
 	}
 	remotePeer := createPeer(peerInfo, conn)
 
-	kid := remotePeer.GetKId()
+	kid := remotePeer.GetID()
 	remoteAddr := remotePeer.GetAddr()
 	// Obsolete node
 	netServer := this
@@ -336,7 +336,7 @@ func (this *NetServer) handleClientConnection(conn net.Conn) error {
 	remotePeer := createPeer(peerInfo, conn)
 
 	// Obsolete node
-	kid := remotePeer.GetKId()
+	kid := remotePeer.GetID()
 	this.removeOldPeer(kid, conn.RemoteAddr().String())
 
 	this.dht.Update(kid)

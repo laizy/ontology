@@ -139,7 +139,6 @@ func AddrReqHandle(ctx *protocols.Context) {
 }
 
 func FindNodeResponseHandle(ctx *protocols.Context, fresp *msgTypes.FindNodeResp) {
-	log.Infof("[FindNodeResponseHandle] fresp: %+v", fresp)
 	if fresp.Success {
 		log.Debugf("[p2p dht] %s", "find peer success, do nothing")
 		return
@@ -253,7 +252,7 @@ func PongHandle(ctx *protocols.Context, pong *msgTypes.Pong) {
 // BlkHeaderHandle handles the sync headers from peer
 func BlkHeaderHandle(ctx *protocols.Context, blkHeader *msgTypes.BlkHeader) {
 	sender := ctx.Sender()
-	ctx.ReceivedHeaders(sender.GetKId(), blkHeader.BlkHdr)
+	ctx.ReceivedHeaders(sender.GetID(), blkHeader.BlkHdr)
 }
 
 // BlockHandle handles the block message from peer
@@ -265,7 +264,7 @@ func BlockHandle(ctx *protocols.Context, block *msgTypes.Block) {
 		return
 	}
 
-	ctx.ReceivedBlock(ctx.Sender().GetKId(), block)
+	ctx.ReceivedBlock(ctx.Sender().GetID(), block)
 }
 
 // ConsensusHandle handles the consensus message from peer
@@ -479,7 +478,7 @@ func DisconnectHandle(ctx *protocols.Context) {
 		p2p.RemovePeerAddress(remotePeer.GetAddr())
 		remotePeer.Close()
 	}
-	p2p.RemoveDHT(remotePeer.GetKId())
+	p2p.RemoveDHT(remotePeer.GetID())
 }
 
 //get blk hdrs from starthash to stophash

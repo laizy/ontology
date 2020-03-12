@@ -25,7 +25,6 @@ import (
 	"net"
 	"time"
 
-	"bytes"
 	comm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
@@ -115,7 +114,6 @@ func (this *Link) Rx() {
 			break
 		}
 
-		log.Infof("ReadMessage from peer: %s, msg type:%s", this.addr, msg.CmdType())
 		t := time.Now()
 		this.UpdateRXTime(t)
 
@@ -170,8 +168,6 @@ func (this *Link) SendRaw(rawPacket []byte) error {
 	if conn == nil {
 		return errors.New("[p2p]tx link invalid")
 	}
-	msg, _, _ := types.ReadMessage(bytes.NewBuffer(rawPacket))
-	log.Infof("SendRaw to peer: %s, msg type:%s", this.addr, msg.CmdType())
 	nByteCnt := len(rawPacket)
 	log.Tracef("[p2p]TX buf length: %d\n", nByteCnt)
 

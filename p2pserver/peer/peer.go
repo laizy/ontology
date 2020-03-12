@@ -147,20 +147,13 @@ func (this *Peer) SendRaw(msgType string, msgPayload []byte) error {
 //Close halt sync connection
 func (this *Peer) Close() {
 	this.SetState(common.INACTIVITY)
-	conn := this.Link.GetConn()
 	this.connLock.Lock()
-	if conn != nil {
-		conn.Close()
-	}
+	this.Link.CloseConn()
 	this.connLock.Unlock()
 }
 
 //GetID return peer`s id
 func (this *Peer) GetID() kbucket.KadId {
-	return this.info.Id
-}
-
-func (this *Peer) GetKId() kbucket.KadId {
 	return this.info.Id
 }
 

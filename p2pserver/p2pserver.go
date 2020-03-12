@@ -236,20 +236,16 @@ func (this *P2PServer) connectSeeds() {
 		}
 	}
 
-	log.Errorf("*************connectSeeds******************, len(seedConnList): %d", len(seedConnList))
 	if len(seedConnList) > 0 {
 		rand.Seed(time.Now().UnixNano())
 		// close NewAddrReq
 		// index := rand.Intn(len(seedConnList))
 		// this.reqNbrList(seedConnList[index])
-		log.Errorf("*************connectSeeds******************,len(seedConnList): %d, isSeed: %v", len(seedConnList), isSeed)
 		if isSeed && len(seedDisconn) > 0 {
 			index := rand.Intn(len(seedDisconn))
-			log.Errorf("*************connectSeeds******************,index: %d", index)
 			go this.network.Connect(seedDisconn[index])
 		}
 	} else { //not found
-		log.Errorf("*************connectSeeds******************,seedNodes: %+v", seedNodes)
 		for _, nodeAddr := range seedNodes {
 			go this.network.Connect(nodeAddr)
 		}

@@ -38,10 +38,10 @@ type Message interface {
 
 //MsgPayload in link channel
 type MsgPayload struct {
-	Id          kbucket.KadId  //peer ID
-	Addr        string  //link address
-	PayloadSize uint32  //payload size
-	Payload     Message //msg payload
+	Id          kbucket.KadId //peer ID
+	Addr        string        //link address
+	PayloadSize uint32        //payload size
+	Payload     Message       //msg payload
 }
 
 type messageHeader struct {

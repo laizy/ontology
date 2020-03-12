@@ -26,8 +26,8 @@ import (
 	comm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
-	"github.com/ontio/ontology/p2pserver/message/types"
 	"github.com/ontio/ontology/p2pserver/dht/kbucket"
+	"github.com/ontio/ontology/p2pserver/message/types"
 )
 
 //NbrPeers: The neigbor list

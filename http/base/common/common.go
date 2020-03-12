@@ -37,12 +37,12 @@ import (
 	cutils "github.com/ontio/ontology/core/utils"
 	ontErrors "github.com/ontio/ontology/errors"
 	bactor "github.com/ontio/ontology/http/base/actor"
+	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/service/native/ont"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	cstate "github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/vm/neovm"
-	"github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
@@ -153,8 +153,8 @@ type BlockInfo struct {
 }
 
 type NodeInfo struct {
-	NodeState   uint   // node status
-	NodePort    uint16 // The nodes's port
+	NodeState   uint          // node status
+	NodePort    uint16        // The nodes's port
 	ID          kbucket.KadId // The nodes's id
 	NodeTime    int64
 	NodeVersion uint32   // The network protocol the node used
