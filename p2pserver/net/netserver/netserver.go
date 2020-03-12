@@ -21,11 +21,12 @@ package netserver
 import (
 	"errors"
 	"fmt"
-	"github.com/ontio/ontology/p2pserver/protocols"
 	"net"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ontio/ontology/p2pserver/protocols"
 
 	"github.com/ontio/ontology-eventbus/actor"
 	"github.com/ontio/ontology/common/config"
@@ -34,9 +35,9 @@ import (
 	"github.com/ontio/ontology/p2pserver/connect_controller"
 	"github.com/ontio/ontology/p2pserver/dht"
 	"github.com/ontio/ontology/p2pserver/dht/kbucket"
-	"github.com/ontio/ontology/p2pserver/message/msg_pack"
+	msgpack "github.com/ontio/ontology/p2pserver/message/msg_pack"
 	"github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/net/protocol"
+	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
 )
 
