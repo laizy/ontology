@@ -118,7 +118,7 @@ func TestAddrReqHandle(t *testing.T) {
 	buf := msgpack.NewAddrReq()
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "test",
 		Payload: buf,
 	}
@@ -144,7 +144,7 @@ func TestAddrReqHandle(t *testing.T) {
 		}
 	}
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // create two neighbors, one masked, one un-masked
@@ -174,7 +174,7 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 	buf := msgpack.NewAddrReq()
 
 	msg := &types.MsgPayload{
-		Id:      testID2.ToUint64(),
+		Id:      testID2,
 		Addr:    "test",
 		Payload: buf,
 	}
@@ -202,7 +202,7 @@ func TestAddrReqHandle_maskok(t *testing.T) {
 		}
 	}
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 func newContext(t *testing.T, msg *types.MsgPayload, n p2p.P2P) *protocols.Context {
@@ -233,7 +233,7 @@ func TestAddrReqHandle_unmaskok(t *testing.T) {
 	buf := msgpack.NewAddrReq()
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "test",
 		Payload: buf,
 	}
@@ -261,7 +261,7 @@ func TestAddrReqHandle_unmaskok(t *testing.T) {
 		}
 	}
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestHeadersReqHandle tests Function HeadersReqHandle handling a header req
@@ -281,7 +281,7 @@ func TestHeadersReqHandle(t *testing.T) {
 	buf := msgpack.NewHeadersReq(headerHash)
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
@@ -289,7 +289,7 @@ func TestHeadersReqHandle(t *testing.T) {
 	// Invoke HeadersReqhandle to handle the msg
 	ctx := newContext(t, msg, network)
 	HeadersReqHandle(ctx, buf.(*types.HeadersReq))
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestPingHandle tests Function PingHandle handling a ping message
@@ -310,7 +310,7 @@ func TestPingHandle(t *testing.T) {
 	buf := msgpack.NewPingMsg(uint64(height))
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
@@ -319,7 +319,7 @@ func TestPingHandle(t *testing.T) {
 	ctx := newContext(t, msg, network)
 	PingHandle(ctx, buf)
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestPingHandle tests Function PingHandle handling a pong message
@@ -340,7 +340,7 @@ func TestPongHandle(t *testing.T) {
 	buf := msgpack.NewPongMsg(uint64(height))
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
@@ -349,7 +349,7 @@ func TestPongHandle(t *testing.T) {
 	ctx := newContext(t, msg, network)
 	PongHandle(ctx, buf)
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestBlkHeaderHandle tests Function BlkHeaderHandle handling a sync header msg
@@ -376,7 +376,7 @@ func TestBlkHeaderHandle(t *testing.T) {
 	realHeaderMsg, _, err := types.ReadMessage(bytes.NewBuffer(sink.Bytes()))
 	assert.Nil(t, err)
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: realHeaderMsg,
 	}
@@ -385,7 +385,7 @@ func TestBlkHeaderHandle(t *testing.T) {
 	ctx := newContext(t, msg, network)
 	BlkHeaderHandle(ctx, realHeaderMsg.(*types.BlkHeader))
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestBlockHandle tests Function BlockHandle handling a block message
@@ -412,7 +412,7 @@ func TestBlockHandle(t *testing.T) {
 	buf := msgpack.NewBlock(block, nil, mr)
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
@@ -421,7 +421,7 @@ func TestBlockHandle(t *testing.T) {
 	ctx := newContext(t, msg, network)
 	BlockHandle(ctx, buf.(*types.Block))
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestDataReqHandle tests Function DataReqHandle handling a data req(block/Transaction)
@@ -440,7 +440,7 @@ func TestDataReqHandle(t *testing.T) {
 	buf := msgpack.NewBlkDataReq(hash)
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
@@ -454,7 +454,7 @@ func TestDataReqHandle(t *testing.T) {
 	txHash.Deserialize(bytes.NewReader(hex))
 	buf = msgpack.NewTxnDataReq(txHash)
 	msg = &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: buf,
 	}
@@ -462,7 +462,7 @@ func TestDataReqHandle(t *testing.T) {
 	ctx = newContext(t, msg, network)
 	DataReqHandle(ctx, buf.(*types.DataReq))
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestInvHandle tests Function InvHandle handling an inventory message
@@ -484,7 +484,7 @@ func TestInvHandle(t *testing.T) {
 	invPayload := msgpack.NewInvPayload(common.BLOCK, []common.Uint256{hash})
 	buffer := msgpack.NewInv(invPayload)
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: buffer,
 	}
@@ -492,7 +492,7 @@ func TestInvHandle(t *testing.T) {
 	ctx := newContext(t, msg, network)
 	InvHandle(ctx, buffer.(*types.Inv))
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }
 
 // TestDisconnectHandle tests Function DisconnectHandle handling a disconnect event
@@ -507,7 +507,7 @@ func TestDisconnectHandle(t *testing.T) {
 	network.AddNbrNode(remotePeer)
 
 	msg := &types.MsgPayload{
-		Id:      testID.ToUint64(),
+		Id:      testID,
 		Addr:    "127.0.0.1:50010",
 		Payload: &types.Disconnected{},
 	}
@@ -515,5 +515,5 @@ func TestDisconnectHandle(t *testing.T) {
 	ctx := newContext(t, msg, network)
 	DisconnectHandle(ctx)
 
-	network.DelNbrNode(testID.ToUint64())
+	network.DelNbrNode(testID)
 }

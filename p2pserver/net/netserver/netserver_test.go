@@ -94,13 +94,14 @@ func TestNetServerNbrPeer(t *testing.T) {
 	if len(addrs) != 5 {
 		t.Error("TestNetServerNbrPeer GetNeighborAddrs error")
 	}
-	if !server.NodeEstablished(0x7533345) {
+	id :=kbucket.PseudoKadIdFromUint64(uint64(0x7533345))
+	if !server.NodeEstablished(id) {
 		t.Error("TestNetServerNbrPeer NodeEstablished error")
 	}
-	if server.GetPeer(0x7533345) == nil {
+	if server.GetPeer(id) == nil {
 		t.Error("TestNetServerNbrPeer GetPeer error")
 	}
-	p, ok := server.DelNbrNode(0x7533345)
+	p, ok := server.DelNbrNode(id)
 	if !ok || p == nil {
 		t.Error("TestNetServerNbrPeer DelNbrNode error")
 	}
