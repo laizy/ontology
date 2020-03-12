@@ -43,9 +43,9 @@ import (
 //NewNetServer return the net object in p2p
 func NewNetServer() p2p.P2P {
 	n := &NetServer{
-		NetChan: make(chan *types.MsgPayload, common.CHAN_CAPABILITY),
-		base:    &peer.PeerInfo{},
-		Np:      peer.NewNbrPeers(),
+		NetChan:  make(chan *types.MsgPayload, common.CHAN_CAPABILITY),
+		base:     &peer.PeerInfo{},
+		Np:       peer.NewNbrPeers(),
 		protocol: &MsgHandler{},
 	}
 
@@ -60,7 +60,7 @@ func NewNetServer() p2p.P2P {
 type NetServer struct {
 	base      *peer.PeerInfo
 	listener  net.Listener
-	protocol protocols.Protocol
+	protocol  protocols.Protocol
 	msgRouter *MessageRouter
 	pid       *actor.PID
 	NetChan   chan *types.MsgPayload
@@ -506,7 +506,7 @@ func (ns *NetServer) refreshCPL() {
 					if pid.IsPseudoKadId() {
 						ns.Send(ns.GetPeer(pid.ToUint64()), msgpack.NewAddrReq())
 					} else {
-						ns.Send(ns.GetPeer(pid.ToUint64()), msgpack.NewFindNodeReq(pid))
+						ns.Send(ns.GetPeer(pid.ToUint64()), msgpack.NewFindNodeReq(randPeer))
 					}
 				}
 			}
