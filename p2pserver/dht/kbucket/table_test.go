@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/scylladb/go-set/strset"
 	"github.com/stretchr/testify/require"
-	"github.com/ontio/ontology/p2pserver/common"
 )
 
 func init() {
@@ -384,7 +384,7 @@ func TestTableFindMultipleBuckets(t *testing.T) {
 			pset.Add(p.ToHexString())
 		}
 		for _, p := range found {
-			if !pset.Has(p.Val.ToHexString()) {
+			if !pset.Has(p.val.ToHexString()) {
 				t.Fatalf("unexpected peer %d", p)
 			}
 		}

@@ -38,15 +38,15 @@ import (
 var Difficulty = 18 //bit
 
 type PeerId struct {
-	Val common.Address
+	val common.Address
 }
 
 func (self PeerId) IsEmpty() bool {
-	return self.Val == common.ADDRESS_EMPTY
+	return self.val == common.ADDRESS_EMPTY
 }
 
 func (self PeerId) Serialization(sink *common.ZeroCopySink) {
-	sink.WriteAddress(self.Val)
+	sink.WriteAddress(self.val)
 }
 
 func (self *PeerId) Deserialization(source *common.ZeroCopySource) error {
@@ -54,12 +54,12 @@ func (self *PeerId) Deserialization(source *common.ZeroCopySource) error {
 	if eof {
 		return io.ErrUnexpectedEOF
 	}
-	self.Val = val
+	self.val = val
 	return nil
 }
 
 func (self *PeerId) ToHexString() string {
-	return self.Val.ToHexString()
+	return self.val.ToHexString()
 }
 
 type PeerKeyId struct {
@@ -70,37 +70,37 @@ type PeerKeyId struct {
 
 func (self PeerId) GenRandPeerId(prefix uint) PeerId {
 	var ret PeerId
-	rand.Read(ret.Val[:])
+	rand.Read(ret.val[:])
 	if prefix == 0 {
-		ret.Val[0] &= 0x7f
+		ret.val[0] &= 0x7f
 		// make first bit different
-		if (0x80 & self.Val[0]) == 0 {
-			ret.Val[0] |= 0x80
+		if (0x80 & self.val[0]) == 0 {
+			ret.val[0] |= 0x80
 		}
 		return ret
 	}
 
 	num := prefix / 8
 	left := prefix % 8
-	if num > uint(len(self.Val[:])) {
-		num = uint(len(self.Val[:]))
+	if num > uint(len(self.val[:])) {
+		num = uint(len(self.val[:]))
 	}
 
 	if num > 0 {
-		copy(ret.Val[:num], self.Val[:num])
+		copy(ret.val[:num], self.val[:num])
 	}
 	// make all prefix bits same
 	mask := (uint8(0xff) >> (8 - left)) << (8 - left)
-	ret.Val[num] &= (^mask)
-	ret.Val[num] |= (self.Val[num] & mask)
+	ret.val[num] &= (^mask)
+	ret.val[num] |= (self.val[num] & mask)
 
 	// and prefix + 1 different
 	// clear prefix + 1
-	ret.Val[num] &= ^(1 << (8 - left - 1))
+	ret.val[num] &= ^(1 << (8 - left - 1))
 	// if prefix + 1 bit is 1 then we already satisfied
 	// if prefix + 1 bit is 0, then we should set this bit
-	if (self.Val[num]>>(8-left-1))&1 == 0 {
-		ret.Val[num] |= (1 << (8 - left - 1))
+	if (self.val[num]>>(8-left-1))&1 == 0 {
+		ret.val[num] |= (1 << (8 - left - 1))
 	}
 
 	return ret
@@ -108,18 +108,18 @@ func (self PeerId) GenRandPeerId(prefix uint) PeerId {
 
 func (self PeerId) ToUint64() uint64 {
 	if self.IsPseudoPeerId() {
-		nonce := binary.LittleEndian.Uint64(self.Val[:8])
+		nonce := binary.LittleEndian.Uint64(self.val[:8])
 		return nonce
 	}
-	kid := new(big.Int).SetBytes(self.Val[:])
+	kid := new(big.Int).SetBytes(self.val[:])
 	uint64Max := new(big.Int).SetUint64(math.MaxUint64)
 	res := kid.Mod(kid, uint64Max)
 	return res.Uint64()
 }
 
 func (self PeerId) IsPseudoPeerId() bool {
-	for i := 8; i < len(self.Val); i++ {
-		if self.Val[i] != 0 {
+	for i := 8; i < len(self.val); i++ {
+		if self.val[i] != 0 {
 			return false
 		}
 	}
@@ -130,7 +130,7 @@ func PseudoPeerIdFromUint64(data uint64) PeerId {
 	id := common.ADDRESS_EMPTY
 	binary.LittleEndian.PutUint64(id[:], data)
 	return PeerId{
-		Val: id,
+		val: id,
 	}
 }
 
@@ -159,7 +159,7 @@ func (this *PeerKeyId) Deserialization(source *common.ZeroCopySource) error {
 }
 
 func peerIdFromPubkey(pubKey keypair.PublicKey) PeerId {
-	return PeerId{Val: types.AddressFromPubKey(pubKey)}
+	return PeerId{val: types.AddressFromPubKey(pubKey)}
 }
 
 func RandPeerKeyId() *PeerKeyId {
@@ -195,13 +195,13 @@ func validatePublicKey(pubKey keypair.PublicKey) bool {
 	return true
 }
 
-func (self PeerId) Distance(b PeerId) PeerId {
+func (self PeerId) Distance(b PeerId) [20]byte {
 	var c PeerId
-	for i := 0; i < len(self.Val); i++ {
-		c.Val[i] = self.Val[i] ^ b.Val[i]
+	for i := 0; i < len(self.val); i++ {
+		c.val[i] = self.val[i] ^ b.val[i]
 	}
 
-	return c
+	return c.val
 }
 
 // Closer returns true if a is closer to self than b is
@@ -209,13 +209,13 @@ func (self PeerId) Closer(a, b PeerId) bool {
 	adist := self.Distance(a)
 	bdist := self.Distance(b)
 
-	return bytes.Compare(adist.Val[:], bdist.Val[:]) < 0
+	return bytes.Compare(adist[:], bdist[:]) < 0
 }
 
 // CommonPrefixLen(cpl) calculate two ID's xor prefix 0
 func CommonPrefixLen(a, b PeerId) int {
 	dis := a.Distance(b)
-	return zeroPrefixLen(dis.Val[:])
+	return zeroPrefixLen(dis[:])
 }
 
 // ZeroPrefixLen returns the number of consecutive zeroes in a byte slice.

@@ -21,14 +21,14 @@ package kbucket
 import (
 	"bytes"
 	"container/list"
-	"sort"
 	"github.com/ontio/ontology/p2pserver/common"
+	"sort"
 )
 
 // A helper struct to sort peers by their distance to the local node
 type peerDistance struct {
 	p        common.PeerId
-	distance common.PeerId
+	distance [20]byte
 }
 
 // peerDistanceSorter implements sort.Interface to sort peers by xor distance
@@ -40,7 +40,7 @@ type peerDistanceSorter struct {
 func (pds *peerDistanceSorter) Len() int      { return len(pds.peers) }
 func (pds *peerDistanceSorter) Swap(a, b int) { pds.peers[a], pds.peers[b] = pds.peers[b], pds.peers[a] }
 func (pds *peerDistanceSorter) Less(a, b int) bool {
-	return bytes.Compare(pds.peers[a].distance.Val[:], pds.peers[b].distance.Val[:]) < 0
+	return bytes.Compare(pds.peers[a].distance[:], pds.peers[b].distance[:]) < 0
 }
 
 // Append the peer.ID to the sorter's slice. It may no longer be sorted.

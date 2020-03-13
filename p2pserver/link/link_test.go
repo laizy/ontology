@@ -47,7 +47,7 @@ func init() {
 
 	cliLink = NewLink()
 	serverLink = NewLink()
-	id :=  peer.PseudoPeerIdFromUint64(0x733936)
+	id := peer.PseudoPeerIdFromUint64(0x733936)
 	cliLink.SetID(id)
 	id2 := peer.PseudoPeerIdFromUint64(0x8274950)
 	serverLink.SetID(id2)

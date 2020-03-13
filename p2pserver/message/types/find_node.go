@@ -50,7 +50,7 @@ func (req *FindNodeReq) Deserialization(source *common.ZeroCopySource) error {
 
 type PeerAddr struct {
 	PeerID ncomm.PeerId // peer ID
-	Addr   string        // simple "ip:port"
+	Addr   string       // simple "ip:port"
 }
 
 type FindNodeResp struct {

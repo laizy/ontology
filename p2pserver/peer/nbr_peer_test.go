@@ -29,6 +29,7 @@ import (
 var id45 common.PeerId
 var id46 common.PeerId
 var id47 common.PeerId
+
 func init() {
 	id45 = common.PseudoPeerIdFromUint64(uint64(0x7533345))
 	id46 = common.PseudoPeerIdFromUint64(uint64(0x7533346))

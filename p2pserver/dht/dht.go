@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/ontio/ontology/common/log"
-	kb "github.com/ontio/ontology/p2pserver/dht/kbucket"
 	"github.com/ontio/ontology/p2pserver/common"
+	kb "github.com/ontio/ontology/p2pserver/dht/kbucket"
 )
 
 // Pool size is the number of nodes used for group find/set RPC calls
