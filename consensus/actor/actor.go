@@ -28,6 +28,7 @@ import (
 	netActor "github.com/ontio/ontology/p2pserver/actor/server"
 	ptypes "github.com/ontio/ontology/p2pserver/message/types"
 	txpool "github.com/ontio/ontology/txnpool/common"
+	"github.com/ontio/ontology/p2pserver/common"
 )
 
 type TxPoolActor struct {
@@ -72,7 +73,7 @@ func (self *P2PActor) Broadcast(msg interface{}) {
 	self.P2P.Tell(msg)
 }
 
-func (self *P2PActor) Transmit(target uint64, msg ptypes.Message) {
+func (self *P2PActor) Transmit(target common.PeerId, msg ptypes.Message) {
 	self.P2P.Tell(&netActor.TransmitConsensusMsgReq{
 		Target: target,
 		Msg:    msg,

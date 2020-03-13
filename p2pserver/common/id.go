@@ -16,7 +16,7 @@
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package kbucket
+package common
 
 import (
 	"bytes"
@@ -37,104 +37,108 @@ import (
 
 var Difficulty = 18 //bit
 
-type KadId struct {
-	val common.Address
+type PeerId struct {
+	Val common.Address
 }
 
-func (self KadId) Serialization(sink *common.ZeroCopySink) {
-	sink.WriteAddress(self.val)
+func (self PeerId) IsEmpty() bool {
+	return self.Val == common.ADDRESS_EMPTY
 }
 
-func (self *KadId) Deserialization(source *common.ZeroCopySource) error {
+func (self PeerId) Serialization(sink *common.ZeroCopySink) {
+	sink.WriteAddress(self.Val)
+}
+
+func (self *PeerId) Deserialization(source *common.ZeroCopySource) error {
 	val, eof := source.NextAddress()
 	if eof {
 		return io.ErrUnexpectedEOF
 	}
-	self.val = val
+	self.Val = val
 	return nil
 }
 
-func (self *KadId) ToHexString() string {
-	return self.val.ToHexString()
+func (self *PeerId) ToHexString() string {
+	return self.Val.ToHexString()
 }
 
-type KadKeyId struct {
+type PeerKeyId struct {
 	PublicKey keypair.PublicKey
 
-	Id KadId
+	Id PeerId
 }
 
-func (self KadId) GenRandKadId(prefix uint) KadId {
-	var ret KadId
-	rand.Read(ret.val[:])
+func (self PeerId) GenRandPeerId(prefix uint) PeerId {
+	var ret PeerId
+	rand.Read(ret.Val[:])
 	if prefix == 0 {
-		ret.val[0] &= 0x7f
+		ret.Val[0] &= 0x7f
 		// make first bit different
-		if (0x80 & self.val[0]) == 0 {
-			ret.val[0] |= 0x80
+		if (0x80 & self.Val[0]) == 0 {
+			ret.Val[0] |= 0x80
 		}
 		return ret
 	}
 
 	num := prefix / 8
 	left := prefix % 8
-	if num > uint(len(self.val[:])) {
-		num = uint(len(self.val[:]))
+	if num > uint(len(self.Val[:])) {
+		num = uint(len(self.Val[:]))
 	}
 
 	if num > 0 {
-		copy(ret.val[:num], self.val[:num])
+		copy(ret.Val[:num], self.Val[:num])
 	}
 	// make all prefix bits same
 	mask := (uint8(0xff) >> (8 - left)) << (8 - left)
-	ret.val[num] &= (^mask)
-	ret.val[num] |= (self.val[num] & mask)
+	ret.Val[num] &= (^mask)
+	ret.Val[num] |= (self.Val[num] & mask)
 
 	// and prefix + 1 different
 	// clear prefix + 1
-	ret.val[num] &= ^(1 << (8 - left - 1))
+	ret.Val[num] &= ^(1 << (8 - left - 1))
 	// if prefix + 1 bit is 1 then we already satisfied
 	// if prefix + 1 bit is 0, then we should set this bit
-	if (self.val[num]>>(8-left-1))&1 == 0 {
-		ret.val[num] |= (1 << (8 - left - 1))
+	if (self.Val[num]>>(8-left-1))&1 == 0 {
+		ret.Val[num] |= (1 << (8 - left - 1))
 	}
 
 	return ret
 }
 
-func (self KadId) ToUint64() uint64 {
-	if self.IsPseudoKadId() {
-		nonce := binary.LittleEndian.Uint64(self.val[:8])
+func (self PeerId) ToUint64() uint64 {
+	if self.IsPseudoPeerId() {
+		nonce := binary.LittleEndian.Uint64(self.Val[:8])
 		return nonce
 	}
-	kid := new(big.Int).SetBytes(self.val[:])
+	kid := new(big.Int).SetBytes(self.Val[:])
 	uint64Max := new(big.Int).SetUint64(math.MaxUint64)
 	res := kid.Mod(kid, uint64Max)
 	return res.Uint64()
 }
 
-func (self KadId) IsPseudoKadId() bool {
-	for i := 8; i < len(self.val); i++ {
-		if self.val[i] != 0 {
+func (self PeerId) IsPseudoPeerId() bool {
+	for i := 8; i < len(self.Val); i++ {
+		if self.Val[i] != 0 {
 			return false
 		}
 	}
 	return true
 }
 
-func PseudoKadIdFromUint64(data uint64) KadId {
+func PseudoPeerIdFromUint64(data uint64) PeerId {
 	id := common.ADDRESS_EMPTY
 	binary.LittleEndian.PutUint64(id[:], data)
-	return KadId{
-		val: id,
+	return PeerId{
+		Val: id,
 	}
 }
 
-func (this *KadKeyId) Serialization(sink *common.ZeroCopySink) {
+func (this *PeerKeyId) Serialization(sink *common.ZeroCopySink) {
 	sink.WriteVarBytes(keypair.SerializePublicKey(this.PublicKey))
 }
 
-func (this *KadKeyId) Deserialization(source *common.ZeroCopySource) error {
+func (this *PeerKeyId) Deserialization(source *common.ZeroCopySource) error {
 	data, _, irregular, eof := source.NextVarBytes()
 	if irregular {
 		return common.ErrIrregularData
@@ -150,15 +154,15 @@ func (this *KadKeyId) Deserialization(source *common.ZeroCopySource) error {
 		return errors.New("invalid kad public key")
 	}
 	this.PublicKey = pub
-	this.Id = kadIdFromPubkey(pub)
+	this.Id = peerIdFromPubkey(pub)
 	return nil
 }
 
-func kadIdFromPubkey(pubKey keypair.PublicKey) KadId {
-	return KadId{val: types.AddressFromPubKey(pubKey)}
+func peerIdFromPubkey(pubKey keypair.PublicKey) PeerId {
+	return PeerId{Val: types.AddressFromPubKey(pubKey)}
 }
 
-func RandKadKeyId() *KadKeyId {
+func RandPeerKeyId() *PeerKeyId {
 	var acc *account.Account
 	for {
 		acc = account.NewAccount("")
@@ -166,8 +170,8 @@ func RandKadKeyId() *KadKeyId {
 			break
 		}
 	}
-	kid := kadIdFromPubkey(acc.PublicKey)
-	return &KadKeyId{
+	kid := peerIdFromPubkey(acc.PublicKey)
+	return &PeerKeyId{
 		PublicKey: acc.PublicKey,
 		Id:        kid,
 	}
@@ -191,27 +195,27 @@ func validatePublicKey(pubKey keypair.PublicKey) bool {
 	return true
 }
 
-func (self KadId) distance(b KadId) KadId {
-	var c KadId
-	for i := 0; i < len(self.val); i++ {
-		c.val[i] = self.val[i] ^ b.val[i]
+func (self PeerId) Distance(b PeerId) PeerId {
+	var c PeerId
+	for i := 0; i < len(self.Val); i++ {
+		c.Val[i] = self.Val[i] ^ b.Val[i]
 	}
 
 	return c
 }
 
 // Closer returns true if a is closer to self than b is
-func (self KadId) Closer(a, b KadId) bool {
-	adist := self.distance(a)
-	bdist := self.distance(b)
+func (self PeerId) Closer(a, b PeerId) bool {
+	adist := self.Distance(a)
+	bdist := self.Distance(b)
 
-	return bytes.Compare(adist.val[:], bdist.val[:]) < 0
+	return bytes.Compare(adist.Val[:], bdist.Val[:]) < 0
 }
 
 // CommonPrefixLen(cpl) calculate two ID's xor prefix 0
-func CommonPrefixLen(a, b KadId) int {
-	dis := a.distance(b)
-	return zeroPrefixLen(dis.val[:])
+func CommonPrefixLen(a, b PeerId) int {
+	dis := a.Distance(b)
+	return zeroPrefixLen(dis.Val[:])
 }
 
 // ZeroPrefixLen returns the number of consecutive zeroes in a byte slice.

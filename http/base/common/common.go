@@ -42,6 +42,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	cstate "github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/vm/neovm"
+	common2 "github.com/ontio/ontology/p2pserver/common"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
@@ -152,9 +153,9 @@ type BlockInfo struct {
 }
 
 type NodeInfo struct {
-	NodeState   uint   // node status
-	NodePort    uint16 // The nodes's port
-	ID          uint64 // The nodes's id
+	NodeState   uint          // node status
+	NodePort    uint16        // The nodes's port
+	ID          common2.PeerId // The nodes's id
 	NodeTime    int64
 	NodeVersion uint32   // The network protocol the node used
 	NodeType    uint64   // The services the node supplied
