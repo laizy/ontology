@@ -68,9 +68,7 @@ func (self *MsgHandler) start(net p2p.P2P) {
 	self.discovery = discovery.NewDiscovery(net)
 	self.heatBeat = heatbeat.NewHeartBeat(net, self.ledger)
 	self.persistRecentPeerService = recent_peers.NewPersistRecentPeerService(net)
-	self.persistRecentPeerService.LoadRecentPeers()
-	self.persistRecentPeerService.TryRecentPeers()
-	go self.persistRecentPeerService.SyncUpRecentPeers()
+	go self.persistRecentPeerService.Start()
 	go self.blockSync.Start()
 	go self.reconnect.Start()
 	go self.discovery.Start()
@@ -80,6 +78,9 @@ func (self *MsgHandler) start(net p2p.P2P) {
 func (self *MsgHandler) stop() {
 	self.blockSync.Close()
 	self.reconnect.Close()
+	self.discovery.Stop()
+	self.persistRecentPeerService.Stop()
+	self.heatBeat.Stop()
 }
 
 func (self *MsgHandler) HandleSystemMessage(net p2p.P2P, msg p2p.SystemMessage) {
@@ -90,16 +91,12 @@ func (self *MsgHandler) HandleSystemMessage(net p2p.P2P, msg p2p.SystemMessage) 
 		self.blockSync.OnAddNode(m.Info.Id)
 		self.reconnect.OnAddPeer(m.Info)
 		self.discovery.OnAddPeer(m.Info)
-		addr := m.Info.Addr + strconv.Itoa(int(m.Info.HttpInfoPort))
-		if !self.persistRecentPeerService.IsHave(addr) {
-			self.persistRecentPeerService.AddNodeAddr(addr)
-		}
+		self.persistRecentPeerService.AddNodeAddr(m.Info.Addr + strconv.Itoa(int(m.Info.Port)))
 	case p2p.PeerDisConnected:
 		self.blockSync.OnDelNode(m.Info.Id)
 		self.reconnect.OnDelPeer(m.Info)
 		self.discovery.OnDelPeer(m.Info)
-		addr := m.Info.Addr + strconv.Itoa(int(m.Info.HttpInfoPort))
-		self.persistRecentPeerService.DelNodeAddr(addr)
+		self.persistRecentPeerService.DelNodeAddr(m.Info.Addr + strconv.Itoa(int(m.Info.Port)))
 	case p2p.NetworkStop:
 		self.stop()
 	}

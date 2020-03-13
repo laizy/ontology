@@ -519,7 +519,6 @@ type P2PRsvConfig struct {
 }
 
 type P2PNodeConfig struct {
-	RecentPeerElapse          int64
 	ReservedPeersOnly         bool
 	ReservedCfg               *P2PRsvConfig
 	NetworkMagic              uint32
@@ -584,7 +583,6 @@ func NewOntologyConfig() *OntologyConfig {
 			MaxTxInBlock:    DEFAULT_MAX_TX_IN_BLOCK,
 		},
 		P2PNode: &P2PNodeConfig{
-			RecentPeerElapse:          60,
 			ReservedCfg:               &P2PRsvConfig{},
 			ReservedPeersOnly:         false,
 			NetworkId:                 NETWORK_ID_MAIN_NET,

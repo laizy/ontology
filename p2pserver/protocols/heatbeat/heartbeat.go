@@ -18,6 +18,8 @@
 package heatbeat
 
 import (
+	"time"
+
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
@@ -26,7 +28,6 @@ import (
 	"github.com/ontio/ontology/p2pserver/message/types"
 	"github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
-	"time"
 )
 
 type HeartBeat struct {
@@ -49,6 +50,9 @@ func (self *HeartBeat) Start() {
 	go self.heartBeatService()
 }
 
+func (self *HeartBeat) Stop() {
+	close(self.quit)
+}
 func (this *HeartBeat) heartBeatService() {
 	var periodTime uint
 	periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
