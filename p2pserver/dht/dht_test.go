@@ -19,12 +19,12 @@
 package dht
 
 import (
+	"fmt"
+	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"testing"
 	"time"
-	"fmt"
-	"github.com/ontio/ontology/p2pserver/common"
 )
 
 func TestNewDHT(t *testing.T) {
