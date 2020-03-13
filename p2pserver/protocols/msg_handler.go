@@ -37,6 +37,7 @@ import (
 	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/protocols/block_sync"
 	"github.com/ontio/ontology/p2pserver/protocols/discovery"
+	"github.com/ontio/ontology/p2pserver/protocols/heatbeat"
 	"github.com/ontio/ontology/p2pserver/protocols/reconnect"
 )
 
@@ -51,6 +52,7 @@ type MsgHandler struct {
 	blockSync *block_sync.BlockSyncMgr
 	reconnect *reconnect.ReconnectService
 	discovery *discovery.Discovery
+	heatBeat  *heatbeat.HeartBeat
 	ledger    *ledger.Ledger
 }
 
@@ -62,10 +64,12 @@ func (self *MsgHandler) start(net p2p.P2P) {
 	self.blockSync = block_sync.NewBlockSyncMgr(net, self.ledger)
 	self.reconnect = reconnect.NewReconectService(net)
 	self.discovery = discovery.NewDiscovery(net)
+	self.heatBeat = heatbeat.NewHeartBeat(net, self.ledger)
 
 	go self.blockSync.Start()
 	go self.reconnect.Start()
 	go self.discovery.Start()
+	go self.heatBeat.Start()
 }
 
 func (self *MsgHandler) stop() {

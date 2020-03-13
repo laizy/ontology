@@ -77,7 +77,6 @@ func (this *P2PServer) Start() error {
 	this.tryRecentPeers()
 	go this.connectSeedService()
 	go this.syncUpRecentPeers()
-	go this.heartBeatService()
 	return nil
 }
 
@@ -267,58 +266,6 @@ func (this *P2PServer) reqNbrList(p *peer.Peer) {
 	}
 
 	go this.Send(p, msg)
-}
-
-//heartBeat send ping to nbr peers and check the timeout
-func (this *P2PServer) heartBeatService() {
-	var periodTime uint
-	periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
-	t := time.NewTicker(time.Second * (time.Duration(periodTime)))
-
-	for {
-		select {
-		case <-t.C:
-			this.ping()
-			this.timeout()
-		case <-this.quit:
-			t.Stop()
-			return
-		}
-	}
-}
-
-//ping send pkg to get pong msg from others
-func (this *P2PServer) ping() {
-	peers := this.network.GetNeighbors()
-	this.pingTo(peers)
-}
-
-//pings send pkgs to get pong msg from others
-func (this *P2PServer) pingTo(peers []*peer.Peer) {
-	for _, p := range peers {
-		if p.GetState() == common.ESTABLISH {
-			height := this.ledger.GetCurrentBlockHeight()
-			ping := msgpack.NewPingMsg(uint64(height))
-			go this.Send(p, ping)
-		}
-	}
-}
-
-//timeout trace whether some peer be long time no response
-func (this *P2PServer) timeout() {
-	peers := this.network.GetNeighbors()
-	var periodTime uint
-	periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
-	for _, p := range peers {
-		if p.GetState() == common.ESTABLISH {
-			t := p.GetContactTime()
-			if t.Before(time.Now().Add(-1 * time.Second *
-				time.Duration(periodTime) * common.KEEPALIVE_TIMEOUT)) {
-				log.Warnf("[p2p]keep alive timeout!!!lost remote peer %d - %s from %s", p.GetID(), p.Link.GetAddr(), t.String())
-				p.Close()
-			}
-		}
-	}
 }
 
 func (this *P2PServer) loadRecentPeers() {
