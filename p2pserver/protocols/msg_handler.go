@@ -38,6 +38,7 @@ import (
 	"github.com/ontio/ontology/p2pserver/protocols/block_sync"
 	"github.com/ontio/ontology/p2pserver/protocols/discovery"
 	"github.com/ontio/ontology/p2pserver/protocols/heatbeat"
+	"github.com/ontio/ontology/p2pserver/protocols/recent_peers"
 	"github.com/ontio/ontology/p2pserver/protocols/reconnect"
 )
 
@@ -49,11 +50,12 @@ var respCache *lru.ARCCache
 var txCache, _ = lru.NewARC(msgCommon.MAX_TX_CACHE_SIZE)
 
 type MsgHandler struct {
-	blockSync *block_sync.BlockSyncMgr
-	reconnect *reconnect.ReconnectService
-	discovery *discovery.Discovery
-	heatBeat  *heatbeat.HeartBeat
-	ledger    *ledger.Ledger
+	blockSync                *block_sync.BlockSyncMgr
+	reconnect                *reconnect.ReconnectService
+	discovery                *discovery.Discovery
+	heatBeat                 *heatbeat.HeartBeat
+	persistRecentPeerService *recent_peers.PersistRecentPeerService
+	ledger                   *ledger.Ledger
 }
 
 func NewMsgHandler(ld *ledger.Ledger) *MsgHandler {
@@ -65,6 +67,10 @@ func (self *MsgHandler) start(net p2p.P2P) {
 	self.reconnect = reconnect.NewReconectService(net)
 	self.discovery = discovery.NewDiscovery(net)
 	self.heatBeat = heatbeat.NewHeartBeat(net, self.ledger)
+	self.persistRecentPeerService = recent_peers.NewPersistRecentPeerService(net)
+	self.persistRecentPeerService.LoadRecentPeers()
+	self.persistRecentPeerService.TryRecentPeers()
+	go self.persistRecentPeerService.SyncUpRecentPeers()
 	go self.blockSync.Start()
 	go self.reconnect.Start()
 	go self.discovery.Start()
@@ -84,10 +90,16 @@ func (self *MsgHandler) HandleSystemMessage(net p2p.P2P, msg p2p.SystemMessage) 
 		self.blockSync.OnAddNode(m.Info.Id)
 		self.reconnect.OnAddPeer(m.Info)
 		self.discovery.OnAddPeer(m.Info)
+		addr := m.Info.Addr + strconv.Itoa(int(m.Info.HttpInfoPort))
+		if !self.persistRecentPeerService.IsHave(addr) {
+			self.persistRecentPeerService.AddNodeAddr(addr)
+		}
 	case p2p.PeerDisConnected:
 		self.blockSync.OnDelNode(m.Info.Id)
 		self.reconnect.OnDelPeer(m.Info)
 		self.discovery.OnDelPeer(m.Info)
+		addr := m.Info.Addr + strconv.Itoa(int(m.Info.HttpInfoPort))
+		self.persistRecentPeerService.DelNodeAddr(addr)
 	case p2p.NetworkStop:
 		self.stop()
 	}
