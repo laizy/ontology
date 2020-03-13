@@ -24,7 +24,7 @@ import (
 	"net"
 	"strconv"
 
-	lru "github.com/hashicorp/golang-lru"
+	"github.com/hashicorp/golang-lru"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
@@ -32,9 +32,9 @@ import (
 	"github.com/ontio/ontology/core/types"
 	actor "github.com/ontio/ontology/p2pserver/actor/req"
 	msgCommon "github.com/ontio/ontology/p2pserver/common"
-	msgpack "github.com/ontio/ontology/p2pserver/message/msg_pack"
+	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	msgTypes "github.com/ontio/ontology/p2pserver/message/types"
-	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
+	"github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/protocols/block_sync"
 	"github.com/ontio/ontology/p2pserver/protocols/discovery"
 	"github.com/ontio/ontology/p2pserver/protocols/heatbeat"
@@ -65,7 +65,6 @@ func (self *MsgHandler) start(net p2p.P2P) {
 	self.reconnect = reconnect.NewReconectService(net)
 	self.discovery = discovery.NewDiscovery(net)
 	self.heatBeat = heatbeat.NewHeartBeat(net, self.ledger)
-
 	go self.blockSync.Start()
 	go self.reconnect.Start()
 	go self.discovery.Start()
@@ -106,9 +105,9 @@ func (self *MsgHandler) HandlePeerMessage(ctx *p2p.Context, msg msgTypes.Message
 	case *msgTypes.HeadersReq:
 		HeadersReqHandle(ctx, m)
 	case *msgTypes.Ping:
-		PingHandle(ctx, m)
+		self.heatBeat.PingHandle(ctx, m)
 	case *msgTypes.Pong:
-		PongHandle(ctx, m)
+		self.heatBeat.PongHandle(ctx, m)
 	case *msgTypes.BlkHeader:
 		self.blockSync.OnHeaderReceive(ctx.Sender().GetID(), m.BlkHdr)
 	case *msgTypes.Block:
@@ -199,28 +198,6 @@ func HeadersReqHandle(ctx *p2p.Context, headersReq *msgTypes.HeadersReq) {
 		log.Warn(err)
 		return
 	}
-}
-
-//PingHandle handle ping msg from peer
-func PingHandle(ctx *p2p.Context, ping *msgTypes.Ping) {
-	remotePeer := ctx.Sender()
-	remotePeer.SetHeight(ping.Height)
-	p2p := ctx.Network()
-
-	height := ledger.DefLedger.GetCurrentBlockHeight()
-	p2p.SetHeight(uint64(height))
-	msg := msgpack.NewPongMsg(uint64(height))
-
-	err := remotePeer.Send(msg)
-	if err != nil {
-		log.Warn(err)
-	}
-}
-
-///PongHandle handle pong msg from peer
-func PongHandle(ctx *p2p.Context, pong *msgTypes.Pong) {
-	remotePeer := ctx.Network()
-	remotePeer.SetHeight(pong.Height)
 }
 
 // blockHandle handles the block message from peer

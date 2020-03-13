@@ -6,6 +6,7 @@ import (
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/message/msg_pack"
+	"github.com/ontio/ontology/p2pserver/message/types"
 	"github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
 	"time"
@@ -79,4 +80,24 @@ func (this *HeartBeat) timeout() {
 			}
 		}
 	}
+}
+
+func (this *HeartBeat) PingHandle(ctx *p2p.Context, ping *types.Ping) {
+	remotePeer := ctx.Sender()
+	remotePeer.SetHeight(ping.Height)
+	p2p := ctx.Network()
+
+	height := ledger.DefLedger.GetCurrentBlockHeight()
+	p2p.SetHeight(uint64(height))
+	msg := msgpack.NewPongMsg(uint64(height))
+
+	err := remotePeer.Send(msg)
+	if err != nil {
+		log.Warn(err)
+	}
+}
+
+func (this *HeartBeat) PongHandle(ctx *p2p.Context, pong *types.Pong) {
+	remotePeer := ctx.Network()
+	remotePeer.SetHeight(pong.Height)
 }
