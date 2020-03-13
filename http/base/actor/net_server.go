@@ -54,11 +54,6 @@ func GetNeighborAddrs() []common.PeerAddr {
 	return netServer.GetNeighborAddrs()
 }
 
-//GetConnectionState from netSever actor
-func GetConnectionState() uint32 {
-	return common.INIT
-}
-
 //GetNodePort from netSever actor
 func GetNodePort() uint16 {
 	if netServer == nil {
