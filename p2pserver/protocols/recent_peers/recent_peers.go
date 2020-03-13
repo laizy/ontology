@@ -14,10 +14,10 @@ import (
 )
 
 type PersistRecentPeerService struct {
-	net             p2p.P2P
-	quit            chan bool
-	recentPeers     map[uint32][]*RecentPeer
-	lock            sync.RWMutex
+	net         p2p.P2P
+	quit        chan bool
+	recentPeers map[uint32][]*RecentPeer
+	lock        sync.RWMutex
 }
 
 func (this *PersistRecentPeerService) IsHave(addr string) bool {
@@ -34,7 +34,8 @@ func (this *PersistRecentPeerService) IsHave(addr string) bool {
 
 func (this *PersistRecentPeerService) AddNodeAddr(addr string) {
 	this.lock.Lock()
-	this.recentPeers[config.DefConfig.P2PNode.NetworkId] = append(this.recentPeers[config.DefConfig.P2PNode.NetworkId],
+	netID := config.DefConfig.P2PNode.NetworkMagic
+	this.recentPeers[netID] = append(this.recentPeers[netID],
 		&RecentPeer{
 			Addr:  addr,
 			Birth: time.Now().Unix(),
