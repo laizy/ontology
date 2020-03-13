@@ -264,7 +264,7 @@ func (this *NetServer) Connect(addr string) error {
 	// Obsolete node
 	this.removeOldPeer(kid, remoteAddr)
 
-	if !this.UpdateDHT(kid) {
+	if !this.UpdateDHT(kid, peerInfo.Priority) {
 		return fmt.Errorf("[HandshakeClient] UpdateDHT failed, kadId: %s", kid.ToHexString())
 	}
 
@@ -337,7 +337,7 @@ func (this *NetServer) handleClientConnection(conn net.Conn) error {
 	kid := remotePeer.GetKId()
 	this.removeOldPeer(kid, conn.RemoteAddr().String())
 
-	this.dht.Update(kid)
+	this.dht.Update(kid, peerInfo.Priority)
 
 	remotePeer.AttachChan(this.NetChan)
 	addr := conn.RemoteAddr().String()
@@ -437,8 +437,8 @@ func (this *NetServer) IsOwnAddress(addr string) bool {
 	return addr == this.connCtrl.OwnAddress()
 }
 
-func (ns *NetServer) UpdateDHT(id kbucket.KadId) bool {
-	ns.dht.Update(id)
+func (ns *NetServer) UpdateDHT(id kbucket.KadId, priority int) bool {
+	ns.dht.Update(id, priority)
 	return true
 }
 

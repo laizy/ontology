@@ -147,7 +147,7 @@ func TestTableCallbacks(t *testing.T) {
 		delete(pset, p)
 	}
 
-	rt.Update(peers[0].Id)
+	rt.Update(peers[0].Id, 0)
 	if _, ok := pset[peers[0].Id]; !ok {
 		t.Fatal("should have this peer")
 	}
@@ -158,7 +158,7 @@ func TestTableCallbacks(t *testing.T) {
 	}
 
 	for _, p := range peers {
-		rt.Update(p.Id)
+		rt.Update(p.Id, 0)
 	}
 
 	out := rt.ListPeers()
@@ -188,7 +188,7 @@ func TestTableUpdate(t *testing.T) {
 
 	// Testing Update
 	for i := 0; i < 10000; i++ {
-		rt.Update(peers[rand.Intn(len(peers))].Id)
+		rt.Update(peers[rand.Intn(len(peers))].Id, 0)
 	}
 
 	for i := 0; i < 100; i++ {
@@ -209,7 +209,7 @@ func TestTableFind(t *testing.T) {
 	peers := make([]*KadKeyId, 100)
 	for i := 0; i < 5; i++ {
 		peers[i] = genpeerID()
-		rt.Update(peers[i].Id)
+		rt.Update(peers[i].Id, 0)
 	}
 
 	t.Logf("Searching for peer: '%s'", peers[2].Id.ToHexString())
@@ -226,8 +226,8 @@ func TestTableEldestPreferred(t *testing.T) {
 	rt := NewRoutingTable(10, local.Id)
 
 	// generate size + 1 peers to saturate a bucket
-	peers := make([]*KadKeyId, 15)
-	for i := 0; i < 15; {
+	peers := make([]*KadKeyId, 16)
+	for i := 0; i < 16; {
 		if p := genpeerID(); CommonPrefixLen(local.Id, p.Id) == 0 {
 			peers[i] = p
 			i++
@@ -236,20 +236,34 @@ func TestTableEldestPreferred(t *testing.T) {
 
 	// test 10 first peers are accepted.
 	for _, p := range peers[:10] {
-		if err := rt.Update(p.Id); err != nil {
+		if err := rt.Update(p.Id, 0); err != nil {
 			t.Errorf("expected all 10 peers to be accepted; instead got: %v", err)
 		}
 	}
 
 	// test next 5 peers are rejected.
-	for _, p := range peers[10:] {
-		err := rt.Update(p.Id)
+	for _, p := range peers[10:15] {
+		err := rt.Update(p.Id, 0)
 		if err != ErrPeerRejectedNoCapacity {
 			t.Errorf("expected extra 5 peers to be rejected; instead got: %v", err)
 		}
 		if len(rt.Buckets) != 2 {
 			t.Fatalf("buket size not OK")
 		}
+	}
+
+	for _, p := range peers[15:] {
+		err := rt.Update(p.Id, 1)
+		if err != nil {
+			t.Errorf("high priority node should insert into bucket under any condition; instead got: %v", err)
+		}
+		if len(rt.Buckets) != 2 {
+			t.Fatalf("buket size not OK")
+		}
+	}
+	// the first bucket now have 11 elements
+	if rt.Buckets[0].Len() != 11 {
+		t.Fatalf("bucket size error, expect: %d, got %d", 11, rt.Buckets[0].Len())
 	}
 }
 
@@ -262,7 +276,7 @@ func TestTableFindMultiple(t *testing.T) {
 	peers := make([]*KadKeyId, 100)
 	for i := 0; i < 18; i++ {
 		peers[i] = genpeerID()
-		rt.Update(peers[i].Id)
+		rt.Update(peers[i].Id, 0)
 	}
 
 	// put in one bucket
@@ -313,7 +327,7 @@ func TestTableFindMultipleBuckets(t *testing.T) {
 	peers := make([]*KadKeyId, 100)
 	for i := 0; i < 100; i++ {
 		peers[i] = genpeerID()
-		rt.Update(peers[i].Id)
+		rt.Update(peers[i].Id, 0)
 	}
 
 	targetID := peers[2]
@@ -432,7 +446,7 @@ func TestTableMultithreaded(t *testing.T) {
 	go func() {
 		for i := 0; i < 1000; i++ {
 			n := rand.Intn(len(peers))
-			tab.Update(peers[n].Id)
+			tab.Update(peers[n].Id, 0)
 		}
 		done <- struct{}{}
 	}()
@@ -440,7 +454,7 @@ func TestTableMultithreaded(t *testing.T) {
 	go func() {
 		for i := 0; i < 1000; i++ {
 			n := rand.Intn(len(peers))
-			tab.Update(peers[n].Id)
+			tab.Update(peers[n].Id, 0)
 		}
 		done <- struct{}{}
 	}()
@@ -469,7 +483,7 @@ func BenchmarkUpdates(b *testing.B) {
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		tab.Update(peers[i].Id)
+		tab.Update(peers[i].Id, 0)
 	}
 }
 
@@ -481,7 +495,7 @@ func BenchmarkFinds(b *testing.B) {
 	var peers []*KadKeyId
 	for i := 0; i < b.N; i++ {
 		peers = append(peers, genpeerID())
-		tab.Update(peers[i].Id)
+		tab.Update(peers[i].Id, 0)
 	}
 
 	b.StartTimer()

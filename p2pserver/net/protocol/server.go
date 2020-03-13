@@ -53,7 +53,7 @@ type P2P interface {
 	Xmit(msg types.Message)
 	IsOwnAddress(addr string) bool
 
-	UpdateDHT(id kbucket.KadId) bool
+	UpdateDHT(id kbucket.KadId, priority int) bool
 	RemoveDHT(id kbucket.KadId) bool
 	BetterPeers(id kbucket.KadId, count int) []kbucket.KadId
 	GetKadKeyId() *kbucket.KadKeyId

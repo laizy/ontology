@@ -78,8 +78,8 @@ func NewDHT() *DHT {
 
 // Update signals the routeTable to Update its last-seen status
 // on the given peer.
-func (dht *DHT) Update(peer kb.KadId) bool {
-	err := dht.routeTable.Update(peer)
+func (dht *DHT) Update(peer kb.KadId, priority int) bool {
+	err := dht.routeTable.Update(peer, priority)
 	return err == nil
 }
 

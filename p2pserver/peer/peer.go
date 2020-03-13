@@ -45,6 +45,12 @@ type PeerInfo struct {
 	Height       uint64
 	SoftVersion  string
 	Addr         string
+	Priority     int
+}
+
+func (pi *PeerInfo) SetPriority(priority int) *PeerInfo {
+	pi.Priority = priority
+	return pi
 }
 
 func NewPeerInfo(id kbucket.KadId, version uint32, services uint64, relay bool, httpInfoPort uint16,

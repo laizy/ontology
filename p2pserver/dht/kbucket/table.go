@@ -48,7 +48,8 @@ type RouteTable struct {
 	tabLock sync.RWMutex
 
 	// kBuckets define all the fingers to other nodes.
-	Buckets    []*Bucket
+	Buckets []*Bucket
+	// bucketSize is a hint, node in reserved list will ignore this restrict
 	bucketsize int
 
 	cplRefreshLk   sync.RWMutex
@@ -113,7 +114,7 @@ func (rt *RouteTable) ResetCplRefreshedAtForID(id KadId, newTime time.Time) {
 }
 
 // Update adds or moves the given peer to the front of its respective bucket
-func (rt *RouteTable) Update(peerID KadId) error {
+func (rt *RouteTable) Update(peerID KadId, priority int) error {
 	cpl := CommonPrefixLen(peerID, rt.local)
 	rt.tabLock.Lock()
 	defer rt.tabLock.Unlock()
@@ -152,8 +153,17 @@ func (rt *RouteTable) Update(peerID KadId) error {
 		bucket = rt.Buckets[bucketID]
 		if bucket.Len() >= rt.bucketsize {
 			// if after all the unfolding, we're unable to find room for this peer, scrap it.
-			return ErrPeerRejectedNoCapacity
+			if priority <= 0 {
+				return ErrPeerRejectedNoCapacity
+			}
+			// consensus node *must* in bucket!
+			// yes, some buket may exceed bucket size
 		}
+		bucket.PushFront(peerID)
+		rt.PeerAdded(peerID)
+		return nil
+	}
+	if priority > 0 {
 		bucket.PushFront(peerID)
 		rt.PeerAdded(peerID)
 		return nil

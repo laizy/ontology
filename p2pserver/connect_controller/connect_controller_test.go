@@ -229,7 +229,7 @@ func checkServer(t *testing.T, client, server *Node, clientConns chan<- net.Conn
 
 func TestCheckReserveWithDomain(t *testing.T) {
 	a := assert.New(t)
-	dname := "www.baidu.com"
+	dname := "www.github.com"
 	gips, err := net.LookupHost(dname)
 	a.Nil(err, "fail to get domain record")
 

@@ -130,14 +130,15 @@ func (self *ConnectController) removeConnecting(addr string) {
 	self.connecting.Remove(addr)
 }
 
-func (self *ConnectController) checkReservedPeers(remoteAddr string) error {
-	if len(self.ReservedPeers) == 0 {
-		return nil
-	}
+func (cc *ConnectController) isReserveListEmpty() bool {
+	return len(cc.ReservedPeers) == 0
+}
+
+func (cc *ConnectController) inReserveList(remoteAddr string) bool {
 	rsvIPs := []string{}
 
 	// we don't load domain in start because we consider domain's A/AAAA record may change sometimes
-	for _, curIPOrName := range self.ReservedPeers {
+	for _, curIPOrName := range cc.ReservedPeers {
 		curIPs, err := net.LookupHost(curIPOrName)
 		if err != nil {
 			continue
@@ -147,8 +148,16 @@ func (self *ConnectController) checkReservedPeers(remoteAddr string) error {
 
 	for _, addr := range rsvIPs {
 		if strings.HasPrefix(remoteAddr, addr) {
-			return nil
+			return true
 		}
+	}
+
+	return false
+}
+
+func (self *ConnectController) checkReservedPeers(remoteAddr string) error {
+	if self.isReserveListEmpty() || self.inReserveList(remoteAddr) {
+		return nil
 	}
 
 	return fmt.Errorf("the remote addr: %s not in reserved list", remoteAddr)
@@ -187,6 +196,12 @@ func (self *ConnectController) AcceptConnect(conn net.Conn) (*peer.PeerInfo, net
 		return nil, nil, err
 	}
 
+	// if reserve list is not empty then peer must be in reserve list
+	// make it priority higher
+	if !self.isReserveListEmpty() {
+		peerInfo.SetPriority(1)
+	}
+
 	wrapped := self.savePeer(conn, peerInfo, INBOUND_INDEX)
 
 	log.Infof("inbound peer %s connected, %s", conn.RemoteAddr().String(), peerInfo)
@@ -221,6 +236,12 @@ func (self *ConnectController) Connect(addr string) (*peer.PeerInfo, net.Conn, e
 	if err != nil {
 		_ = conn.Close()
 		return nil, nil, err
+	}
+
+	// if reserve list is not empty then peer must be in reserve list
+	// make it priority higher
+	if !self.isReserveListEmpty() {
+		peerInfo.SetPriority(1)
 	}
 
 	wrapped := self.savePeer(conn, peerInfo, OUTBOUND_INDEX)
