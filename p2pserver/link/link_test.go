@@ -30,7 +30,6 @@ import (
 	ct "github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/p2pserver/common"
 	mt "github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/peer"
 )
 
 var (
@@ -47,9 +46,9 @@ func init() {
 
 	cliLink = NewLink()
 	serverLink = NewLink()
-	id := peer.PseudoPeerIdFromUint64(0x733936)
+	id := common.PseudoPeerIdFromUint64(0x733936)
 	cliLink.SetID(id)
-	id2 := peer.PseudoPeerIdFromUint64(0x8274950)
+	id2 := common.PseudoPeerIdFromUint64(0x8274950)
 	serverLink.SetID(id2)
 
 	cliChan = make(chan *mt.MsgPayload, 100)
@@ -65,7 +64,7 @@ func TestNewLink(t *testing.T) {
 	if cliLink.GetID().ToUint64() != 0x733936 {
 		t.Fatal("link GetID failed")
 	}
-	i := peer.PseudoPeerIdFromUint64(uint64(id))
+	i := common.PseudoPeerIdFromUint64(uint64(id))
 	cliLink.SetID(i)
 	if cliLink.GetID().ToUint64() != uint64(id) {
 		t.Fatal("link SetID failed")
@@ -106,9 +105,9 @@ func TestUnpackBufNode(t *testing.T) {
 
 	switch msgType {
 	case "addr":
-		var newaddrs []peer.PeerAddr
+		var newaddrs []common.PeerAddr
 		for i := 0; i < 10000000; i++ {
-			idd := peer.PseudoPeerIdFromUint64(uint64(i))
+			idd := common.PseudoPeerIdFromUint64(uint64(i))
 			newaddrs = append(newaddrs, common.PeerAddr{
 				Time: time.Now().Unix(),
 				ID:   idd,

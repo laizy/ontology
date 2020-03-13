@@ -384,7 +384,7 @@ func TestTableFindMultipleBuckets(t *testing.T) {
 			pset.Add(p.ToHexString())
 		}
 		for _, p := range found {
-			if !pset.Has(p.val.ToHexString()) {
+			if !pset.Has(p.ToHexString()) {
 				t.Fatalf("unexpected peer %d", p)
 			}
 		}

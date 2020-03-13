@@ -70,9 +70,6 @@ func TestNodeExisted(t *testing.T) {
 	if !nm.NodeExisted(id45) {
 		t.Fatal("0x7533345 should in nbr peers")
 	}
-	if nm.NodeExisted(id45) {
-		t.Fatal("0x5533345 should not in nbr peers")
-	}
 }
 
 func TestGetPeer(t *testing.T) {
