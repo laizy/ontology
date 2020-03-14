@@ -21,9 +21,13 @@ package protocols
 import (
 	"errors"
 	"fmt"
-	"github.com/ontio/ontology/p2pserver/protocols/bootstrap"
 	"net"
 	"strconv"
+
+	msgpack "github.com/ontio/ontology/p2pserver/message/msg_pack"
+	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
+
+	"github.com/ontio/ontology/p2pserver/protocols/bootstrap"
 
 	"github.com/hashicorp/golang-lru"
 	"github.com/ontio/ontology/common"
@@ -33,9 +37,7 @@ import (
 	"github.com/ontio/ontology/core/types"
 	actor "github.com/ontio/ontology/p2pserver/actor/req"
 	msgCommon "github.com/ontio/ontology/p2pserver/common"
-	"github.com/ontio/ontology/p2pserver/message/msg_pack"
 	msgTypes "github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/protocols/block_sync"
 	"github.com/ontio/ontology/p2pserver/protocols/discovery"
 	"github.com/ontio/ontology/p2pserver/protocols/heatbeat"
@@ -357,14 +359,12 @@ func InvHandle(ctx *p2p.Context, inv *msgTypes.Inv) {
 // DisconnectHandle handles the disconnect events
 func DisconnectHandle(ctx *p2p.Context) {
 	remotePeer := ctx.Sender()
-	p2p := ctx.Network()
 	if remotePeer == nil {
 		log.Debug("[p2p]disconnect peer is nil")
 		return
 	}
 
 	if remotePeer.Link.GetAddr() == remotePeer.GetAddr() {
-		p2p.RemovePeerAddress(remotePeer.GetAddr())
 		remotePeer.Close()
 	}
 }

@@ -41,13 +41,10 @@ type P2P interface {
 	SetHeight(uint64)
 	IsPeerEstablished(p *peer.Peer) bool
 	Send(p *peer.Peer, msg types.Message) error
+	SendTo(p common.PeerId, msg types.Message)
 	GetOutConnRecordLen() uint
-	AddPeerAddress(addr string, p *peer.Peer)
-	RemovePeerAddress(addr string)
-	AddNbrNode(*peer.Peer)
-	DelNbrNode(id common.PeerId) (*peer.Peer, bool)
 	NodeEstablished(id common.PeerId) bool
-	Xmit(msg types.Message)
+	Broadcast(msg types.Message)
 	IsOwnAddress(addr string) bool
 
 	GetPeerStringAddr() map[common.PeerId]string

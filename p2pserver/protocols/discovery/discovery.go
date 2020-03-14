@@ -34,19 +34,19 @@ import (
 )
 
 type Discovery struct {
-	dht     *dht.DHT
-	net     p2p.P2P
-	id      common.PeerId
-	quit    chan bool
+	dht  *dht.DHT
+	net  p2p.P2P
+	id   common.PeerId
+	quit chan bool
 	maskSet *strset.Set
 }
 
 func NewDiscovery(net p2p.P2P, maskLst []string) *Discovery {
 	return &Discovery{
-		id:      net.GetID(),
-		dht:     dht.NewDHT(net.GetID()),
-		net:     net,
-		quit:    make(chan bool),
+		id:   net.GetID(),
+		dht:  dht.NewDHT(net.GetID()),
+		net:  net,
+		quit: make(chan bool),
 		maskSet: strset.New(maskLst...),
 	}
 }
@@ -158,11 +158,11 @@ func (self *Discovery) FindNodeHandle(ctx *p2p.Context, freq *types.FindNodeReq)
 			ip, _, err := net.SplitHostPort(pair.Address)
 			if err != nil {
 				continue
-			}
+		}
 			// hide mask node
 			if self.maskSet.Has(ip) {
 				continue
-			}
+	}
 			mskedAddrs = append(mskedAddrs, pair)
 		}
 		// replace with masked nodes
