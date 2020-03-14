@@ -41,7 +41,6 @@ type P2P interface {
 	SetHeight(uint64)
 	IsPeerEstablished(p *peer.Peer) bool
 	Send(p *peer.Peer, msg types.Message) error
-	GetPeerFromAddr(addr string) *peer.Peer
 	GetOutConnRecordLen() uint
 	AddPeerAddress(addr string, p *peer.Peer)
 	RemovePeerAddress(addr string)

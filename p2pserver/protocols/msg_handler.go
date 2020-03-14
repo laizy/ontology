@@ -21,6 +21,8 @@ package protocols
 import (
 	"errors"
 	"fmt"
+	"github.com/ontio/ontology/p2pserver/protocols/bootstrap"
+	"net"
 	"strconv"
 
 	"github.com/hashicorp/golang-lru"
@@ -53,6 +55,7 @@ type MsgHandler struct {
 	reconnect                *reconnect.ReconnectService
 	discovery                *discovery.Discovery
 	heatBeat                 *heatbeat.HeartBeat
+	bootstrap                *bootstrap.BootstrapService
 	persistRecentPeerService *recent_peers.PersistRecentPeerService
 	ledger                   *ledger.Ledger
 }
@@ -65,6 +68,8 @@ func (self *MsgHandler) start(net p2p.P2P) {
 	self.blockSync = block_sync.NewBlockSyncMgr(net, self.ledger)
 	self.reconnect = reconnect.NewReconectService(net)
 	self.discovery = discovery.NewDiscovery(net, config.DefConfig.P2PNode.ReservedCfg.MaskPeers)
+	seeds := config.DefConfig.Genesis.SeedList
+	self.bootstrap = bootstrap.NewBootstrapService(net, seeds)
 	self.heatBeat = heatbeat.NewHeartBeat(net, self.ledger)
 	self.persistRecentPeerService = recent_peers.NewPersistRecentPeerService(net)
 	go self.persistRecentPeerService.Start()
@@ -72,14 +77,16 @@ func (self *MsgHandler) start(net p2p.P2P) {
 	go self.reconnect.Start()
 	go self.discovery.Start()
 	go self.heatBeat.Start()
+	go self.bootstrap.Start()
 }
 
 func (self *MsgHandler) stop() {
-	self.blockSync.Close()
-	self.reconnect.Close()
+	self.blockSync.Stop()
+	self.reconnect.Stop()
 	self.discovery.Stop()
 	self.persistRecentPeerService.Stop()
 	self.heatBeat.Stop()
+	self.bootstrap.Stop()
 }
 
 func (self *MsgHandler) HandleSystemMessage(net p2p.P2P, msg p2p.SystemMessage) {
@@ -90,11 +97,13 @@ func (self *MsgHandler) HandleSystemMessage(net p2p.P2P, msg p2p.SystemMessage) 
 		self.blockSync.OnAddNode(m.Info.Id)
 		self.reconnect.OnAddPeer(m.Info)
 		self.discovery.OnAddPeer(m.Info)
+		self.bootstrap.OnAddPeer(m.Info)
 		self.persistRecentPeerService.AddNodeAddr(m.Info.Addr + strconv.Itoa(int(m.Info.Port)))
 	case p2p.PeerDisConnected:
 		self.blockSync.OnDelNode(m.Info.Id)
 		self.reconnect.OnDelPeer(m.Info)
 		self.discovery.OnDelPeer(m.Info)
+		self.bootstrap.OnDelPeer(m.Info)
 		self.persistRecentPeerService.DelNodeAddr(m.Info.Addr + strconv.Itoa(int(m.Info.Port)))
 	case p2p.NetworkStop:
 		self.stop()

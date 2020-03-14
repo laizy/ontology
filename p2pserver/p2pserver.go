@@ -43,10 +43,9 @@ import (
 
 //P2PServer control all network activities
 type P2PServer struct {
-	network     p2pnet.P2P
-	ledger      *ledger.Ledger
-	recentPeers map[uint32][]string
-	quit        chan bool
+	network p2pnet.P2P
+	ledger  *ledger.Ledger
+	quit    chan bool
 }
 
 //NewServer return a new p2pserver according to the pubkey

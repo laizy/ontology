@@ -342,19 +342,6 @@ func (this *NetServer) startNetAccept(listener net.Listener) {
 	}
 }
 
-//find exist peer from addr map
-func (this *NetServer) GetPeerFromAddr(addr string) *peer.Peer {
-	var p *peer.Peer
-	this.PeerAddrMap.RLock()
-	defer this.PeerAddrMap.RUnlock()
-
-	p, ok := this.PeerAddress[addr]
-	if ok {
-		return p
-	}
-	return nil
-}
-
 //IsNbrPeerAddr return result whether the address is under connecting
 func (this *NetServer) IsNbrPeerAddr(addr string) bool {
 	var addrNew string
