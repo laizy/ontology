@@ -34,7 +34,7 @@ import (
 )
 
 //NewNetServer return the net object in p2p
-func NewNetServer(protocol p2p.Protocol, conf *config.P2PNodeConfig) (p2p.P2P, error) {
+func NewNetServer(protocol p2p.Protocol, conf *config.P2PNodeConfig) (*NetServer, error) {
 	n := &NetServer{
 		NetChan:  make(chan *types.MsgPayload, common.CHAN_CAPABILITY),
 		base:     &peer.PeerInfo{},
@@ -178,11 +178,6 @@ func (this *NetServer) GetNeighbors() []*peer.Peer {
 	return this.Np.GetNeighbors()
 }
 
-//NodeEstablished return whether a peer is establish with self according to id
-func (this *NetServer) NodeEstablished(id common.PeerId) bool {
-	return this.Np.NodeEstablished(id)
-}
-
 //Broadcast called by actor, broadcast msg
 func (this *NetServer) Broadcast(msg types.Message) {
 	this.Np.Broadcast(msg)
@@ -195,14 +190,6 @@ func (this *NetServer) Send(p *peer.Peer, msg types.Message) error {
 	}
 	log.Warn("[p2p]sendMsg to a invalid peer")
 	return errors.New("[p2p]sendMsg to a invalid peer")
-}
-
-//IsPeerEstablished return the establise state of given peer`s id
-func (this *NetServer) IsPeerEstablished(p *peer.Peer) bool {
-	if p == nil {
-		return false
-	}
-	return this.Np.NodeEstablished(p.GetID())
 }
 
 func (this *NetServer) removeOldPeer(kid common.PeerId, remoteAddr string) {
@@ -247,8 +234,8 @@ func (this *NetServer) Connect(addr string) error {
 func (this *NetServer) notifyPeerConnected(p *peer.PeerInfo) {
 }
 
-//Halt stop all net layer logic
-func (this *NetServer) Halt() {
+//Stop stop all net layer logic
+func (this *NetServer) Stop() {
 	peers := this.Np.GetNeighbors()
 	for _, p := range peers {
 		p.Close()
@@ -367,10 +354,6 @@ func (this *NetServer) AddrValid(addr string) bool {
 //check own network address
 func (this *NetServer) IsOwnAddress(addr string) bool {
 	return addr == this.connCtrl.OwnAddress()
-}
-
-func (ns *NetServer) GetPeerStringAddr() map[common.PeerId]string {
-	return ns.Np.GetPeerStringAddr()
 }
 
 func createPeer(info *peer.PeerInfo, conn net.Conn) *peer.Peer {

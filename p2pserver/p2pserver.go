@@ -33,9 +33,7 @@ import (
 
 //P2PServer control all network activities
 type P2PServer struct {
-	network p2pnet.P2P
-	ledger  *ledger.Ledger
-	quit    chan bool
+	network *netserver.NetServer
 }
 
 //NewServer return a new p2pserver according to the pubkey
@@ -50,10 +48,8 @@ func NewServer() (*P2PServer, error) {
 
 	p := &P2PServer{
 		network: n,
-		ledger:  ld,
 	}
 
-	p.quit = make(chan bool)
 	return p, nil
 }
 
@@ -65,8 +61,7 @@ func (this *P2PServer) Start() error {
 
 //Stop halt all service by send signal to channels
 func (this *P2PServer) Stop() {
-	this.network.Halt()
-	this.quit <- true
+	this.network.Stop()
 }
 
 // GetNetWork returns the low level netserver

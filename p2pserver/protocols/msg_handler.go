@@ -21,13 +21,7 @@ package protocols
 import (
 	"errors"
 	"fmt"
-	"net"
 	"strconv"
-
-	msgpack "github.com/ontio/ontology/p2pserver/message/msg_pack"
-	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
-
-	"github.com/ontio/ontology/p2pserver/protocols/bootstrap"
 
 	"github.com/hashicorp/golang-lru"
 	"github.com/ontio/ontology/common"
@@ -37,8 +31,11 @@ import (
 	"github.com/ontio/ontology/core/types"
 	actor "github.com/ontio/ontology/p2pserver/actor/req"
 	msgCommon "github.com/ontio/ontology/p2pserver/common"
+	msgpack "github.com/ontio/ontology/p2pserver/message/msg_pack"
 	msgTypes "github.com/ontio/ontology/p2pserver/message/types"
+	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/protocols/block_sync"
+	"github.com/ontio/ontology/p2pserver/protocols/bootstrap"
 	"github.com/ontio/ontology/p2pserver/protocols/discovery"
 	"github.com/ontio/ontology/p2pserver/protocols/heatbeat"
 	"github.com/ontio/ontology/p2pserver/protocols/recent_peers"
