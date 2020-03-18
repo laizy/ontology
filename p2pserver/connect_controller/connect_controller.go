@@ -308,7 +308,7 @@ func (self *ConnectController) savePeer(conn net.Conn, p *peer.PeerInfo, index i
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	addr := conn.RemoteAddr().String()
+	addr := p.Addr
 	self.inoutbounds[index].Add(addr)
 
 	cid := self.getConnectId()

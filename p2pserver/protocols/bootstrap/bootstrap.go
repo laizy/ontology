@@ -18,6 +18,7 @@
 package bootstrap
 
 import (
+	"fmt"
 	"math/rand"
 	"net"
 	"strconv"
@@ -98,12 +99,12 @@ func (self *BootstrapService) connectSeeds() {
 			log.Warnf("[p2p]resolve err: %s", err.Error())
 			continue
 		}
-		port, err := common.ParseIPPort(n)
+		_, port, err := common.ParseHostAndPort(n)
 		if err != nil {
 			log.Warnf("[p2p]seed peer %s address format is wrong", n)
 			continue
 		}
-		seedNodes = append(seedNodes, ns[0]+port)
+		seedNodes = append(seedNodes, fmt.Sprintf("%s:%d", ns[0], port))
 	}
 
 	connPeers := make(map[string]*peer.Peer)

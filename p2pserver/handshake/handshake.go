@@ -154,7 +154,11 @@ func HandshakeServer(info *peer.PeerInfo, selfId *common.PeerKeyId, conn net.Con
 		return nil, err
 	}
 
-	return createPeerInfo(version, kid, conn.RemoteAddr().String()), nil
+	listenAddr := conn.RemoteAddr().String()
+	if ip, _, err := common.ParseHostAndPort(conn.RemoteAddr().String()); err == nil {
+		listenAddr = fmt.Sprintf("%s:%d", ip, version.P.SyncPort)
+	}
+	return createPeerInfo(version, kid, listenAddr), nil
 }
 
 func sendMsg(conn net.Conn, msg types.Message) error {

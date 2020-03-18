@@ -155,3 +155,19 @@ func ParseIPPort(s string) (string, error) {
 	}
 	return s[i:], nil
 }
+
+func ParseHostAndPort(s string) (string, uint16, error) {
+	i := strings.LastIndex(s, ":")
+	if i < 0 || i == len(s)-1 {
+		return "", 0, errors.New("[p2p]split ip port error")
+	}
+	port, err := strconv.Atoi(s[i+1:])
+	if err != nil {
+		return "", 0, errors.New("[p2p]parse port error")
+	}
+	if port <= 0 || port >= 65535 {
+		return "", 0, errors.New("[p2p]port out of bound")
+	}
+
+	return s[:i], uint16(port), nil
+}

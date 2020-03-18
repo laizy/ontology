@@ -369,7 +369,7 @@ func createPeer(info *peer.PeerInfo, conn net.Conn) *peer.Peer {
 	remotePeer.SetInfo(info)
 	remotePeer.SetState(common.ESTABLISH)
 	remotePeer.Link.UpdateRXTime(time.Now())
-	remotePeer.Link.SetAddr(conn.RemoteAddr().String())
+	remotePeer.Link.SetAddr(info.Addr)
 	remotePeer.Link.SetConn(conn)
 	remotePeer.Link.SetID(info.Id)
 
