@@ -20,7 +20,7 @@ package actor
 
 import (
 	"github.com/ontio/ontology/p2pserver/common"
-	"github.com/ontio/ontology/p2pserver/net/protocol"
+	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
 )
 
 var netServer p2p.P2P
