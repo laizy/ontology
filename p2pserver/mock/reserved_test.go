@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -19,12 +20,13 @@ func TestReserved(t *testing.T) {
 	var nodes []*netserver.NetServer
 	go seedNode.Start()
 	seedAddr := seedNode.GetHostInfo().Addr
+	seedIP := strings.Split(seedAddr, ":")[0]
 	log.Errorf("seed addr: %s", seedAddr)
 	for i := 0; i < N; i++ {
 		var node *netserver.NetServer
 		var reserved []string
 		if i == 0 {
-			reserved = []string{seedAddr}
+			reserved = []string{seedIP}
 		}
 		node = NewReservedNode([]string{seedAddr}, net, reserved)
 		net.AllowConnect(seedNode.GetHostInfo().Id, node.GetHostInfo().Id)

@@ -1,60 +1,55 @@
 package mock
 
 import (
+	"strings"
 	"testing"
 	"time"
 
-	"strings"
-
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/net/netserver"
 	"github.com/ontio/ontology/p2pserver/peer"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewNetwork(t *testing.T) {
-	net := NewNetwork()
-	N := 4
-	nodes := make([]*netserver.NetServer, N)
-	for i := 0; i < N; i++ {
-		var node *netserver.NetServer
-		if i == 2 {
-			node0Addr := nodes[0].GetHostInfo().Addr
-			node1Addr := nodes[1].GetHostInfo().Addr
-			ip0 := strings.Split(node0Addr, ":")
-			ip1 := strings.Split(node1Addr, ":")
-			node = NewMaskNode([]string{node0Addr, node1Addr}, net, []string{ip0[0], ip1[0]})
-		} else if i == 3 {
-			node2Addr := nodes[2].GetHostInfo().Addr
-			node = NewMaskNode([]string{node2Addr}, net, nil)
-		} else {
-			node = NewMaskNode(nil, net, nil)
-		}
-		nodes[i] = node
-	}
+func TestMask(t *testing.T) {
+	nw := NewNetwork()
 
-	for i := 0; i < N; i++ {
-		for j := i; j < N; j++ {
-			net.AllowConnect(nodes[i].GetHostInfo().Id, nodes[j].GetHostInfo().Id)
-		}
-		go nodes[i].Start()
-	}
+	// topo:
+	//      seed
+	//    /     \
+	//  normal   resv
+	seed := NewTestNode(nw, nil, nil, nil)
+	seedAddr := seed.GetHostInfo().Addr
+	seedIP := strings.Split(seedAddr, ":")[0]
+	log.Errorf("seed ip: %s", seedIP)
 
-	time.Sleep(time.Second * 10)
-	for i := 0; i < N; i++ {
-		if i == N-1 {
-			assert.Equal(t, uint32(1), nodes[i].GetConnectionCnt())
-		}
-		assert.Equal(t, uint32(3), nodes[i].GetConnectionCnt())
-	}
+	// to make sure resvnode will not active connect to normal node
+	nodeWithResv := NewTestNode(nw, []string{seedAddr}, []string{seedIP}, []string{seedIP})
+	nodeNormal := NewTestNode(nw, []string{seedAddr}, nil, nil)
+
+	// normal will not reach nodeWithResv, dht won't give it nodeWithResv IP, it's beed masked
+	nw.AllowConnect(seed.GetHostInfo().Id, nodeWithResv.GetHostInfo().Id)
+	nw.AllowConnect(seed.GetHostInfo().Id, nodeNormal.GetHostInfo().Id)
+	nw.AllowConnect(nodeNormal.GetHostInfo().Id, nodeWithResv.GetHostInfo().Id)
+
+	go seed.Start()
+	go nodeWithResv.Start()
+	go nodeNormal.Start()
+
+	time.Sleep(time.Second * 2)
+	assert.Equal(t, uint32(2), seed.GetConnectionCnt())
+	assert.Equal(t, uint32(1), nodeNormal.GetConnectionCnt())
+	assert.Equal(t, uint32(1), nodeWithResv.GetConnectionCnt())
 }
 
-func NewMaskNode(seeds []string, net Network, maskPeers []string) *netserver.NetServer {
+func NewTestNode(nw Network, seeds, maskPeers, resv []string) *netserver.NetServer {
 	seedId := common.RandPeerKeyId()
 	info := peer.NewPeerInfo(seedId.Id, 0, 0, true, 0,
 		0, 0, "1.10", "")
 
 	dis := NewDiscoveryProtocol(seeds, maskPeers)
-	dis.RefleshInterval = time.Millisecond * 10
-	return NewNode(seedId, info, dis, net, nil)
+	dis.RefleshInterval = time.Millisecond * 1
+
+	return NewNode(seedId, info, dis, nw, resv)
 }
