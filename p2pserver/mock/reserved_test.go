@@ -22,7 +22,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/net/netserver"
 	"github.com/ontio/ontology/p2pserver/peer"
@@ -30,6 +29,16 @@ import (
 )
 
 func TestReserved(t *testing.T) {
+	//topo
+	/**
+	normal —————— normal
+	  \  reserved  /
+	   \    |     /
+	    \  seed  /
+	        |
+	        |
+	      normal
+	*/
 	N := 4
 	net := NewNetwork()
 	seedNode := NewReservedNode(nil, net, nil)
@@ -38,7 +47,6 @@ func TestReserved(t *testing.T) {
 	go seedNode.Start()
 	seedAddr := seedNode.GetHostInfo().Addr
 	seedIP := strings.Split(seedAddr, ":")[0]
-	log.Errorf("seed addr: %s", seedAddr)
 	for i := 0; i < N; i++ {
 		var node *netserver.NetServer
 		var reserved []string
