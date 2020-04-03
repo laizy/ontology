@@ -162,7 +162,7 @@ func sendMsg(conn net.Conn, msg types.Message) error {
 	types.WriteMessage(sink, msg)
 	_, err := conn.Write(sink.Bytes())
 	if err != nil {
-		return fmt.Errorf("[handshake]error sending messge to %s :%s", conn.LocalAddr(), err.Error())
+		return fmt.Errorf("[handshake]error sending messge to %s :%s", conn.RemoteAddr().String(), err.Error())
 	}
 
 	return nil
