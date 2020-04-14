@@ -26,12 +26,14 @@ import (
 )
 
 type FindNodeReq struct {
-	TargetID ncomm.PeerId
+	TargetID  ncomm.PeerId
+	Recursive bool
 }
 
 // Serialization message payload
 func (req FindNodeReq) Serialization(sink *common.ZeroCopySink) {
 	req.TargetID.Serialization(sink)
+	sink.WriteBool(req.Recursive)
 }
 
 // CmdType return this message type
@@ -41,11 +43,23 @@ func (req *FindNodeReq) CmdType() string {
 
 // Deserialization message payload
 func (req *FindNodeReq) Deserialization(source *common.ZeroCopySource) error {
-	return req.TargetID.Deserialization(source)
+	err := req.TargetID.Deserialization(source)
+	if err != nil {
+		return err
+	}
+
+	rec, _, eof := source.NextBool()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	req.Recursive = rec
+
+	return nil
 }
 
 type FindNodeResp struct {
 	TargetID    ncomm.PeerId
+	Recursive   bool
 	Success     bool
 	Address     string
 	CloserPeers []ncomm.PeerIDAddressPair
@@ -54,6 +68,7 @@ type FindNodeResp struct {
 // Serialization message payload
 func (resp FindNodeResp) Serialization(sink *common.ZeroCopySink) {
 	resp.TargetID.Serialization(sink)
+	sink.WriteBool(resp.Recursive)
 	sink.WriteBool(resp.Success)
 	sink.WriteString(resp.Address)
 	sink.WriteUint32(uint32(len(resp.CloserPeers)))
@@ -74,6 +89,11 @@ func (resp *FindNodeResp) Deserialization(source *common.ZeroCopySource) error {
 	if err != nil {
 		return err
 	}
+	rec, _, eof := source.NextBool()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	resp.Recursive = rec
 
 	succ, _, eof := source.NextBool()
 	if eof {

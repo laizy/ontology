@@ -26,6 +26,7 @@ import (
 func TestFindNodeRequest(t *testing.T) {
 	var req FindNodeReq
 	req.TargetID = common.PeerId{}
+	req.Recursive = true
 
 	MessageTest(t, &req)
 }
@@ -34,6 +35,7 @@ func TestFindNodeResponse(t *testing.T) {
 	var resp FindNodeResp
 	resp.TargetID = common.PeerId{}
 	resp.Address = "127.0.0.1:1222"
+	resp.Recursive = true
 	id := common.PseudoPeerIdFromUint64(uint64(0x456))
 	resp.CloserPeers = []common.PeerIDAddressPair{
 		common.PeerIDAddressPair{

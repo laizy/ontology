@@ -98,9 +98,6 @@ func (dht *DHT) BetterPeers(id common.PeerId, count int) []common.PeerIDAddressP
 		if curPair.ID == dht.localId {
 			continue
 		}
-		if curPair.ID == id {
-			continue
-		}
 		filtered = append(filtered, curPair)
 	}
 

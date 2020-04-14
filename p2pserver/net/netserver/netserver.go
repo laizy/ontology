@@ -19,6 +19,7 @@
 package netserver
 
 import (
+	"context"
 	"errors"
 	"net"
 	"time"
@@ -27,9 +28,12 @@ import (
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver/common"
 	"github.com/ontio/ontology/p2pserver/connect_controller"
+	"github.com/ontio/ontology/p2pserver/dht"
 	"github.com/ontio/ontology/p2pserver/message/types"
+	"github.com/ontio/ontology/p2pserver/mock/mock_discovery"
 	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
+	"github.com/ontio/ontology/p2pserver/protocols"
 )
 
 //NewNetServer return the net object in p2p
@@ -323,4 +327,106 @@ func (this *NetServer) SendTo(p common.PeerId, msg types.Message) {
 	if peer != nil {
 		this.Send(peer, msg)
 	}
+}
+
+func (this *NetServer) FindPeerAddress(ctx context.Context, targetID common.PeerId) (string, error) {
+	// find myself?
+	if targetID == this.GetID() {
+		return "", errors.New("useless find")
+	}
+
+	msgHandler, ok := this.protocol.(*protocols.MsgHandler)
+	if !ok {
+		return "", errors.New("can not get dht")
+	}
+
+	// // find in local dht
+	betters := msgHandler.Discovery().DHT().BetterPeers(targetID, dht.AlphaValue)
+
+	// if betters is empty we will create an entry for this target
+	// everytime when a newly node is connected we will re find all those target
+
+	// check in local
+	for _, p := range betters {
+		if p.ID == targetID {
+			return p.Address, nil
+		}
+	}
+
+	// send request to better neighbors
+	req := &types.FindNodeReq{
+		Recursive: true,
+		TargetID:  targetID,
+	}
+	// add discovery entry
+	ch := make(chan string)
+
+	msgHandler.Discovery().MakeRecursiveEntry(targetID, ch)
+
+	for _, b := range betters {
+		if msgHandler.Discovery().TryVisit(targetID, b.ID) {
+			go this.SendTo(b.ID, req)
+		}
+	}
+
+	var ret string
+	select {
+	case ret = <-ch:
+
+	case <-ctx.Done():
+	}
+
+	return ret, nil
+}
+
+// CustomFindPeerAddress need to cast protocol to test struct pointer: DiscoveryProtocol
+// other than that all process is same
+func (this *NetServer) CustomFindPeerAddress(ctx context.Context, targetID common.PeerId) (string, error) {
+	// find myself?
+	if targetID == this.GetID() {
+		return "", errors.New("useless find")
+	}
+
+	msgHandler, ok := this.protocol.(*mock_discovery.DiscoveryProtocol)
+	if !ok {
+		return "", errors.New("can not get dht in test mode")
+	}
+
+	// // find in local dht
+	betters := msgHandler.Discovery().DHT().BetterPeers(targetID, dht.AlphaValue)
+
+	// if betters is empty we will create an entry for this target
+	// everytime when a newly node is connected we will re find all those target
+
+	// check in local
+	for _, p := range betters {
+		if p.ID == targetID {
+			return p.Address, nil
+		}
+	}
+
+	// send request to better neighbors
+	req := &types.FindNodeReq{
+		Recursive: true,
+		TargetID:  targetID,
+	}
+	// add discovery entry
+	ch := make(chan string)
+
+	msgHandler.Discovery().MakeRecursiveEntry(targetID, ch)
+
+	for _, b := range betters {
+		if msgHandler.Discovery().TryVisit(targetID, b.ID) {
+			go this.SendTo(b.ID, req)
+		}
+	}
+
+	var ret string
+	select {
+	case ret = <-ch:
+
+	case <-ctx.Done():
+	}
+
+	return ret, nil
 }

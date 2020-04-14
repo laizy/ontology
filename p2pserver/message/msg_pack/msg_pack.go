@@ -173,3 +173,12 @@ func NewFindNodeReq(id msgCommon.PeerId) mt.Message {
 
 	return &req
 }
+
+func NewRecursiveFindNodeReq(id msgCommon.PeerId) mt.Message {
+	req := mt.FindNodeReq{
+		Recursive: true,
+		TargetID:  id,
+	}
+
+	return &req
+}
