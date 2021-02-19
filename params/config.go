@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ontio/ontology/vm/evm/common"
 )
 
 // Genesis hashes to enforce below configs on.
@@ -272,7 +272,8 @@ func (c *TrustedCheckpoint) Hash() common.Hash {
 	copy(buf[8:], c.SectionHead.Bytes())
 	copy(buf[8+common.HashLength:], c.CHTRoot.Bytes())
 	copy(buf[8+2*common.HashLength:], c.BloomRoot.Bytes())
-	return crypto.Keccak256Hash(buf)
+
+	return common.Hash(crypto.Keccak256Hash(buf))
 }
 
 // Empty returns an indicator whether the checkpoint is regarded as empty.

@@ -19,8 +19,8 @@ package evm
 import (
 	"errors"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ontio/ontology/vm/evm/common"
 	"github.com/ontio/ontology/vm/evm/params"
 )
 

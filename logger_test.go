@@ -20,9 +20,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/holiman/uint256"
+	"github.com/ontio/ontology/vm/evm/common"
 	"github.com/ontio/ontology/vm/evm/params"
 )
 

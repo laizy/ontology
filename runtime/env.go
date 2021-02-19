@@ -17,9 +17,10 @@
 package runtime
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ontio/ontology/vm/evm"
 	"math/big"
+
+	"github.com/ontio/ontology/vm/evm"
+	"github.com/ontio/ontology/vm/evm/common"
 )
 
 func NewEnv(cfg *Config) *evm.EVM {

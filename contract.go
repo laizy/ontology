@@ -17,9 +17,9 @@
 package evm
 
 import (
+	"github.com/ontio/ontology/vm/evm/common"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
 )
 

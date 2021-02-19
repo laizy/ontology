@@ -17,9 +17,8 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
+	"github.com/ontio/ontology/vm/evm/common"
 	"github.com/ontio/ontology/vm/evm/params"
 	"golang.org/x/crypto/sha3"
 )
@@ -836,7 +835,7 @@ func makeLog(size int) executionFunc {
 		}
 
 		d := callContext.memory.GetCopy(int64(mStart.Uint64()), int64(mSize.Uint64()))
-		interpreter.evm.StateDB.AddLog(&types.Log{
+		interpreter.evm.StateDB.AddLog(&common.Log{
 			Address: callContext.contract.Address(),
 			Topics:  topics,
 			Data:    d,

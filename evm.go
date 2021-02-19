@@ -21,15 +21,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
+	"github.com/ontio/ontology/vm/evm/common"
 	"github.com/ontio/ontology/vm/evm/params"
 )
 
 // emptyCodeHash is used by create to ensure deployment is disallowed to already
 // deployed contract addresses (relevant after the account abstraction).
-var emptyCodeHash = crypto.Keccak256Hash(nil)
+var emptyCodeHash = common.Hash(crypto.Keccak256Hash(nil))
 
 type (
 	// CanTransferFunc is the signature of a transfer guard function
@@ -387,7 +387,8 @@ type codeAndHash struct {
 
 func (c *codeAndHash) Hash() common.Hash {
 	if c.hash == (common.Hash{}) {
-		c.hash = crypto.Keccak256Hash(c.code)
+		hash := crypto.Keccak256Hash(c.code)
+		c.hash = common.Hash(hash)
 	}
 	return c.hash
 }

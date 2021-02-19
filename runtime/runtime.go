@@ -21,11 +21,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ontio/ontology/vm/evm"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ontio/ontology/vm/evm"
+	"github.com/ontio/ontology/vm/evm/common"
 	"github.com/ontio/ontology/vm/evm/params"
 )
 

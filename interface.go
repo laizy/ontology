@@ -19,13 +19,12 @@ package evm
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ontio/ontology/vm/evm/common"
 )
 
 // StateDB is an EVM database for full state querying.
 type StateDB interface {
-	CreateAccount(common.Address)
+	CreateAccount(address common.Address)
 
 	SubBalance(common.Address, *big.Int)
 	AddBalance(common.Address, *big.Int)
@@ -69,7 +68,7 @@ type StateDB interface {
 	RevertToSnapshot(int)
 	Snapshot() int
 
-	AddLog(*types.Log)
+	AddLog(*common.Log)
 	AddPreimage(common.Hash, []byte)
 
 	ForEachStorage(common.Address, func(common.Hash, common.Hash) bool) error
