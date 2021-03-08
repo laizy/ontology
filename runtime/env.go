@@ -17,7 +17,6 @@
 package runtime
 
 import (
-	"math/big"
 
 	"github.com/ontio/ontology/vm/evm"
 	"github.com/ontio/ontology/vm/evm/common"
