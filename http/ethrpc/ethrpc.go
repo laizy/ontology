@@ -109,6 +109,9 @@ func (api *EthereumAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexuti
 	if err != nil {
 		return nil
 	}
+	if block == nil {
+		return nil
+	}
 	txCount := hexutil.Uint(len(block.Transactions))
 	return &txCount
 }
@@ -116,6 +119,9 @@ func (api *EthereumAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexuti
 func (api *EthereumAPI) GetBlockTransactionCountByNumber(number int64) *hexutil.Uint {
 	block, err := bactor.GetBlockByHeight(uint32(number))
 	if err != nil {
+		return nil
+	}
+	if block == nil {
 		return nil
 	}
 	txCount := hexutil.Uint(len(block.Transactions))
@@ -134,6 +140,9 @@ func (api *EthereumAPI) GetCode(address common.Address, blockNumber types2.Block
 	deployCode, err := bactor.GetContractStateFromStore(oComm.Address(address))
 	if err != nil {
 		return nil, err
+	}
+	if deployCode == nil {
+		return nil, fmt.Errorf("code: %v not found", address)
 	}
 	code := deployCode.GetRawCode()
 	return code, nil
@@ -176,10 +185,13 @@ func (api *EthereumAPI) GetBlockByHash(hash common.Hash, fullTx bool) (interface
 }
 
 func (api *EthereumAPI) GetBlockByNumber(blockNum types2.BlockNumber, fullTx bool) (interface{}, error) {
-	//block, err := bactor.GetBlockByHeight(uint32(blockNum))
-	//if err != nil {
-	//	return nil, err
-	//}
+	block, err := bactor.GetBlockByHeight(uint32(blockNum))
+	if err != nil {
+		return nil, err
+	}
+	if block == nil {
+		return nil, fmt.Errorf("block: %v not found", blockNum.Int64())
+	}
 	return map[string]interface{}{
 		"number":           hexutil.Uint64(100000),
 		"hash":             hexutil.Bytes{},
@@ -214,6 +226,9 @@ func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types2.Transact
 	block, err := bactor.GetBlockByHeight(height)
 	if err != nil {
 		return nil, err
+	}
+	if block == nil {
+		return nil, fmt.Errorf("block: %v not found", height)
 	}
 	header := block.Header
 	blockHash := header.Hash()
