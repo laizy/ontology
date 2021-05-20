@@ -8,18 +8,23 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 	oComm "github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/constants"
 	bactor "github.com/ontio/ontology/http/base/actor"
 	hComm "github.com/ontio/ontology/http/base/common"
 	types2 "github.com/ontio/ontology/http/ethrpc/types"
 	"math/big"
 )
 
+const (
+	eth65           = 65
+	ProtocolVersion = eth65
+	ChainId         = 5851
+)
+
 type EthereumAPI struct {
 }
 
 func (api *EthereumAPI) ChainId() hexutil.Uint64 {
-	return hexutil.Uint64(constants.ChainId)
+	return hexutil.Uint64(ChainId)
 }
 
 func (api *EthereumAPI) BlockNumber() (hexutil.Uint64, error) {
@@ -36,7 +41,7 @@ func (api *EthereumAPI) GetBalance(address common.Address, _ rpc.BlockNumberOrHa
 }
 
 func (api *EthereumAPI) ProtocolVersion() hexutil.Uint {
-	return hexutil.Uint(constants.ProtocolVersion)
+	return hexutil.Uint(ProtocolVersion)
 }
 
 func (api *EthereumAPI) Syncing() (interface{}, error) {
