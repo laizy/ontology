@@ -18,13 +18,14 @@
 package ethrpc
 
 import (
+	"math/big"
+	"reflect"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	types2 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ontio/ontology/core/types"
 	types3 "github.com/ontio/ontology/http/ethrpc/types"
-	"math/big"
-	"reflect"
 )
 
 func EthBlockFromOntology(block *types.Block, fullTx bool) map[string]interface{} {

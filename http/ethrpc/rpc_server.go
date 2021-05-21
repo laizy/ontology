@@ -18,10 +18,11 @@
 package ethrpc
 
 import (
-	"github.com/ethereum/go-ethereum/rpc"
-	cfg "github.com/ontio/ontology/common/config"
 	"net/http"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/rpc"
+	cfg "github.com/ontio/ontology/common/config"
 )
 
 func StartEthServer() error {

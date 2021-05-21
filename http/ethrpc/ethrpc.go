@@ -20,6 +20,8 @@ package ethrpc
 import (
 	"bytes"
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,7 +30,6 @@ import (
 	bactor "github.com/ontio/ontology/http/base/actor"
 	hComm "github.com/ontio/ontology/http/base/common"
 	types2 "github.com/ontio/ontology/http/ethrpc/types"
-	"math/big"
 )
 
 const (
