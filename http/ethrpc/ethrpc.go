@@ -208,11 +208,8 @@ func (api *EthereumAPI) GetBlockByHash(hash common.Hash, fullTx bool) (interface
 }
 
 func (api *EthereumAPI) GetBlockByNumber(blockNum types2.BlockNumber, fullTx bool) (interface{}, error) {
-	if blockNum.IsPending() {
-		return nil, nil
-	}
 	height := uint32(blockNum)
-	if blockNum.IsLatest() {
+	if blockNum.IsLatest() || blockNum.IsPending() {
 		height = bactor.GetCurrentBlockHeight()
 	}
 	block, err := bactor.GetBlockByHeight(height)
