@@ -81,6 +81,27 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (bn BlockNumber) IsLatest() bool {
+	if bn == 0 {
+		return true
+	}
+	return false
+}
+
+func (bn BlockNumber) IsEarliest() bool {
+	if bn == 1 {
+		return true
+	}
+	return false
+}
+
+func (bn BlockNumber) IsPending() bool {
+	if bn == -1 {
+		return true
+	}
+	return false
+}
+
 // Int64 converts block number to primitive type
 func (bn BlockNumber) Int64() int64 {
 	return int64(bn)
