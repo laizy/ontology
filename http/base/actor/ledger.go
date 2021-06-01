@@ -24,6 +24,7 @@ import (
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/smartcontract/event"
+	"github.com/ontio/ontology/smartcontract/service/evm"
 	cstate "github.com/ontio/ontology/smartcontract/states"
 )
 

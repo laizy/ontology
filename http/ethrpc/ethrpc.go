@@ -19,9 +19,11 @@ package ethrpc
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -35,32 +37,40 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 	hComm "github.com/ontio/ontology/http/base/common"
 	types2 "github.com/ontio/ontology/http/ethrpc/types"
+	"github.com/ontio/ontology/smartcontract/service/evm"
+	"github.com/ontio/ontology/smartcontract/service/native/utils"
+	tp "github.com/ontio/ontology/txnpool/proc"
 )
 
 const (
 	eth65           = 65
 	ProtocolVersion = eth65
-	ChainId         = 5851
+	RPCGasCap       = 0
 )
 
 type EthereumAPI struct {
+	txpool *tp.TXPoolServer
+}
+
+func NewEthereumAPI(txpool *tp.TXPoolServer) EthereumAPI {
+	return EthereumAPI{txpool: txpool}
 }
 
 func (api *EthereumAPI) ChainId() hexutil.Uint64 {
-	return hexutil.Uint64(ChainId)
+	return hexutil.Uint64(getChainId())
 }
 
 func (api *EthereumAPI) BlockNumber() (hexutil.Uint64, error) {
-	// height := bactor.GetCurrentBlockHeight()
-	return hexutil.Uint64(1000), nil
+	height := bactor.GetCurrentBlockHeight()
+	return hexutil.Uint64(height), nil
 }
 
 func (api *EthereumAPI) GetBalance(address common.Address, _ rpc.BlockNumberOrHash) (*hexutil.Big, error) {
-	//balances, _, err := hComm.GetContractBalance(0, []oComm.Address{utils.OngContractAddress}, oComm.Address(address), true)
-	//if err != nil {
-	//	return nil, fmt.Errorf("get ong balance error:%s", err)
-	//}
-	return (*hexutil.Big)(big.NewInt(0)), nil
+	balances, _, err := hComm.GetContractBalance(0, []oComm.Address{utils.OngContractAddress}, oComm.Address(address), true)
+	if err != nil {
+		return nil, fmt.Errorf("get ong balance error:%s", err)
+	}
+	return (*hexutil.Big)(big.NewInt(int64(balances[0]))), nil
 }
 
 func (api *EthereumAPI) ProtocolVersion() hexutil.Uint {
@@ -125,11 +135,19 @@ func (api *EthereumAPI) GetStorageAt(address common.Address, key string, blockNu
 	return nil, nil
 }
 
-// TODO
-func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum int64) (*hexutil.Uint64, error) {
-	nonce := hexutil.Uint64(12321)
-	print("12321")
-	return &nonce, nil
+func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum types2.BlockNumber) (*hexutil.Uint64, error) {
+	addr := EthToOntAddr(address)
+	if blockNum.IsPending() {
+		nonce := api.txpool.Nonce(addr)
+		n := hexutil.Uint64(nonce)
+		return &n, nil
+	}
+	nonce, err := bactor.GetNonce(addr)
+	if err != nil {
+		return nil, err
+	}
+	n := hexutil.Uint64(nonce)
+	return &n, nil
 }
 
 func (api *EthereumAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
@@ -211,8 +229,33 @@ func (api *EthereumAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, err
 	return common.BytesToHash(txhash[:]), nil
 }
 
-func (api *EthereumAPI) Call(args types2.CallArgs, blockNumber int64, _ *map[common.Address]types2.Account) (hexutil.Bytes, error) {
-	return nil, nil
+func (api *EthereumAPI) Call(args types2.CallArgs, blockNumber types2.BlockNumber, _ *map[common.Address]types2.Account) (hexutil.Bytes, error) {
+	tx := args.AsTransaction(RPCGasCap)
+	res, err := bactor.PreExecuteEip155Tx(tx)
+	if err != nil {
+		return nil, err
+	}
+	if len(res.Revert()) > 0 {
+		return nil, newRevertError(res)
+	}
+	return res.Return(), res.Err
+}
+
+func newRevertError(result *evm.ExecutionResult) *revertError {
+	reason, errUnpack := abi.UnpackRevert(result.Revert())
+	err := errors.New("execution reverted")
+	if errUnpack == nil {
+		err = fmt.Errorf("execution reverted: %v", reason)
+	}
+	return &revertError{
+		error:  err,
+		reason: hexutil.Encode(result.Revert()),
+	}
+}
+
+type revertError struct {
+	error
+	reason string // revert reason hex encoded
 }
 
 func (api *EthereumAPI) EstimateGas(args types2.CallArgs) (hexutil.Uint, error) {

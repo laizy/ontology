@@ -21,6 +21,9 @@ package ledger
 import (
 	"fmt"
 
+	types2 "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ontio/ontology/smartcontract/service/evm"
+
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
@@ -182,6 +185,10 @@ func (self *Ledger) PreExecuteContract(tx *types.Transaction) (*cstate.PreExecRe
 
 func (self *Ledger) PreExecuteContractBatch(txes []*types.Transaction, atomic bool) ([]*cstate.PreExecResult, uint32, error) {
 	return self.ldgStore.PreExecuteContractBatch(txes, atomic)
+}
+
+func (self *Ledger) PreExecuteEip155Tx(tx *types2.Transaction) (*evm.ExecutionResult, error) {
+	return self.ldgStore.PreExecuteEip155Tx(tx)
 }
 
 func (self *Ledger) GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error) {
