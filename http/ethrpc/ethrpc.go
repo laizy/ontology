@@ -267,6 +267,9 @@ func (api *EthereumAPI) GetBlockByHash(hash common.Hash, fullTx bool) (interface
 	if err != nil {
 		return nil, err
 	}
+	if block == nil {
+		return nil, fmt.Errorf("block: %v not found", hash.String())
+	}
 	return EthBlockFromOntology(block, fullTx), nil
 }
 
@@ -282,27 +285,7 @@ func (api *EthereumAPI) GetBlockByNumber(blockNum types2.BlockNumber, fullTx boo
 	if block == nil {
 		return nil, fmt.Errorf("block: %v not found", blockNum.Int64())
 	}
-	return map[string]interface{}{
-		"number":           hexutil.Uint64(100000),
-		"hash":             hexutil.Bytes{},
-		"parentHash":       hexutil.Bytes{},
-		"nonce":            types.BlockNonce{}, // PoW specific
-		"sha3Uncles":       common.Hash{},      // No uncles in Tendermint
-		"logsBloom":        types2.Bloom{},
-		"transactionsRoot": hexutil.Bytes{},
-		"stateRoot":        hexutil.Bytes{},
-		"miner":            common.Address{},
-		"mixHash":          common.Hash{},
-		"difficulty":       hexutil.Uint64(0),
-		"totalDifficulty":  hexutil.Uint64(0),
-		"extraData":        hexutil.Bytes{},
-		"size":             hexutil.Uint64(0),
-		"gasLimit":         hexutil.Uint64(0), // TODO Static gas limit
-		"gasUsed":          (*hexutil.Big)(big.NewInt(0)),
-		"timestamp":        hexutil.Uint64(0),
-		"uncles":           []string{},
-		"receiptsRoot":     common.Hash{},
-	}, nil
+	return EthBlockFromOntology(block, fullTx), nil
 }
 
 func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types2.Transaction, error) {
@@ -331,7 +314,7 @@ func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types2.Transact
 			break
 		}
 	}
-	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx)), nil
+	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
 func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types2.Transaction, error) {
@@ -349,11 +332,29 @@ func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx 
 		return nil, fmt.Errorf("access block: %v overflow %v", hash.Hex(), idx)
 	}
 	tx := txs[idx]
-	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx)), nil
+	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
 func (api *EthereumAPI) GetTransactionByBlockNumberAndIndex(blockNum types2.BlockNumber, idx hexutil.Uint) (*types2.Transaction, error) {
-	return nil, nil
+	height := uint32(blockNum)
+	if blockNum.IsLatest() || blockNum.IsPending() {
+		height = bactor.GetCurrentBlockHeight()
+	}
+	block, err := bactor.GetBlockByHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	if block == nil {
+		return nil, fmt.Errorf("block: %v not found", height)
+	}
+	header := block.Header
+	blockHash := header.Hash()
+	txs := block.Transactions
+	if len(txs) >= int(idx) {
+		return nil, fmt.Errorf("access block: %v overflow %v", height, idx)
+	}
+	tx := txs[idx]
+	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
 func (api *EthereumAPI) GetTransactionReceipt(hash common.Hash) (interface{}, error) {
@@ -361,11 +362,35 @@ func (api *EthereumAPI) GetTransactionReceipt(hash common.Hash) (interface{}, er
 }
 
 func (api *EthereumAPI) PendingTransactions() ([]*types2.Transaction, error) {
-	return nil, nil
+	pendingTxs := api.txpool.PendingEIPTransactions()
+	var rpcTxs []*types2.Transaction
+	for _, v1 := range pendingTxs {
+		for _, v2 := range v1 {
+			tx, err := NewTransaction(v2, v2.Hash(), common.Hash{}, 0, 0)
+			if err != nil {
+				return nil, nil
+			}
+			rpcTxs = append(rpcTxs, tx)
+		}
+	}
+	return rpcTxs, nil
 }
 
-func (api *EthereumAPI) PendingTransactionByHash(target common.Hash) (*types2.Transaction, error) {
-	return nil, nil
+func (api *EthereumAPI) PendingTransactionsByHash(target common.Hash) (*types2.Transaction, error) {
+	pendingTxs := api.txpool.PendingEIPTransactions()
+	var ethTx *types.Transaction
+	for _, v1 := range pendingTxs {
+		for _, v2 := range v1 {
+			if bytes.Equal(v2.Hash().Bytes(), target.Bytes()) {
+				ethTx = v2
+				break
+			}
+		}
+	}
+	if ethTx == nil {
+		return nil, fmt.Errorf("tx: %v not found", target.String())
+	}
+	return NewTransaction(ethTx, ethTx.Hash(), common.Hash{}, 0, 0)
 }
 
 func (api *EthereumAPI) GetUncleByBlockHashAndIndex(_ common.Hash, _ hexutil.Uint) map[string]interface{} {
