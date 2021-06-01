@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"math/big"
 
+	types3 "github.com/ontio/ontology/smartcontract/service/evm/types"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -37,7 +39,6 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 	hComm "github.com/ontio/ontology/http/base/common"
 	types2 "github.com/ontio/ontology/http/ethrpc/types"
-	"github.com/ontio/ontology/smartcontract/service/evm"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	tp "github.com/ontio/ontology/txnpool/proc"
 )
@@ -241,7 +242,7 @@ func (api *EthereumAPI) Call(args types2.CallArgs, blockNumber types2.BlockNumbe
 	return res.Return(), res.Err
 }
 
-func newRevertError(result *evm.ExecutionResult) *revertError {
+func newRevertError(result *types3.ExecutionResult) *revertError {
 	reason, errUnpack := abi.UnpackRevert(result.Revert())
 	err := errors.New("execution reverted")
 	if errUnpack == nil {
@@ -259,7 +260,12 @@ type revertError struct {
 }
 
 func (api *EthereumAPI) EstimateGas(args types2.CallArgs) (hexutil.Uint, error) {
-	return 0, nil
+	tx := args.AsTransaction(RPCGasCap)
+	res, err := bactor.PreExecuteEip155Tx(tx)
+	if err != nil {
+		return 0, err
+	}
+	return hexutil.Uint(res.UsedGas), nil
 }
 
 func (api *EthereumAPI) GetBlockByHash(hash common.Hash, fullTx bool) (interface{}, error) {

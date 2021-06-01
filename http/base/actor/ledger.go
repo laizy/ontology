@@ -26,7 +26,7 @@ import (
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/smartcontract/event"
-	"github.com/ontio/ontology/smartcontract/service/evm"
+	types3 "github.com/ontio/ontology/smartcontract/service/evm/types"
 	cstate "github.com/ontio/ontology/smartcontract/states"
 )
 
@@ -124,7 +124,7 @@ func GetNonce(address common.Address) (uint64, error) {
 	return acc.Nonce, err
 }
 
-func PreExecuteEip155Tx(tx *types2.Transaction) (*evm.ExecutionResult, error) {
+func PreExecuteEip155Tx(tx *types2.Transaction) (*types3.ExecutionResult, error) {
 	res, err := ledger.DefLedger.PreExecuteEip155Tx(tx)
 	return res, err
 }

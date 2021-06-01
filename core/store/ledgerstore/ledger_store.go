@@ -31,6 +31,8 @@ import (
 	"sync"
 	"time"
 
+	types4 "github.com/ontio/ontology/smartcontract/service/evm/types"
+
 	common2 "github.com/ethereum/go-ethereum/common"
 	evm2 "github.com/ontio/ontology/smartcontract/service/evm"
 	"github.com/ontio/ontology/smartcontract/service/native/ong"
@@ -1364,7 +1366,7 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 	return this.PreExecuteContractWithParam(tx, param)
 }
 
-func (this *LedgerStoreImp) PreExecuteEip155Tx(tx *types3.Transaction) (*evm2.ExecutionResult, error) {
+func (this *LedgerStoreImp) PreExecuteEip155Tx(tx *types3.Transaction) (*types4.ExecutionResult, error) {
 	overlay := this.stateStore.NewOverlayDB()
 	cache := storage.NewCacheDB(overlay)
 	statedb := storage.NewStateDB(cache, tx.Hash(), common2.Hash{}, ong.OngBalanceHandle{})
