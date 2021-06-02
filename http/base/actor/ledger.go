@@ -19,7 +19,7 @@
 package actor
 
 import (
-	ethcomm "github.com/ethereum/go-ethereum/common"
+	common2 "github.com/ethereum/go-ethereum/common"
 	types2 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/ledger"
@@ -120,9 +120,16 @@ func GetCrossStatesProof(height uint32, key []byte) ([]byte, error) {
 	return ledger.DefLedger.GetCrossStatesProof(height, key)
 }
 
-func GetNonce(address common.Address) (uint64, error) {
-	acc, err := ledger.DefLedger.GetStore().GetCacheDB().GetEthAccount(ethcomm.BytesToAddress(address[:]))
-	return acc.Nonce, err
+func GetNonce(address common2.Address) (uint64, error) {
+	return ledger.DefLedger.GetNonce(address)
+}
+
+func GetEthCode(address common2.Address) ([]byte, error) {
+	return ledger.DefLedger.GetEthCode(address)
+}
+
+func GetEthStorage(address common2.Address, key string) ([]byte, error) {
+	return ledger.DefLedger.GetEthState(address, key)
 }
 
 func PreExecuteEip155Tx(tx *types2.Transaction) (*types3.ExecutionResult, error) {

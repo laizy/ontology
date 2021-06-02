@@ -31,10 +31,8 @@ import (
 	"sync"
 	"time"
 
-	types4 "github.com/ontio/ontology/smartcontract/service/evm/types"
-
+	common2 "github.com/ethereum/go-ethereum/common"
 	types3 "github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
@@ -53,6 +51,7 @@ import (
 	"github.com/ontio/ontology/merkle"
 	"github.com/ontio/ontology/smartcontract"
 	"github.com/ontio/ontology/smartcontract/event"
+	types4 "github.com/ontio/ontology/smartcontract/service/evm/types"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	"github.com/ontio/ontology/smartcontract/service/wasmvm"
@@ -1241,6 +1240,38 @@ func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155C
 	notify := &event.ExecuteNotify{State: event.CONTRACT_STATE_FAIL, TxIndex: ctx.TxIndex}
 	result, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify)
 	return result, notify, err
+}
+
+func (this *LedgerStoreImp) GetEthCode(address common2.Address) ([]byte, error) {
+	hash, err := this.GetCodeHash(address)
+	if err != nil {
+		return nil, err
+	}
+	code, err := this.stateStore.GetEthCode(hash)
+	if err != nil {
+		return nil, err
+	}
+	return code, nil
+}
+
+func (this *LedgerStoreImp) GetNonce(address common2.Address) (uint64, error) {
+	acc, err := this.GetEthAccount(address)
+	if err != nil {
+		return 0, err
+	}
+	return acc.Nonce, err
+}
+
+func (this *LedgerStoreImp) GetEthState(address common2.Address, key string) ([]byte, error) {
+	return this.stateStore.GetEthState(address, key)
+}
+
+func (this *LedgerStoreImp) GetCodeHash(address common2.Address) (common2.Hash, error) {
+	return this.stateStore.GetCodeHash(address)
+}
+
+func (this *LedgerStoreImp) GetEthAccount(address common2.Address) (*storage.EthAcount, error) {
+	return this.stateStore.GetEthAccount(address)
 }
 
 //PreExecuteContract return the result of smart contract execution without commit to store

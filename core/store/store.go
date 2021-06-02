@@ -19,6 +19,7 @@
 package store
 
 import (
+	common2 "github.com/ethereum/go-ethereum/common"
 	types2 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
@@ -73,7 +74,11 @@ type LedgerStore interface {
 	PreExecuteEip155Tx(tx *types2.Transaction) (*types3.ExecutionResult, error)
 	GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error)
 	GetEventNotifyByBlock(height uint32) ([]*event.ExecuteNotify, error)
-
+	GetEthCode(address common2.Address) ([]byte, error)
+	GetNonce(address common2.Address) (uint64, error)
+	GetEthState(address common2.Address, key string) ([]byte, error)
+	GetCodeHash(address common2.Address) (common2.Hash, error)
+	GetEthAccount(address common2.Address) (*storage.EthAcount, error)
 	//cross chain states root
 	GetCrossStatesRoot(height uint32) (common.Uint256, error)
 	GetCrossChainMsg(height uint32) (*types.CrossChainMsg, error)

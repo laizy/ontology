@@ -23,13 +23,20 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ontio/ontology/smartcontract/event"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	oComm "github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
+	otypes "github.com/ontio/ontology/core/types"
+	ontErrors "github.com/ontio/ontology/errors"
 	bactor "github.com/ontio/ontology/http/base/actor"
+	bcomn "github.com/ontio/ontology/http/base/common"
 	hComm "github.com/ontio/ontology/http/base/common"
 	types2 "github.com/ontio/ontology/http/ethrpc/types"
 	types3 "github.com/ontio/ontology/smartcontract/service/evm/types"
@@ -39,7 +46,7 @@ import (
 const (
 	eth65           = 65
 	ProtocolVersion = eth65
-	RPCGasCap       = 0
+	RPCGasCap       = 0 // TODO modify this
 )
 
 type TxPoolService interface {
@@ -101,47 +108,28 @@ func (api *EthereumAPI) Hashrate() hexutil.Uint64 {
 }
 
 func (api *EthereumAPI) GasPrice() *hexutil.Big {
-	start := bactor.GetCurrentBlockHeight()
-	var gasPrice uint64 = 0
-	var end uint32 = 0
-	if start > hComm.MAX_SEARCH_HEIGHT {
-		end = start - hComm.MAX_SEARCH_HEIGHT
-	}
-	for i := start; i >= end; i-- {
-		head, err := bactor.GetHeaderByHeight(i)
-		if err == nil && head.TransactionsRoot != oComm.UINT256_EMPTY {
-			blk, err := bactor.GetBlockByHeight(i)
-			if err != nil {
-				return nil
-			}
-			for _, v := range blk.Transactions {
-				gasPrice += v.GasPrice
-			}
-			gasPrice = gasPrice / uint64(len(blk.Transactions))
-			break
-		}
+	gasPrice, _, err := hComm.GetGasPrice()
+	if err != nil {
+		return nil
 	}
 	return (*hexutil.Big)(new(big.Int).SetUint64(gasPrice))
 }
 
-// TODO
 func (api *EthereumAPI) Accounts() ([]common.Address, error) {
-	return nil, nil
+	return nil, fmt.Errorf("eth_accounts is not supported")
 }
 
-// TODO
 func (api *EthereumAPI) GetStorageAt(address common.Address, key string, blockNum types2.BlockNumber) (hexutil.Bytes, error) {
-	return nil, nil
+	return bactor.GetEthStorage(address, key)
 }
 
 func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum types2.BlockNumber) (*hexutil.Uint64, error) {
 	addr := EthToOntAddr(address)
-	if blockNum.IsPending() {
-		nonce := api.txpool.Nonce(addr)
+	if nonce := api.txpool.Nonce(addr); blockNum.IsPending() && nonce != 0 {
 		n := hexutil.Uint64(nonce)
 		return &n, nil
 	}
-	nonce, err := bactor.GetNonce(addr)
+	nonce, err := bactor.GetNonce(address)
 	if err != nil {
 		return nil, err
 	}
@@ -182,35 +170,82 @@ func (api *EthereumAPI) GetUncleCountByBlockNumber(number int64) hexutil.Uint {
 }
 
 func (api *EthereumAPI) GetCode(address common.Address, blockNumber types2.BlockNumber) (hexutil.Bytes, error) {
-	deployCode, err := bactor.GetContractStateFromStore(oComm.Address(address))
+	code, err := bactor.GetEthCode(address)
 	if err != nil {
 		return nil, err
 	}
-	if deployCode == nil {
-		return nil, fmt.Errorf("code: %v not found", address)
-	}
-	code := deployCode.GetRawCode()
-	return code, nil
-
+	return hexutil.Bytes(code), nil
 }
 
-// TODO
 func (api *EthereumAPI) GetTransactionLogs(txHash common.Hash) ([]*types.Log, error) {
-	return nil, nil
+	notify, err := bactor.GetEventNotifyByTxHash(EthToOntHash(txHash))
+	if err != nil {
+		return nil, err
+	}
+	if notify == nil {
+		return nil, fmt.Errorf("tx %v not found", txHash.String())
+	}
+	return generateLog(notify)
 }
 
-// TODO
+func generateLog(rawNotify *event.ExecuteNotify) ([]*types.Log, error) {
+	var res []*types.Log
+	txHash := rawNotify.TxHash
+	height, _, err := bactor.GetTxnWithHeightByTxHash(txHash)
+	if err != nil {
+		return nil, err
+	}
+	block, err := bactor.GetBlockByHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	for idx, n := range rawNotify.Notify {
+		if !n.IsEvm {
+			return nil, fmt.Errorf("not support tx type %v", rawNotify.TxHash.ToHexString())
+		}
+		source := oComm.NewZeroCopySource(n.States.([]byte))
+		var storageLog otypes.StorageLog
+		storageLog.Deserialization(source)
+		log := &types.Log{
+			Address:     storageLog.Address,
+			Topics:      storageLog.Topics,
+			Data:        storageLog.Data,
+			BlockNumber: uint64(height),
+			TxHash:      OntToEthHash(txHash),
+			TxIndex:     uint(rawNotify.TxIndex),
+			BlockHash:   OntToEthHash(block.Hash()),
+			Index:       uint(idx),
+			Removed:     false,
+		}
+		res = append(res, log)
+	}
+	return res, nil
+}
+
 func (api *EthereumAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-	return nil, nil
+	return nil, fmt.Errorf("eth_sign is not supported")
 }
 
-// TODO
 func (api *EthereumAPI) SendTransaction(args types2.SendTxArgs) (common.Hash, error) {
-	return [32]byte{}, nil
+	return [32]byte{}, fmt.Errorf("eth_sendTransaction is not supported")
 }
 
 func (api *EthereumAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) {
-	return [32]byte{}, nil
+	tx := new(types.Transaction)
+	if err := rlp.DecodeBytes(data, tx); err != nil {
+		return common.Hash{}, err
+	}
+
+	eip155tx, err := otypes.TransactionFromEIP155(tx)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	txhash := eip155tx.Hash()
+	if errCode, desc := bcomn.SendTxToPool(eip155tx); errCode != ontErrors.ErrNoError {
+		log.Warnf("SendRawTransaction verified %s error: %s", txhash.ToHexString(), desc)
+		return common.Hash{}, err
+	}
+	return common.BytesToHash(txhash[:]), nil
 }
 
 func (api *EthereumAPI) Call(args types2.CallArgs, blockNumber types2.BlockNumber, _ *map[common.Address]types2.Account) (hexutil.Bytes, error) {
@@ -391,7 +426,7 @@ func (api *EthereumAPI) GetUncleByBlockNumberAndIndex(_ hexutil.Uint, _ hexutil.
 }
 
 func (api *EthereumAPI) GetProof(address common.Address, storageKeys []string, block types2.BlockNumber) (*types2.AccountResult, error) {
-	return nil, nil
+	return nil, fmt.Errorf("eth_getProof is not supported")
 }
 
 type PublicNetAPI struct {
