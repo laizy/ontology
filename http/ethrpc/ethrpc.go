@@ -405,7 +405,7 @@ func (api *EthereumAPI) PendingTransactionsByHash(target common.Hash) (*types2.T
 	var ethTx *types.Transaction
 	for _, v1 := range pendingTxs {
 		for _, v2 := range v1 {
-			if bytes.Equal(v2.Hash().Bytes(), target.Bytes()) {
+			if v2.Hash() == target {
 				ethTx = v2
 				break
 			}
