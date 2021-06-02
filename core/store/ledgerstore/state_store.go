@@ -23,10 +23,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	common2 "github.com/ethereum/go-ethereum/common"
-	"github.com/ontio/ontology/smartcontract/storage"
-	"io"
 
+	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/common/serialization"
@@ -38,6 +36,8 @@ import (
 	"github.com/ontio/ontology/merkle"
 	"github.com/ontio/ontology/smartcontract/service/native/ontid"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
+	"github.com/ontio/ontology/smartcontract/storage"
+	"io"
 )
 
 var (
