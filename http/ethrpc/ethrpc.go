@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ontio/ontology/smartcontract/event"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -39,6 +37,7 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 	hComm "github.com/ontio/ontology/http/base/common"
 	types2 "github.com/ontio/ontology/http/ethrpc/types"
+	"github.com/ontio/ontology/smartcontract/event"
 	types3 "github.com/ontio/ontology/smartcontract/service/evm/types"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 )
