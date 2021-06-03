@@ -28,6 +28,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/event"
 	types3 "github.com/ontio/ontology/smartcontract/service/evm/types"
 	cstate "github.com/ontio/ontology/smartcontract/states"
+	"github.com/ontio/ontology/smartcontract/storage"
 )
 
 const (
@@ -120,16 +121,16 @@ func GetCrossStatesProof(height uint32, key []byte) ([]byte, error) {
 	return ledger.DefLedger.GetCrossStatesProof(height, key)
 }
 
-func GetNonce(address common2.Address) (uint64, error) {
-	return ledger.DefLedger.GetNonce(address)
+func GetEthAccount(address common2.Address) (*storage.EthAccount, error) {
+	return ledger.DefLedger.GetEthAccount(address)
 }
 
-func GetEthCode(address common2.Address) ([]byte, error) {
-	return ledger.DefLedger.GetEthCode(address)
+func GetEthCode(hash common2.Hash) ([]byte, error) {
+	return ledger.DefLedger.GetEthCode(hash)
 }
 
-func GetEthStorage(address common2.Address, key string) ([]byte, error) {
-	return ledger.DefLedger.GetEthState(address, key)
+func GetEthStorage(addr common2.Address, key common2.Hash) ([]byte, error) {
+	return ledger.DefLedger.GetEthState(addr, key)
 }
 
 func PreExecuteEip155Tx(tx *types2.Transaction) (*types3.ExecutionResult, error) {

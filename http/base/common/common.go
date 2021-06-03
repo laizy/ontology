@@ -507,7 +507,6 @@ func GetGasPrice() (gasPrice uint64, height uint32, err error) {
 			break
 		}
 	}
-	// result := map[string]interface{}{"gasprice": gasPrice, "height": height}
 	return
 }
 

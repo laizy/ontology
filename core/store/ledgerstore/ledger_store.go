@@ -1242,35 +1242,15 @@ func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155C
 	return result, notify, err
 }
 
-func (this *LedgerStoreImp) GetEthCode(address common2.Address) ([]byte, error) {
-	hash, err := this.GetCodeHash(address)
-	if err != nil {
-		return nil, err
-	}
-	code, err := this.stateStore.GetEthCode(hash)
-	if err != nil {
-		return nil, err
-	}
-	return code, nil
+func (this *LedgerStoreImp) GetEthCode(hash common2.Hash) ([]byte, error) {
+	return this.stateStore.GetEthCode(hash)
 }
 
-func (this *LedgerStoreImp) GetNonce(address common2.Address) (uint64, error) {
-	acc, err := this.GetEthAccount(address)
-	if err != nil {
-		return 0, err
-	}
-	return acc.Nonce, err
-}
-
-func (this *LedgerStoreImp) GetEthState(address common2.Address, key string) ([]byte, error) {
+func (this *LedgerStoreImp) GetEthState(address common2.Address, key common2.Hash) ([]byte, error) {
 	return this.stateStore.GetEthState(address, key)
 }
 
-func (this *LedgerStoreImp) GetCodeHash(address common2.Address) (common2.Hash, error) {
-	return this.stateStore.GetCodeHash(address)
-}
-
-func (this *LedgerStoreImp) GetEthAccount(address common2.Address) (*storage.EthAcount, error) {
+func (this *LedgerStoreImp) GetEthAccount(address common2.Address) (*storage.EthAccount, error) {
 	return this.stateStore.GetEthAccount(address)
 }
 

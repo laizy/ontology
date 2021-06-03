@@ -23,6 +23,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ontio/ontology/common"
@@ -37,7 +38,6 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/native/ontid"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"github.com/ontio/ontology/smartcontract/storage"
-	"io"
 )
 
 var (
@@ -306,14 +306,14 @@ func (self *StateStore) GetEthCode(codeHash common2.Hash) ([]byte, error) {
 	return value, nil
 }
 
-func (self *StateStore) GetEthAccount(address common2.Address) (*storage.EthAcount, error) {
+func (self *StateStore) GetEthAccount(address common2.Address) (*storage.EthAccount, error) {
 	key := genEthAccountKey(address)
 	value, err := self.store.Get(key)
 	if err != nil {
 		return nil, err
 	}
 	reader := common.NewZeroCopySource(value)
-	account := new(storage.EthAcount)
+	account := new(storage.EthAccount)
 	err = account.Deserialization(reader)
 	if err != nil {
 		return nil, err
@@ -321,16 +321,8 @@ func (self *StateStore) GetEthAccount(address common2.Address) (*storage.EthAcou
 	return account, nil
 }
 
-func (self *StateStore) GetCodeHash(address common2.Address) (common2.Hash, error) {
-	account, err := self.GetEthAccount(address)
-	if err != nil {
-		return common2.Hash{}, err
-	}
-	return account.CodeHash, nil
-}
-
-func (self *StateStore) GetEthState(address common2.Address, stateKey string) ([]byte, error) {
-	key := genStateKey(address, common2.HexToHash(stateKey))
+func (self *StateStore) GetEthState(addr common2.Address, stateKey common2.Hash) ([]byte, error) {
+	key := genStateKey(addr, stateKey)
 	value, err := self.store.Get(key)
 	if err != nil {
 		return nil, err

@@ -119,7 +119,7 @@ func (api *EthereumAPI) Accounts() ([]common.Address, error) {
 }
 
 func (api *EthereumAPI) GetStorageAt(address common.Address, key string, blockNum types2.BlockNumber) (hexutil.Bytes, error) {
-	return bactor.GetEthStorage(address, key)
+	return bactor.GetEthStorage(address, common.HexToHash(key))
 }
 
 func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum types2.BlockNumber) (*hexutil.Uint64, error) {
@@ -128,12 +128,16 @@ func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum typ
 		n := hexutil.Uint64(nonce)
 		return &n, nil
 	}
-	nonce, err := bactor.GetNonce(address)
+	account, err := bactor.GetEthAccount(address)
 	if err != nil {
 		return nil, err
 	}
-	n := hexutil.Uint64(nonce)
-	return &n, nil
+	nonce := hexutil.Uint64(0)
+	if account == nil {
+		return &nonce, nil
+	}
+	nonce = hexutil.Uint64(account.Nonce)
+	return &nonce, nil
 }
 
 func (api *EthereumAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
@@ -169,7 +173,14 @@ func (api *EthereumAPI) GetUncleCountByBlockNumber(number int64) hexutil.Uint {
 }
 
 func (api *EthereumAPI) GetCode(address common.Address, blockNumber types2.BlockNumber) (hexutil.Bytes, error) {
-	code, err := bactor.GetEthCode(address)
+	account, err := bactor.GetEthAccount(address)
+	if err != nil {
+		return nil, err
+	}
+	if account == nil {
+		return nil, fmt.Errorf("contract %v not found", address.String())
+	}
+	code, err := bactor.GetEthCode(account.CodeHash)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +205,7 @@ func generateLog(rawNotify *event.ExecuteNotify) ([]*types.Log, error) {
 	if err != nil {
 		return nil, err
 	}
-	block, err := bactor.GetBlockByHeight(height)
+	hash := bactor.GetBlockHashFromStore(height)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +226,7 @@ func generateLog(rawNotify *event.ExecuteNotify) ([]*types.Log, error) {
 			BlockNumber: uint64(height),
 			TxHash:      OntToEthHash(txHash),
 			TxIndex:     uint(rawNotify.TxIndex),
-			BlockHash:   OntToEthHash(block.Hash()),
+			BlockHash:   OntToEthHash(hash),
 			Index:       uint(idx),
 			Removed:     false,
 		}
@@ -247,7 +258,7 @@ func (api *EthereumAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, err
 		log.Warnf("SendRawTransaction verified %s error: %s", txhash.ToHexString(), desc)
 		return common.Hash{}, err
 	}
-	return common.BytesToHash(txhash[:]), nil
+	return common.Hash(txhash), nil
 }
 
 func (api *EthereumAPI) Call(args types2.CallArgs, blockNumber types2.BlockNumber, _ *map[common.Address]types2.Account) (hexutil.Bytes, error) {
