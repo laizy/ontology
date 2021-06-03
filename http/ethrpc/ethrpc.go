@@ -132,11 +132,7 @@ func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum typ
 	if err != nil {
 		return nil, err
 	}
-	nonce := hexutil.Uint64(0)
-	if account == nil {
-		return &nonce, nil
-	}
-	nonce = hexutil.Uint64(account.Nonce)
+	nonce := hexutil.Uint64(account.Nonce)
 	return &nonce, nil
 }
 
@@ -177,7 +173,7 @@ func (api *EthereumAPI) GetCode(address common.Address, blockNumber types2.Block
 	if err != nil {
 		return nil, err
 	}
-	if account == nil {
+	if account.IsEmpty() {
 		return nil, fmt.Errorf("contract %v not found", address.String())
 	}
 	code, err := bactor.GetEthCode(account.CodeHash)
