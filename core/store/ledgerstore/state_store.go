@@ -310,6 +310,9 @@ func (self *StateStore) GetEthAccount(address common2.Address) (*storage.EthAcco
 	key := genEthAccountKey(address)
 	value, err := self.store.Get(key)
 	if err != nil {
+		if err == scom.ErrNotFound {
+			return &storage.EthAccount{}, nil
+		}
 		return nil, err
 	}
 	reader := common.NewZeroCopySource(value)
