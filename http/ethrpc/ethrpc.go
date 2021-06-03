@@ -204,7 +204,10 @@ func generateLog(rawNotify *event.ExecuteNotify) ([]*types.Log, error) {
 		}
 		source := oComm.NewZeroCopySource(n.States.([]byte))
 		var storageLog otypes.StorageLog
-		storageLog.Deserialization(source)
+		err := storageLog.Deserialization(source)
+		if err != nil {
+			return nil, err
+		}
 		log := &types.Log{
 			Address:     storageLog.Address,
 			Topics:      storageLog.Topics,
