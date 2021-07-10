@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/JohnCGriffin/overflow v0.0.0-20170615021017-4d914c927216
-	github.com/Workiva/go-datastructures v1.0.50
+	github.com/Workiva/go-datastructures v1.0.50 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/ethereum/go-ethereum v1.9.25
@@ -19,6 +19,7 @@ require (
 	github.com/itchyny/base58-go v0.1.0
 	github.com/json-iterator/go v1.1.10
 	github.com/mattn/go-isatty v0.0.10 // indirect
+	github.com/mattn/go-sqlite3 v1.14.7
 	github.com/ontio/ontology-crypto v1.0.9
 	github.com/ontio/ontology-eventbus v0.9.1
 	github.com/ontio/wagon v0.4.1
@@ -26,13 +27,11 @@ require (
 	github.com/pborman/uuid v1.2.0
 	github.com/prometheus/client_golang v0.9.1
 	github.com/scylladb/go-set v1.0.2
-	github.com/status-im/keycard-go v0.0.0-20190316090335-8537d3370df4
 	github.com/stretchr/testify v1.4.0
 	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca
 	github.com/urfave/cli v1.22.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
-	gotest.tools v2.2.0+incompatible
 )
 
 replace (
