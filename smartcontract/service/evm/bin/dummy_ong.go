@@ -1,17 +1,21 @@
 package main
 
 import (
-	"bytes"
 	"math/big"
 
 	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/serialization"
-	"github.com/ontio/ontology/smartcontract/service/native/ont"
-	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	storage2 "github.com/ontio/ontology/smartcontract/storage"
 )
 
-type OngBalanceHandle struct{}
+type OngBalanceHandle struct {
+	AccountBalance map[common.Address]*big.Int
+}
+
+func NewOngBalanceHandle() *OngBalanceHandle {
+	return &OngBalanceHandle{
+		AccountBalance: make(map[common.Address]*big.Int),
+	}
+}
 
 var ZERO = new(big.Int).SetUint64(0)
 
@@ -36,29 +40,14 @@ func (self OngBalanceHandle) AddBalance(cache *storage2.CacheDB, addr common.Add
 }
 
 func (self OngBalanceHandle) SetBalance(cache *storage2.CacheDB, addr common.Address, val *big.Int) error {
-	balanceKey := ont.GenBalanceKey(utils.OngContractAddress, addr)
-	result := val.Bytes()
-	if ZERO.Cmp(val) == 0 {
-		cache.Delete(balanceKey)
-	} else {
-		cache.Put(balanceKey, utils.GenVarBytesStorageItem(result).ToArray())
-	}
-
+	self.AccountBalance[addr] = val
 	return nil
 }
 
 func (self OngBalanceHandle) GetBalance(cache *storage2.CacheDB, addr common.Address) (*big.Int, error) {
-	balanceKey := ont.GenBalanceKey(utils.OngContractAddress, addr)
-	item, err := utils.GetStorageItem(cache, balanceKey)
-	if err != nil {
-		return nil, err
-	}
-	if item == nil {
+	balance := self.AccountBalance[addr]
+	if balance == nil {
 		return ZERO, nil
 	}
-	v, err := serialization.ReadVarBytes(bytes.NewBuffer(item.Value))
-	if err != nil {
-		return nil, err
-	}
-	return big.NewInt(0).SetBytes(v), nil
+	return balance, nil
 }
