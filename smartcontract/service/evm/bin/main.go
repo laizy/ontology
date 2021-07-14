@@ -108,6 +108,7 @@ func DoCheck(jsonTxStore string, config *params.ChainConfig) bool {
 		block := GetBlock(n)
 		return block.Hash()
 	}
+	//vmenv := evm.NewEVM(blockContext, evm.TxContext{}, db, config, evm.Config{Debug: true, Tracer: evm.NewJSONLogger(nil, os.Stdout)})
 	vmenv := evm.NewEVM(blockContext, evm.TxContext{}, db, config, evm.Config{})
 	txContext := evm2.NewEVMTxContext(msg)
 	vmenv.Reset(txContext, db)
