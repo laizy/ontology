@@ -48,7 +48,7 @@ func NewStateDB(txHash, blockHash common2.Hash) (*storage2.CacheDB, *storage2.St
 	return cache, state
 }
 func GetBlock(n uint64) *types.Block {
-	client, err := ethclient.Dial("http://172.168.3.21:7545")
+	client, err := ethclient.Dial("http://172.168.3.21:7547")
 	Ensure(err)
 	block, err := client.BlockByNumber(context.Background(), big.NewInt(int64(n)))
 	Ensure(err)
