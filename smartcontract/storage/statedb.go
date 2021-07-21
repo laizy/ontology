@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	comm "github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
 	common2 "github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/overlaydb"
 	"github.com/ontio/ontology/core/types"
@@ -112,12 +113,14 @@ type snapshot struct {
 }
 
 func (self *StateDB) AddRefund(gas uint64) {
+	log.Infof("AddRefund %v", gas)
 	self.refund += gas
 }
 
 // SubRefund removes gas from the refund counter.
 // This method will panic if the refund counter goes below zero
 func (self *StateDB) SubRefund(gas uint64) {
+	log.Infof("SubRefund %v", gas)
 	if gas > self.refund {
 		panic(fmt.Sprintf("Refund counter below zero (gas: %d > refund: %d)", gas, self.refund))
 	}
@@ -134,6 +137,7 @@ func genKey(contract common.Address, key common.Hash) []byte {
 
 func (self *StateDB) GetState(contract common.Address, key common.Hash) common.Hash {
 	val, err := self.cacheDB.Get(genKey(contract, key))
+	log.Infof("GetState %v %v", contract.Hex(), key.Hex())
 	if err != nil {
 		self.cacheDB.SetDbErr(err)
 	}
@@ -143,10 +147,12 @@ func (self *StateDB) GetState(contract common.Address, key common.Hash) common.H
 
 // GetRefund returns the current value of the refund counter.
 func (self *StateDB) GetRefund() uint64 {
+	log.Infof("GetRefund %v", self.refund)
 	return self.refund
 }
 
 func (self *StateDB) SetState(contract common.Address, key, value common.Hash) {
+	log.Infof("SetState %v %v %v", contract.Hex(), key.Hex(), value.Hex())
 	self.cacheDB.Put(genKey(contract, key), value[:])
 }
 
@@ -156,7 +162,7 @@ func (self *StateDB) GetCommittedState(addr common.Address, key common.Hash) com
 	if err != nil {
 		self.cacheDB.SetDbErr(err)
 	}
-
+	log.Infof("GetCommittedState %v %v %v", addr.Hex(), key.Hex(), common.BytesToHash(val).Hex())
 	return common.BytesToHash(val)
 }
 
@@ -166,6 +172,7 @@ type EthAccount struct {
 }
 
 func (self *EthAccount) IsEmpty() bool {
+	log.Infof("IsEmpty %v", self.Nonce == 0 && self.CodeHash == common.Hash{})
 	return self.Nonce == 0 && self.CodeHash == common.Hash{}
 }
 
@@ -197,7 +204,7 @@ func (self *CacheDB) GetEthAccount(addr common.Address) (val EthAccount, err err
 	}
 
 	err = val.Deserialization(comm.NewZeroCopySource(value))
-
+	log.Infof("GetEthAccount %v %v %v", addr.Hex(), val.CodeHash.Hex(), val.Nonce)
 	return val, err
 }
 
@@ -206,7 +213,7 @@ func (self *CacheDB) PutEthAccount(addr common.Address, val EthAccount) {
 	if !val.IsEmpty() {
 		raw = comm.SerializeToBytes(&val)
 	}
-
+	log.Infof("PutEthAccount %v %v %v", addr.Hex(), val.CodeHash.Hex(), val.Nonce)
 	self.put(common2.ST_ETH_ACCOUNT, addr[:], raw)
 }
 
@@ -215,10 +222,13 @@ func (self *CacheDB) DelEthAccount(addr common.Address) {
 }
 
 func (self *CacheDB) GetEthCode(codeHash common.Hash) (val []byte, err error) {
-	return self.get(common2.ST_ETH_CODE, codeHash[:])
+	code, err := self.get(common2.ST_ETH_CODE, codeHash[:])
+	log.Infof("GetEthCode %v %v", codeHash.Hex(), common.Bytes2Hex(code))
+	return code, err
 }
 
 func (self *CacheDB) PutEthCode(codeHash common.Hash, val []byte) {
+	log.Infof("PutEthCode %v %v", codeHash.Hex(), common.Bytes2Hex(val))
 	self.put(common2.ST_ETH_CODE, codeHash[:], val)
 }
 
@@ -233,16 +243,19 @@ func (self *StateDB) getEthAccount(addr common.Address) (val EthAccount) {
 }
 
 func (self *StateDB) GetNonce(addr common.Address) uint64 {
+	log.Infof("GetNonce %v %v", addr.Hex(), self.getEthAccount(addr).Nonce)
 	return self.getEthAccount(addr).Nonce
 }
 
 func (self *StateDB) SetNonce(addr common.Address, nonce uint64) {
 	account := self.getEthAccount(addr)
 	account.Nonce = nonce
+	log.Infof("SetNonce %v %v", addr.Hex(), nonce)
 	self.cacheDB.PutEthAccount(addr, account)
 }
 
 func (self *StateDB) GetCodeHash(addr common.Address) (hash common.Hash) {
+	log.Infof("GetCodeHash %v %v", addr.Hex(), self.getEthAccount(addr).CodeHash.Hex())
 	return self.getEthAccount(addr).CodeHash
 }
 
@@ -253,7 +266,7 @@ func (self *StateDB) GetCode(addr common.Address) []byte {
 		self.cacheDB.SetDbErr(err)
 		return nil
 	}
-
+	log.Infof("GetCode %v %v", addr.Hex(), common.Bytes2Hex(code))
 	return code
 }
 
@@ -333,6 +346,7 @@ func (self *StateDB) CreateAccount(address common.Address) {
 }
 
 func (self *StateDB) Snapshot() int {
+
 	changes := self.cacheDB.memdb.DeepClone()
 	suicided := make(map[common.Address]bool)
 	for k, v := range self.Suicided {
@@ -347,11 +361,14 @@ func (self *StateDB) Snapshot() int {
 	}
 
 	self.snapshots = append(self.snapshots, sn)
-
+	balance := self.GetBalance(common.HexToAddress("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777"))
+	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 before balance: %s %v", balance.String(), len(self.snapshots)-1)
 	return len(self.snapshots) - 1
 }
 
 func (self *StateDB) RevertToSnapshot(idx int) {
+	balance := self.GetBalance(common.HexToAddress("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777"))
+	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 before revert balance: %s %v", balance.String(), idx)
 	if idx+1 > len(self.snapshots) {
 		panic("can not to revert snapshot")
 	}
@@ -363,9 +380,12 @@ func (self *StateDB) RevertToSnapshot(idx int) {
 	self.Suicided = sn.suicided
 	self.refund = sn.refund
 	self.logs = self.logs[:sn.logsSize]
+	balance = self.GetBalance(common.HexToAddress("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777"))
+	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 after balance: %s %v", balance.String(), idx)
 }
 
 func (self *StateDB) SubBalance(addr common.Address, val *big.Int) {
+	log.Infof("SubBalance %v %v", addr.Hex(), val.String())
 	err := self.OngBalanceHandle.SubBalance(self.cacheDB, comm.Address(addr), val)
 	if err != nil {
 		self.cacheDB.SetDbErr(err)
@@ -374,6 +394,7 @@ func (self *StateDB) SubBalance(addr common.Address, val *big.Int) {
 }
 
 func (self *StateDB) AddBalance(addr common.Address, val *big.Int) {
+	log.Infof("AddBalance %v %v", addr.Hex(), val.String())
 	err := self.OngBalanceHandle.AddBalance(self.cacheDB, comm.Address(addr), val)
 	if err != nil {
 		self.cacheDB.SetDbErr(err)
@@ -387,6 +408,6 @@ func (self *StateDB) GetBalance(addr common.Address) *big.Int {
 		self.cacheDB.SetDbErr(err)
 		return big.NewInt(0)
 	}
-
+	log.Infof("GetBalance %v %v", addr.Hex(), balance.String())
 	return balance
 }
