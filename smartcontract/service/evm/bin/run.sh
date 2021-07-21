@@ -1,2 +1,2 @@
 go build -o check
-cat evm-diffs.txt | ./check 
+cat txdata.json | ./check 

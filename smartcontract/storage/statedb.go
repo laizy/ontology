@@ -361,6 +361,7 @@ func (self *StateDB) Snapshot() int {
 	}
 
 	self.snapshots = append(self.snapshots, sn)
+	log.Infof("dump db %s, snapshot: %d", changes.DumpToJson(), len(self.snapshots)-1)
 	balance := self.GetBalance(common.HexToAddress("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777"))
 	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 snapshot balance: %s %v", balance.String(), len(self.snapshots)-1)
 	balance = self.GetBalance(common.HexToAddress("0xF387F71C535d44E412596a953Dd09e242C81FCCC"))
@@ -373,6 +374,7 @@ func (self *StateDB) RevertToSnapshot(idx int) {
 	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 before revert balance: %s %v", balance.String(), idx)
 	balance = self.GetBalance(common.HexToAddress("0xF387F71C535d44E412596a953Dd09e242C81FCCC"))
 	log.Infof("0xF387F71C535d44E412596a953Dd09e242C81FCCC before revert balance: %s %v", balance.String(), idx)
+	log.Infof("before revert dump db %s, snap: %d", self.cacheDB.memdb.DumpToJson(), idx)
 
 	if idx+1 > len(self.snapshots) {
 		panic("can not to revert snapshot")
@@ -389,6 +391,7 @@ func (self *StateDB) RevertToSnapshot(idx int) {
 	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 after revert balance: %s %v", balance.String(), idx)
 	balance = self.GetBalance(common.HexToAddress("0xF387F71C535d44E412596a953Dd09e242C81FCCC"))
 	log.Infof("0xF387F71C535d44E412596a953Dd09e242C81FCCC after revert balance: %s %v", balance.String(), idx)
+	log.Infof("revert dump db %s, snap: %d", self.cacheDB.memdb.DumpToJson(), idx)
 }
 
 func (self *StateDB) SubBalance(addr common.Address, val *big.Int) {

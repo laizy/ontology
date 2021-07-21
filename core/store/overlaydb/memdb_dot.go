@@ -19,8 +19,21 @@ package overlaydb
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 )
+
+func (db *MemDB) DumpToJson() string {
+	kv := make(map[string]string)
+
+	db.ForEach(func(key, val []byte) {
+		kv[hex.EncodeToString(key)] = hex.EncodeToString(val)
+	})
+
+	buf, _ := json.MarshalIndent(kv, "", "  ")
+
+	return string(buf)
+}
 
 func (db *MemDB) DumpToDot() string {
 	out := `digraph g {
