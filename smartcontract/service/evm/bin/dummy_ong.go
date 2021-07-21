@@ -17,8 +17,6 @@ func NewOngBalanceHandle() *OngBalanceHandle {
 	return &OngBalanceHandle{}
 }
 
-var ZERO = new(big.Int).SetUint64(0)
-
 func (self OngBalanceHandle) SubBalance(cache *storage2.CacheDB, addr common.Address, val *big.Int) error {
 	balance, err := self.GetBalance(cache, addr)
 	if err != nil {
@@ -34,7 +32,6 @@ func (self OngBalanceHandle) AddBalance(cache *storage2.CacheDB, addr common.Add
 	if err != nil {
 		return err
 	}
-
 	balance.Add(balance, val)
 	return self.SetBalance(cache, addr, balance)
 }
@@ -42,7 +39,7 @@ func (self OngBalanceHandle) AddBalance(cache *storage2.CacheDB, addr common.Add
 func (self OngBalanceHandle) SetBalance(cache *storage2.CacheDB, addr common.Address, val *big.Int) error {
 	balanceKey := ont.GenBalanceKey(utils.OngContractAddress, addr)
 	result := val.Bytes()
-	if ZERO.Cmp(val) == 0 {
+	if new(big.Int).SetUint64(0).Cmp(val) == 0 {
 		cache.Delete(balanceKey)
 	} else {
 		cache.Put(balanceKey, utils.GenVarBytesStorageItem(result).ToArray())
@@ -57,7 +54,7 @@ func (self OngBalanceHandle) GetBalance(cache *storage2.CacheDB, addr common.Add
 		return nil, err
 	}
 	if item == nil {
-		return ZERO, nil
+		return new(big.Int).SetUint64(0), nil
 	}
 	v, err := serialization.ReadVarBytes(bytes.NewBuffer(item.Value))
 	if err != nil {
