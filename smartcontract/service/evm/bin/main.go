@@ -48,7 +48,7 @@ func NewStateDB(txHash, blockHash common2.Hash) (*storage2.CacheDB, *storage2.St
 	return cache, state
 }
 func GetBlock(n uint64) *types.Block {
-	client, err := ethclient.Dial("http://172.168.3.21:7545")
+	client, err := ethclient.Dial("http://172.168.3.21:7547")
 	Ensure(err)
 	block, err := client.BlockByNumber(context.Background(), big.NewInt(int64(n)))
 	Ensure(err)
@@ -108,8 +108,8 @@ func DoCheck(jsonTxStore string, config *params.ChainConfig) bool {
 		block := GetBlock(n)
 		return block.Hash()
 	}
-	//vmenv := evm.NewEVM(blockContext, evm.TxContext{}, db, config, evm.Config{Debug: true, Tracer: evm.NewJSONLogger(nil, os.Stdout)})
-	vmenv := evm.NewEVM(blockContext, evm.TxContext{}, db, config, evm.Config{})
+	vmenv := evm.NewEVM(blockContext, evm.TxContext{}, db, config, evm.Config{Debug: true, Tracer: evm.NewJSONLogger(nil, os.Stdout)})
+	//vmenv := evm.NewEVM(blockContext, evm.TxContext{}, db, config, evm.Config{})
 	txContext := evm2.NewEVMTxContext(msg)
 	vmenv.Reset(txContext, db)
 	_, err = evm2.ApplyMessage(vmenv, msg, coinbase)
