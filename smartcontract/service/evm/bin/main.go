@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/store/leveldbstore"
 	"github.com/ontio/ontology/core/store/overlaydb"
@@ -78,8 +77,7 @@ func DoCheck(jsonTxStore string, config *params.ChainConfig) bool {
 		balance, _ := new(big.Int).SetString(state.OriginAccount.Balance, 10)
 		if balance != nil {
 			addr := state.Address
-			err := db.OngBalanceHandle.SetBalance(cache, common.Address(addr), balance)
-			Ensure(err)
+			db.SetBalance(addr, balance)
 		}
 		for _, oriStore := range state.OriginStorage {
 			db.SetState(state.Address, common2.HexToHash(oriStore.Key), common2.HexToHash(oriStore.Value))

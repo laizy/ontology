@@ -362,13 +362,18 @@ func (self *StateDB) Snapshot() int {
 
 	self.snapshots = append(self.snapshots, sn)
 	balance := self.GetBalance(common.HexToAddress("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777"))
-	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 before balance: %s %v", balance.String(), len(self.snapshots)-1)
+	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 snapshot balance: %s %v", balance.String(), len(self.snapshots)-1)
+	balance = self.GetBalance(common.HexToAddress("0xF387F71C535d44E412596a953Dd09e242C81FCCC"))
+	log.Infof("0xF387F71C535d44E412596a953Dd09e242C81FCCC snapshot balance: %s %v", balance.String(), len(self.snapshots)-1)
 	return len(self.snapshots) - 1
 }
 
 func (self *StateDB) RevertToSnapshot(idx int) {
 	balance := self.GetBalance(common.HexToAddress("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777"))
 	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 before revert balance: %s %v", balance.String(), idx)
+	balance = self.GetBalance(common.HexToAddress("0xF387F71C535d44E412596a953Dd09e242C81FCCC"))
+	log.Infof("0xF387F71C535d44E412596a953Dd09e242C81FCCC before revert balance: %s %v", balance.String(), idx)
+
 	if idx+1 > len(self.snapshots) {
 		panic("can not to revert snapshot")
 	}
@@ -381,7 +386,9 @@ func (self *StateDB) RevertToSnapshot(idx int) {
 	self.refund = sn.refund
 	self.logs = self.logs[:sn.logsSize]
 	balance = self.GetBalance(common.HexToAddress("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777"))
-	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 after balance: %s %v", balance.String(), idx)
+	log.Infof("0x2FaA316Fc4624EC39adc2Ef7B5301124cfB68777 after revert balance: %s %v", balance.String(), idx)
+	balance = self.GetBalance(common.HexToAddress("0xF387F71C535d44E412596a953Dd09e242C81FCCC"))
+	log.Infof("0xF387F71C535d44E412596a953Dd09e242C81FCCC after revert balance: %s %v", balance.String(), idx)
 }
 
 func (self *StateDB) SubBalance(addr common.Address, val *big.Int) {
@@ -410,4 +417,13 @@ func (self *StateDB) GetBalance(addr common.Address) *big.Int {
 	}
 	log.Infof("GetBalance %v %v", addr.Hex(), balance.String())
 	return balance
+}
+
+func (self *StateDB) SetBalance(addr common.Address, val *big.Int) {
+	log.Infof("SetBalance %v %v", addr.Hex(), val.String())
+	err := self.OngBalanceHandle.SetBalance(self.cacheDB, comm.Address(addr), val)
+	if err != nil {
+		self.cacheDB.SetDbErr(err)
+		return
+	}
 }
