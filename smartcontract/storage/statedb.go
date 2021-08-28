@@ -156,7 +156,6 @@ func (self *StateDB) GetCommittedState(addr common.Address, key common.Hash) com
 	if err != nil {
 		self.cacheDB.SetDbErr(err)
 	}
-
 	return common.BytesToHash(val)
 }
 
@@ -197,7 +196,6 @@ func (self *CacheDB) GetEthAccount(addr common.Address) (val EthAccount, err err
 	}
 
 	err = val.Deserialization(comm.NewZeroCopySource(value))
-
 	return val, err
 }
 
@@ -206,7 +204,6 @@ func (self *CacheDB) PutEthAccount(addr common.Address, val EthAccount) {
 	if !val.IsEmpty() {
 		raw = comm.SerializeToBytes(&val)
 	}
-
 	self.put(common2.ST_ETH_ACCOUNT, addr[:], raw)
 }
 
@@ -215,7 +212,8 @@ func (self *CacheDB) DelEthAccount(addr common.Address) {
 }
 
 func (self *CacheDB) GetEthCode(codeHash common.Hash) (val []byte, err error) {
-	return self.get(common2.ST_ETH_CODE, codeHash[:])
+	code, err := self.get(common2.ST_ETH_CODE, codeHash[:])
+	return code, err
 }
 
 func (self *CacheDB) PutEthCode(codeHash common.Hash, val []byte) {
@@ -253,7 +251,6 @@ func (self *StateDB) GetCode(addr common.Address) []byte {
 		self.cacheDB.SetDbErr(err)
 		return nil
 	}
-
 	return code
 }
 
@@ -333,6 +330,7 @@ func (self *StateDB) CreateAccount(address common.Address) {
 }
 
 func (self *StateDB) Snapshot() int {
+
 	changes := self.cacheDB.memdb.DeepClone()
 	suicided := make(map[common.Address]bool)
 	for k, v := range self.Suicided {
@@ -347,11 +345,11 @@ func (self *StateDB) Snapshot() int {
 	}
 
 	self.snapshots = append(self.snapshots, sn)
-
 	return len(self.snapshots) - 1
 }
 
 func (self *StateDB) RevertToSnapshot(idx int) {
+
 	if idx+1 > len(self.snapshots) {
 		panic("can not to revert snapshot")
 	}
@@ -387,6 +385,13 @@ func (self *StateDB) GetBalance(addr common.Address) *big.Int {
 		self.cacheDB.SetDbErr(err)
 		return big.NewInt(0)
 	}
-
 	return balance
+}
+
+func (self *StateDB) SetBalance(addr common.Address, val *big.Int) {
+	err := self.OngBalanceHandle.SetBalance(self.cacheDB, comm.Address(addr), val)
+	if err != nil {
+		self.cacheDB.SetDbErr(err)
+		return
+	}
 }
