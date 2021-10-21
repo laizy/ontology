@@ -81,6 +81,13 @@ func (this *TransferStatesV2) Deserialization(source *common.ZeroCopySource) err
 	return nil
 }
 
+func (this *TransferStatesV2) Serialization(sink *common.ZeroCopySink) {
+	utils.EncodeVarUint(sink, uint64(len(this.States)))
+	for _, state := range this.States {
+		state.Serialization(sink)
+	}
+}
+
 type TransferStateV2 struct {
 	From  common.Address
 	To    common.Address
