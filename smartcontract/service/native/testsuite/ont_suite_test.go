@@ -41,13 +41,13 @@ func setOntBalance(db *storage.CacheDB, addr common.Address, value uint64) {
 	db.Put(balanceKey, item.ToArray())
 }
 
-func ontBalanceOf(native *native.NativeService, addr common.Address) uint64 {
+func ontBalanceOf(native *native.NativeService, addr common.Address) int {
 	sink := common.NewZeroCopySink(nil)
 	utils.EncodeAddress(sink, addr)
 	native.Input = sink.Bytes()
 	buf, _ := ont.OntBalanceOf(native)
 	val := common.BigIntFromNeoBytes(buf)
-	return val.Uint64()
+	return int(val.Uint64())
 }
 func ontBalanceOfV2(native *native.NativeService, addr common.Address) uint64 {
 	sink := common.NewZeroCopySink(nil)
@@ -106,13 +106,13 @@ func ongAllowanceV2(native *native.NativeService, from, to common.Address) bigin
 	return bigint.New(val)
 }
 
-func ontTotalAllowance(native *native.NativeService, addr common.Address) uint64 {
+func ontTotalAllowance(native *native.NativeService, addr common.Address) int {
 	sink := common.NewZeroCopySink(nil)
 	utils.EncodeAddress(sink, addr)
 	native.Input = sink.Bytes()
 	buf, _ := ont.TotalAllowance(native)
 	val := common.BigIntFromNeoBytes(buf)
-	return val.Uint64()
+	return int(val.Uint64())
 }
 
 func ontTotalAllowanceV2(native *native.NativeService, addr common.Address) uint64 {
@@ -288,13 +288,13 @@ func TestTransferV2(t *testing.T) {
 		assert.Equal(t, ontBalanceOfV2(native, a), uint64(10000*states.ScaleFactor))
 		assert.Equal(t, ontBalanceOfV2(native, b), uint64(0))
 		assert.Equal(t, ontBalanceOfV2(native, c), uint64(0))
-		assert.Equal(t, ontBalanceOf(native, a), uint64(10000))
+		assert.Equal(t, ontBalanceOf(native, a), 10000)
 
 		assert.Nil(t, ontTransferV2(native, a, b, 10*states.ScaleFactor))
 		assert.Equal(t, ontBalanceOfV2(native, a), uint64(9990*states.ScaleFactor))
 		assert.Equal(t, ontBalanceOfV2(native, b), uint64(10*states.ScaleFactor))
-		assert.Equal(t, ontBalanceOf(native, a), uint64(9990))
-		assert.Equal(t, ontBalanceOf(native, b), uint64(10))
+		assert.Equal(t, ontBalanceOf(native, a), 9990)
+		assert.Equal(t, ontBalanceOf(native, b), 10)
 
 		assert.Nil(t, ontTransferV2(native, b, c, 10*states.ScaleFactor))
 		assert.Equal(t, ontBalanceOfV2(native, b), uint64(0))
