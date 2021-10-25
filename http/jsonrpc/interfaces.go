@@ -459,7 +459,6 @@ func GetBalanceV2(params []interface{}) map[string]interface{} {
 	return rpc.ResponseSuccess(rsp)
 }
 
-
 //get balance of address
 func GetOep4Balance(params []interface{}) map[string]interface{} {
 	if len(params) < 2 {
