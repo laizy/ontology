@@ -18,6 +18,7 @@
 package testsuite
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -140,6 +141,22 @@ func ontTransferV2(native *native.NativeService, from, to common.Address, value 
 	return err
 }
 
+func ontTransferFrom(native *native.NativeService, sender, from, to common.Address, value uint64) error {
+	native.Tx.SignedAddr = append(native.Tx.SignedAddr, from)
+	state := &ont.TransferFrom{sender, ont.TransferState{from, to, value}}
+	native.Input = common.SerializeToBytes(state)
+	_, err := ont.OntTransferFrom(native)
+	return err
+}
+
+func ontTransferFromV2(native *native.NativeService, sender, from, to common.Address, value uint64) error {
+	native.Tx.SignedAddr = append(native.Tx.SignedAddr, from)
+	state := &ont.TransferFromStateV2{sender, ont.TransferStateV2{from, to, states.NativeTokenBalance{Balance: bigint.New(value)}}}
+	native.Input = common.SerializeToBytes(state)
+	_, err := ont.OntTransferFromV2(native)
+	return err
+}
+
 func ontApprove(native *native.NativeService, from, to common.Address, value uint64) error {
 	native.Tx.SignedAddr = append(native.Tx.SignedAddr, from)
 
@@ -204,6 +221,7 @@ func TestTotalAllowance(t *testing.T) {
 		assert.Equal(t, ontTotalAllowance(native, a), 110)
 		assert.Equal(t, ontTotalAllowance(native, c), 0)
 
+		assert.Nil(t, ontTransferFrom(native, c, a, c, 100))
 		return nil, nil
 	})
 }
@@ -322,7 +340,9 @@ func TestTotalAllowanceV2(t *testing.T) {
 		assert.Nil(t, ontApproveV2(native, a, c, uint64(100*states.ScaleFactor)))
 		assert.Equal(t, ontTotalAllowanceV2(native, a), uint64(110*states.ScaleFactor))
 		assert.Equal(t, ontTotalAllowanceV2(native, c), uint64(0))
+		fmt.Println(ontBalanceOfV2(native, a))
 
+		assert.Nil(t, ontTransferFromV2(native, c, a, c, uint64(100*states.ScaleFactor)))
 		return nil, nil
 	})
 }
