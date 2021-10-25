@@ -337,12 +337,11 @@ func GetBalanceV2(address common.Address) (*BalanceOfRsp, error) {
 		return nil, fmt.Errorf("get ont balance error:%s", err)
 	}
 	return &BalanceOfRsp{
-		Ont:    fmt.Sprintf("%s", balances[0].String()),
-		Ong:    fmt.Sprintf("%s", balances[1].String()),
+		Ont:    balances[0].String(),
+		Ong:    balances[1].String(),
 		Height: fmt.Sprintf("%d", height),
 	}, nil
 }
-
 
 func GetOep4Balance(contractAddress common.Address, addrs []common.Address) (*Oep4BalanceOfRsp, error) {
 	balances, height, err := GetOep4ContractBalance(contractAddress, addrs, true)
@@ -525,7 +524,6 @@ func GetContractAllowance(cVersion byte, contractAddr, fromAddr, toAddr common.A
 	allowance := common.BigIntFromNeoBytes(data)
 	return allowance.Uint64(), nil
 }
-
 
 func GetContractAllowanceV2(cVersion byte, contractAddr, fromAddr, toAddr common.Address) (string, error) {
 	type allowanceStruct struct {
