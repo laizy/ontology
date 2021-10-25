@@ -180,9 +180,8 @@ func unboundGovernanceOng(native *native.NativeService) error {
 
 func TestTransfer(t *testing.T) {
 	InvokeNativeContract(t, utils.OntContractAddress, func(native *native.NativeService) ([]byte, error) {
-		a := RandomAddress()
-		b := RandomAddress()
-		c := RandomAddress()
+		a, b, c := RandomAddress(), RandomAddress(), RandomAddress()
+
 		setOntBalance(native.CacheDB, a, 10000)
 		setOngBalance(native.CacheDB, utils.OntContractAddress, constants.ONG_TOTAL_SUPPLY)
 
@@ -204,10 +203,9 @@ func TestTransfer(t *testing.T) {
 
 func TestTotalAllowance(t *testing.T) {
 	InvokeNativeContract(t, utils.OntContractAddress, func(native *native.NativeService) ([]byte, error) {
-		a := RandomAddress()
-		b := RandomAddress()
-		c := RandomAddress()
+		a, b, c := RandomAddress(), RandomAddress(), RandomAddress()
 		setOntBalance(native.CacheDB, a, 10000)
+		setOngBalance(native.CacheDB, utils.OntContractAddress, constants.ONG_TOTAL_SUPPLY)
 
 		assert.Equal(t, ontBalanceOf(native, a), 10000)
 		assert.Equal(t, ontBalanceOf(native, b), 0)
@@ -297,10 +295,9 @@ func TestGovernanceUnbound(t *testing.T) {
 
 func TestTransferV2(t *testing.T) {
 	InvokeNativeContract(t, utils.OntContractAddress, func(native *native.NativeService) ([]byte, error) {
-		a := RandomAddress()
-		b := RandomAddress()
-		c := RandomAddress()
+		a, b, c := RandomAddress(), RandomAddress(), RandomAddress()
 		setOntBalance(native.CacheDB, a, 10000)
+		// default networkid is mainnet, need set ong balance for ont contract
 		setOngBalance(native.CacheDB, utils.OntContractAddress, constants.ONG_TOTAL_SUPPLY)
 
 		assert.Equal(t, ontBalanceOfV2(native, a), uint64(10000*states.ScaleFactor))
@@ -324,10 +321,9 @@ func TestTransferV2(t *testing.T) {
 
 func TestTotalAllowanceV2(t *testing.T) {
 	InvokeNativeContract(t, utils.OntContractAddress, func(native *native.NativeService) ([]byte, error) {
-		a := RandomAddress()
-		b := RandomAddress()
-		c := RandomAddress()
+		a, b, c := RandomAddress(), RandomAddress(), RandomAddress()
 		setOntBalance(native.CacheDB, a, 10000)
+		setOngBalance(native.CacheDB, utils.OntContractAddress, constants.ONG_TOTAL_SUPPLY)
 
 		assert.Equal(t, ontBalanceOfV2(native, a), uint64(10000*states.ScaleFactor))
 		assert.Equal(t, ontBalanceOfV2(native, b), uint64(0))
