@@ -427,6 +427,7 @@ func GetBalance(cmd map[string]interface{}) map[string]interface{} {
 	resp["Result"] = balance
 	return resp
 }
+
 //get balance of address
 func GetBalanceV2(cmd map[string]interface{}) map[string]interface{} {
 	resp := ResponsePack(berr.SUCCESS)
