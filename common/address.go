@@ -131,3 +131,7 @@ func AddressFromVmCode(code []byte) Address {
 
 	return addr
 }
+
+func (self Address) MarshalText() (text []byte, err error) {
+	return []byte(self.ToBase58()), nil
+}

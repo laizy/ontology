@@ -19,8 +19,11 @@
 package ong
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
+
+	"github.com/ontio/ontology/common/log"
 
 	"github.com/laizy/bigint"
 
@@ -110,8 +113,17 @@ func OngTransferV2(native *native.NativeService) ([]byte, error) {
 	return doTransfer(native, &transfers)
 }
 
+func jsonstring(v interface{}) string {
+	b, _ := json.MarshalIndent(v, "", "  ")
+
+	return string(b)
+}
+
 func doTransfer(native *native.NativeService, transfers *ont.TransferStatesV2) ([]byte, error) {
 	contract := native.ContextRef.CurrentContext().ContractAddress
+
+	log.Errorf("do transfer: %s", jsonstring(transfers))
+
 	for _, v := range transfers.States {
 		if v.Value.IsZero() {
 			continue

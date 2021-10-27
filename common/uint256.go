@@ -78,3 +78,7 @@ func Uint256FromHexString(s string) (Uint256, error) {
 	}
 	return Uint256ParseFromBytes(ToArrayReverse(hx))
 }
+
+func (self Uint256) MarshalText() (text []byte, err error) {
+	return []byte(self.ToHexString()), nil
+}
