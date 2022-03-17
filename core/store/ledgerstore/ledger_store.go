@@ -1015,8 +1015,12 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block, ccMsg *types.CrossChai
 	//empty block does not check stateMerkleRoot
 	if len(block.Transactions) != 0 && result.MerkleRoot != stateMerkleRoot {
 		log.Infof("state mismatch at block height: %d, changeset: %s", block.Header.Height, result.WriteSet.DumpToDot())
-		return fmt.Errorf("state merkle root mismatch. expected: %s, got: %s",
+		log.Infof("state merkle root mismatch. expected: %s, got: %s",
 			result.MerkleRoot.ToHexString(), stateMerkleRoot.ToHexString())
+		/*
+			return fmt.Errorf("state merkle root mismatch. expected: %s, got: %s",
+				result.MerkleRoot.ToHexString(), stateMerkleRoot.ToHexString())
+		*/
 	}
 
 	return this.submitBlock(block, ccMsg, result)
