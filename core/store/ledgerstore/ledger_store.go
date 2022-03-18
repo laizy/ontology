@@ -1034,6 +1034,7 @@ func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, cach
 	var err error
 	switch tx.TxType {
 	case types.Deploy:
+		log.Errorf("deploy tx, blkHeight:%d, txHash:%s", block.Header.Height, tx.Hash().ToHexString())
 		err = this.stateStore.HandleDeployTransaction(this, overlay, gasTable, cache, tx, block, notify)
 		if overlay.Error() != nil {
 			return nil, nil, fmt.Errorf("HandleDeployTransaction tx %s error %s", txHash.ToHexString(), overlay.Error())
@@ -1042,6 +1043,7 @@ func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, cach
 			log.Debugf("HandleDeployTransaction tx %s error %s", txHash.ToHexString(), err)
 		}
 	case types.InvokeNeo, types.InvokeWasm:
+		log.Errorf("invoke neo or wasm tx, blkHeight:%d, txHash:%s", block.Header.Height, tx.Hash().ToHexString())
 		crossStateHashes, err = this.stateStore.HandleInvokeTransaction(this, overlay, gasTable, cache, tx, block, notify)
 		if overlay.Error() != nil {
 			return nil, nil, fmt.Errorf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), overlay.Error())
@@ -1050,6 +1052,7 @@ func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, cach
 			log.Debugf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), err)
 		}
 	case types.EIP155:
+		log.Errorf("invoke EIP155 tx, blkHeight:%d, txHash:%s", block.Header.Height, tx.Hash().ToHexString())
 		eiptx, err := tx.GetEIP155Tx()
 		if err != nil {
 			return nil, nil, fmt.Errorf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), err.Error())

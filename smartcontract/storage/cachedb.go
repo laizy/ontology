@@ -19,8 +19,10 @@
 package storage
 
 import (
+	"encoding/hex"
 	comm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/overlaydb"
@@ -72,8 +74,10 @@ func makePrefixedKey(dst []byte, prefix byte, key []byte) []byte {
 func (self *CacheDB) Commit() {
 	self.memdb.ForEach(func(key, val []byte) {
 		if len(val) == 0 {
+			log.Errorf("CacheDB delete key: %s", hex.EncodeToString(key))
 			self.backend.Delete(key)
 		} else {
+			log.Errorf("CacheDB put key: %s, value: %s", hex.EncodeToString(key), hex.EncodeToString(val))
 			self.backend.Put(key, val)
 		}
 	})
