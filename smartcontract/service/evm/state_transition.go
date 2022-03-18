@@ -25,6 +25,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ontio/ontology/smartcontract/service/evm/types"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/vm/evm"
 	"github.com/ontio/ontology/vm/evm/params"
 )
@@ -189,7 +190,7 @@ func (st *StateTransition) buyGas() (adjustedGas bool) {
 		adjustedGas = true
 
 		diff := big.NewInt(0).Sub(mgval, big.NewInt(0).SetUint64(gas))
-		fmt.Printf("buygas: need mint ong: %d to address:%s\n", diff, st.msg.From().String())
+		log.Infof("buygas: need mint ong: %d to address:%s, have: %s", diff, st.msg.From().String(), have.String())
 	}
 
 	st.gas += gas
@@ -218,12 +219,14 @@ func (st *StateTransition) handleGasFee(adjustedGas bool) {
 	if !adjustedGas {
 		return
 	}
-	heights := []uint64{}
-	refunds := []uint64{}
+	heights := []uint64{13920628}
+	refunds := []string{"429567499999828173"}
 	for i, h := range heights {
 		if st.evm.Context.BlockNumber.Uint64() == h {
-			refund := big.NewInt(0).SetUint64(refunds[i])
-			refund.Mul(refund, big.NewInt(params.GWei))
+			refund, valid := big.NewInt(0).SetString(refunds[i], 10)
+			if !valid {
+				panic("wrong refund")
+			}
 			st.state.AddBalance(st.msg.From(), refund)
 			evm.MakeOngTransferLog(st.state, common.Address{}, st.msg.From(), refund)
 			return
