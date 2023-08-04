@@ -20,6 +20,7 @@ package governance
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
@@ -27,6 +28,7 @@ import (
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/constants"
+	"github.com/ontio/ontology/common/log"
 	cstates "github.com/ontio/ontology/core/states"
 	"github.com/ontio/ontology/smartcontract/service/native"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
@@ -939,6 +941,7 @@ func executeSplit2(native *native.NativeService, contract common.Address, view u
 			return splitSum, fmt.Errorf("appCallTransferOng, appCallTransferOng error: %v", err)
 		}
 	}
+	log.Errorf("debug: income: %d, dapp income: %d", income, dappIncome)
 
 	//fee split to node
 	if income < dappIncome.Uint64() {
@@ -1058,6 +1061,11 @@ func executeSplit2(native *native.NativeService, contract common.Address, view u
 	return splitSum, nil
 }
 
+func jsonstr(v interface{}) string {
+	s, _ := json.Marshal(v)
+	return string(s)
+}
+
 func executeAddressSplit(native *native.NativeService, contract common.Address, authorizeInfo *AuthorizeInfo, preIfConsensus, ifConsensus bool, totalPos uint64, totalAmount uint64, peerAddress common.Address) (uint64, error) {
 	var validatePos uint64
 	if ifConsensus || preIfConsensus {
@@ -1079,6 +1087,9 @@ func executeAddressSplit(native *native.NativeService, contract common.Address, 
 	if err != nil {
 		return 0, fmt.Errorf("putSplitFeeAddress, putSplitFeeAddress error: %v", err)
 	}
+	log.Errorf("debug: user split, user: %s", jsonstr(authorizeInfo))
+	log.Errorf("debug: user split, user: %x, validatePos:%d, totalUserPos:%d, totalAmount: %d, user income: %d, feeAmount: %d",
+		authorizeInfo.Address.ToBase58(), validatePos, totalPos, totalAmount, amount, splitFeeAddress.Amount)
 	return amount, nil
 }
 
@@ -1245,6 +1256,7 @@ func executeCommitDpos2(native *native.NativeService, contract common.Address) e
 	newView := view + 1
 
 	//feeSplit first
+	log.Errorf("debug: starting commit dpos")
 	splitSum, err := executeSplit2(native, contract, view)
 	if err != nil {
 		return fmt.Errorf("executeNodeSplit2, executeNodeSplit2 error: %v", err)
@@ -1416,6 +1428,7 @@ func splitNodeFee(native *native.NativeService, contract common.Address, peerPub
 	}
 	var amount uint64
 	if native.Height > config.GetNewPeerCostHeight() {
+		// nodeAmount * totalPos / (initPos + totalPos)
 		stakeFee := new(big.Int).Div(
 			new(big.Int).Mul(new(big.Int).SetUint64(nodeAmount), new(big.Int).SetUint64(totalPos)),
 			new(big.Int).Add(new(big.Int).SetUint64(initPos), new(big.Int).SetUint64(totalPos))).Uint64()
@@ -1424,6 +1437,8 @@ func splitNodeFee(native *native.NativeService, contract common.Address, peerPub
 	} else {
 		amount = nodeAmount * (100 - peerCost) / 100
 	}
+	log.Errorf("debug: node: %x, key: %x, nodePos:%d, userPos:%d, income: %d, user income: %d", peerAddress.ToBase58(),
+		peerPubkey, initPos, totalPos, nodeAmount, amount)
 	var sumAmount uint64 = 0
 	iter := native.CacheDB.NewIterator(utils.ConcatKey(contract, AUTHORIZE_INFO_POOL, peerPubkeyPrefix))
 	defer iter.Release()
